@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>Slideshow Manual</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<style>
+    img {height: 350px; width: 250px;}
+    .mySlides {display:none;}
+</style>
+
+</head>
+<body>
+<div class="w3-container w3-auto">
+  <h1>Baby Animals Slideshow (manual)</h1>
+</div>
+<!-- set up each image, the coding will be the same but different images-->
+
+<div class="w3-content w3-display-container" style="max-width:500px;">
+
+    <div class="w3-display-container mySlides w3-text-green w3-xlarge">
+        <img src="4.6 images/cats.jpg" alt="Cats" style="width:100%">
+        <div class="w3-display-bottommiddle w3-large w3-container w3-padding-12 w3-black">
+            <h3>Kittens</h3>
+        </div>
+    </div>
+
+<!--Repeat code above-->
+
+    <div class="w3-display-container mySlides w3-text-green w3-xlarge">
+        <img src="4.6 images/dogs.jpg" alt="Dog" style="width:100%">
+        <div class="w3-display-bottommiddle w3-large w3-container w3-padding-12 w3-black">
+            <h3>Puppies</h3>
+        </div>
+    </div>
+
+    <div class="w3-display-container mySlides w3-text-green w3-xlarge">
+        <img src="4.6 images/ducks.jpg" alt="Duck" style="width:100%">
+        <div class="w3-display-bottommiddle w3-large w3-container w3-padding-12 w3-black">
+            <h3>Ducklings</h3>
+        </div>
+    </div>
+
+    <div class="w3-display-container mySlides w3-text-green w3-xlarge">
+        <img src="4.6 images/giraffe.jpg" alt="Giraffe" style="width:100%">
+        <div class="w3-display-bottommiddle w3-large w3-container w3-padding-12 w3-black">
+            <h3>Giraffe</h3>
+        </div>
+    </div>
+
+    <div class="w3-display-container mySlides w3-text-green w3-xlarge">
+        <img src="4.6 images/koala.jpg" alt="Koala" style="width:100%">
+        <div class="w3-display-bottommiddle w3-large w3-container w3-padding-12 w3-black">
+            <h3>Koala</h3>
+        </div>
+    </div>
+
+    <div class="w3-display-container mySlides w3-text-green w3-xlarge">
+        <img src="4.6 images/lion.jpg" alt="Lion" style="width:100%">
+        <div class="w3-display-bottommiddle w3-large w3-container w3-padding-12 w3-black">
+            <h3>Lion</h3>
+        </div>
+    </div>
+
+
+<!-- do not change this, these are your buttons for navigating through images-->
+  <button class="w3-button w3-black w3-display-left" onclick="plusDivs(-1)">&#10094;</button>
+  <button class="w3-button w3-black w3-display-right" onclick="plusDivs(1)">&#10095;</button>
+</div>
+
+<!-- DO NOT CHANGE ANYTHING BELOW THIS LINE-->
+<script>
+var slideIndex = 1;
+showDivs(slideIndex);
+function plusDivs(n) {
+  showDivs(slideIndex += n);
+}
+
+function showDivs(n) {
+  var i;
+  var x = document.getElementsByClassName("mySlides");
+  if (n > x.length) {slideIndex = 1}
+  if (n < 1) {slideIndex = x.length}
+  for (i = 0; i < x.length; i++) {
+    x[i].style.display = "none";  
+  }
+  x[slideIndex-1].style.display = "block";  
+}
+</script>
+<!-- CHANGE FOOTER-->
+<footer>
+    <div class="w3-container w3-center">
+        <h3> Kaden Cruts - 2025</h3>
+    <div>
+</footer>
+</body>
+</html>
