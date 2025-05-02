@@ -1,0 +1,21 @@
+@keyframes title-grow {
+    0% {
+        transform: scale(0.9) rotate(9deg);
+    }
+    50% {
+        transform: scale(1.25) rotate(9deg);
+    }
+    100% {
+        transform: scale(0.9) rotate(9deg);
+    }
+}
+
+#esc{
+    color:red;
+    display: inline-block;
+    transform: rotate(-10deg);
+    animation-iteration-count: infinite;
+    margin: 26px;
+    animation: title-grow 3s infinite alternate ease-in-out;
+
+}
