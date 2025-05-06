@@ -7,8 +7,71 @@
         <link rel="stylesheet" href="https://www.w3schools.com/lib/w3-theme-blue.css">
     </head>
 <body>
-    <div class="w3-container w3-auto">
-        <div class="w3-bar w3-blue">
+    <div class="w3-sidebar w3-bar-block w3-card w3-animate-left" style="display:none" id="mySidebar">
+        <button class="w3-bar-item w3-button w3-large"
+        onclick="w3_close()">Close &times;</button>
+        <!--Base Page Links-->
+        <a href="index.html" class="w3-bar-item w3-button">Index</a>
+        
+        <button class="w3-button w3-block w3-left-align" onclick="myAccFunc('qout')">
+            Qoutes <i class="fa fa-caret-down"></i>
+            </button>
+            <div id="qout" class="w3-hide w3-white w3-card">
+              <a href="myQoutes.html" class="w3-bar-item w3-button w3-small">HomeWork</a>
+              <a href="qoutecw.html" class="w3-bar-item w3-button w3-small">ClassWork</a>
+            </div>
+
+        <button class="w3-button w3-block w3-left-align" onclick="myAccFunc('tabl')">
+            Tables <i class="fa fa-caret-down"></i>
+            </button>
+            <div id="tabl" class="w3-hide w3-white w3-card">
+                <a href="tableHW.html" class="w3-bar-item w3-button w3-small">HomeWork</a>
+                <a href="tableCW.html" class="w3-bar-item w3-button w3-small">ClassWork</a>
+            </div>
+
+        <button class="w3-button w3-block w3-left-align" onclick="myAccFunc('card')">
+            Cards <i class="fa fa-caret-down"></i>
+            </button>
+            <div id="card" class="w3-hide w3-white w3-card">
+                <a href="cardsHW.html" class="w3-bar-item w3-button w3-small">HomeWork</a>
+                <a href="cardsCW.html" class="w3-bar-item w3-button w3-small">ClassWork</a>
+            </div>
+
+        <button class="w3-button w3-block w3-left-align" onclick="myAccFunc('phot')">
+            PhotoAlbum <i class="fa fa-caret-down"></i>
+            </button>
+            <div id="phot" class="w3-hide w3-white w3-card">
+                <a href="photoHW.html" class="w3-bar-item w3-button w3-small">HomeWork</a>
+                <a href="photoCW.html" class="w3-bar-item w3-button w3-small">ClassWork</a>
+            </div>
+
+            <button class="w3-button w3-block w3-left-align" onclick="myAccFunc('slide')">
+                Slideshow <i class="fa fa-caret-down"></i>
+                </button>
+                <div id="slide" class="w3-hide w3-white w3-card">
+                    <a href="slideshowHW.html" class="w3-bar-item w3-button w3-small">HomeWork</a>
+                    <a href="slideshowCW.html" class="w3-bar-item w3-button w3-small">ClassWork</a>
+                </div>
+                
+            <button class="w3-button w3-block w3-left-align" onclick="myAccFunc('drop')">
+                Dropdowns <i class="fa fa-caret-down"></i>
+                </button>
+                <div id="drop" class="w3-hide w3-white w3-card">
+                    <a href="triviaHW.html" class="w3-bar-item w3-button w3-small">HomeWork</a>
+                    <a href="triviaCW.html" class="w3-bar-item w3-button w3-small">ClassWork</a>
+                </div>
+            
+            <a href="myTranscript.html" class="w3-bar-item w3-button">Transcript</a>
+
+            <a href="social_profile.html" class="w3-bar-item w3-button">Social Media Page</a>
+            
+        <!--Accordion below change func to correspond to id of div-->
+
+            <!--End of Accordion-->
+    </div>
+    <div id="main" class="w3-container w3-auto">
+        <button id="openNav" class="w3-button w3-teal w3-xlarge" onclick="w3_open()">&#9776;</button>
+        <!--<div class="w3-bar w3-blue">
             <a href="index.html" class="w3-bar-item w3-button">Home</a>
             <a href="myQoutes.html" class="w3-bar-item w3-button">Qoutes</a>
             <a href="tableHW.html" class="w3-bar-item w3-button">Tables</a>
@@ -19,7 +82,7 @@
             <a href="myTranscript.html" class="w3-bar-item w3-button">My Transcript</a>
             <a href="index.html" class="w3-bar-item w3-button">Social Media Page</a>
             <a href="index.html" class="w3-bar-item w3-button">Final Project</a>
-          </div>
+          </div>-->
         <div class="w3-panel w3-theme-d2 w3-center">
 
             <h1>Kaden Cruts - Portfolio</h1>
@@ -59,6 +122,35 @@
     </div>
 
     </div>
+
+    <script>
+            
+
+        function myAccFunc(id) {
+        var x = document.getElementById(id);
+        if (x.className.indexOf("w3-show") == -1) {
+            x.className += " w3-show";
+            x.previousElementSibling.className += " w3-green";
+        } else { 
+            x.className = x.className.replace(" w3-show", "");
+            x.previousElementSibling.className = 
+            x.previousElementSibling.className.replace(" w3-green", "");
+        }
+        }
+        function w3_open() {
+            document.getElementById("main").style.marginLeft = "25%";
+            document.getElementById("mySidebar").style.width = "25%";
+            document.getElementById("mySidebar").style.display = "block";
+            document.getElementById("openNav").style.display = 'none';
+        }
+        function w3_close() {
+            document.getElementById("main").style.marginLeft = "0%";
+            document.getElementById("mySidebar").style.display = "none";
+            document.getElementById("openNav").style.display = "inline-block";
+        }
+    </script>
+
+
 </body>
     <footer>
         Kaden Cruts - 2025
