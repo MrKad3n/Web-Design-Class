@@ -11,7 +11,7 @@
 }
 
 #esc{
-    color:red;
+    color:gray;
     display: inline-block;
     transform: rotate(-10deg);
     animation-iteration-count: infinite;
