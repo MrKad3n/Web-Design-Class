@@ -1,0 +1,61 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    background: #121212;
+    font-family: sans-serif;
+  }
+  
+  #map-container {
+    width: 100vw;
+    height: 100vh;
+    overflow: scroll;
+    background: #1e1e1e;
+  }
+  
+  #map {
+    display: grid;
+    grid-template-columns: repeat(50, 100px);
+    grid-template-rows: repeat(50, 100px);
+    width: max-content;
+    height: max-content;
+  }
+  
+  .grid-cell {
+    width: 100px;
+    height: 100px;
+    box-sizing: border-box;
+    border: 1px solid #444;
+    background-color: #292929;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  
+  .grid-cell:hover {
+    background-color: #3a3a3a;
+  }
+  
+  #popup {
+    position: fixed;
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #222;
+    padding: 20px;
+    border: 2px solid #0ff;
+    color: white;
+    z-index: 1000;
+    display: none;
+  }
+  
+  #popup button {
+    margin-top: 10px;
+  }
+  
+  .hidden {
+    display: none;
+  }
+  
