@@ -90,7 +90,7 @@
 #esc{
     color:gray;
     display: inline-block;
-    transform: rotate(-10deg);
+    transform: rotate(-10deg) hue-rotate(60deg);
     animation-iteration-count: infinite;
     margin: 26px;
     animation: title-grow 3s infinite alternate ease-in-out;
