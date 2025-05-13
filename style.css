@@ -97,6 +97,13 @@
 
 }
 
+.glow {
+    font-size: 48px;
+    color: white;
+    font-weight: bold;
+    animation: glow 2s infinite ease-in-out;
+  }
+
 button:hover {
     animation: wiggle 2s linear infinite;
 }
@@ -107,12 +114,6 @@ button:hover {
     text-shadow:1px 1px 0 #444;
     font-size: 25px;
 }
-  .glow {
-    font-size: 48px;
-    color: white;
-    font-weight: bold;
-    animation: glow 2s infinite ease-in-out;
-  }
 
   .clickable {
     transition: all 0.3s ease;
