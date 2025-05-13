@@ -127,7 +127,7 @@ button:hover {
   }
 
   .clickable2:hover {
-    transform: scale(1.3) rotateZ(10deg) scaleX(-1);
+    transform: scale(1.3) rotateZ(10deg) rotateY(180deg);
   }
   
   .character-container {
