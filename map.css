@@ -14,8 +14,8 @@ body {
   
   #map {
     display: grid;
-    grid-template-columns: repeat(50, 100px);
-    grid-template-rows: repeat(50, 100px);
+    grid-template-columns: repeat(20, 150px);
+    grid-template-rows: repeat(20, 150px);
     width: max-content;
     height: max-content;
   }
