@@ -3,8 +3,13 @@ const popup = document.getElementById("popup");
 const popupContent = document.getElementById("popup-content");
 
 // Generate 50x50 grid
-const rows = 10;
-const cols = 10;
+<<<<<<< HEAD
+const rows = 13;
+const cols = 13;
+=======
+const rows = 20;
+const cols = 20;
+>>>>>>> 877367ffc50ec594070a86a12d7b4d1112326c07
 
 for (let row = 0; row < rows; row++) {
   for (let col = 0; col < cols; col++) {
