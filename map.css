@@ -14,13 +14,8 @@ body {
   
   #map {
     display: grid;
-<<<<<<< HEAD
-    grid-template-columns: repeat(13, 130px);
-    grid-template-rows: repeat(13, 130px);
-=======
-    grid-template-columns: repeat(20, 100px);
-    grid-template-rows: repeat(20, 100px);
->>>>>>> 877367ffc50ec594070a86a12d7b4d1112326c07
+    grid-template-columns: repeat(50, 100px);
+    grid-template-rows: repeat(50, 100px);
     width: max-content;
     height: max-content;
   }
