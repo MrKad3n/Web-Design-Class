@@ -85,7 +85,32 @@
     }
   }
 
-
+  @keyframes hitEffect {
+    0% {
+      transform: translate(0, 0) rotate(0);
+      filter: hue-rotate(0deg);
+    }
+    20% {
+      transform: translate(-5px, 0) rotate(-2deg);
+      filter: hue-rotate(-50deg) brightness(1.5);
+    }
+    40% {
+      transform: translate(5px, 0) rotate(2deg);
+      filter: hue-rotate(50deg) brightness(1.5);
+    }
+    60% {
+      transform: translate(-5px, 0) rotate(-2deg);
+      filter: hue-rotate(-50deg) brightness(1.5);
+    }
+    80% {
+      transform: translate(5px, 0) rotate(2deg);
+      filter: hue-rotate(50deg) brightness(1.5);
+    }
+    100% {
+      transform: translate(0, 0) rotate(0);
+      filter: none;
+    }
+  }
 
 #esc{
     color:gray;
@@ -146,3 +171,15 @@ button:hover {
     width: 100%;
   }
   
+  #battle {
+    margin: 0;
+    padding: 0;
+    background-image: url('battle.png');
+    background-size: 100% 100%; /* Ensures the image covers the entire background */
+    background-position: center; /* Centers the image */
+    background-repeat: no-repeat; /* Prevents repeating */
+    background-attachment: fixed; /* Optional: Makes it fixed while scrolling */
+}
+.hit-animation {
+  animation: hitEffect 0.6s ease;
+}
