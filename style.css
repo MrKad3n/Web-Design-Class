@@ -203,3 +203,7 @@ button:hover {
 .hit-animation {
   animation: hitEffect 0.6s ease;
 }
+
+.icon {
+  width: 20%;
+}
