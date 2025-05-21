@@ -22,8 +22,8 @@ body {
   }
   #map {
     display: grid;
-    grid-template-columns: repeat(13, 130px);
-    grid-template-rows: repeat(13, 130px);
+    grid-template-columns: repeat(10, 130px);
+    grid-template-rows: repeat(10, 130px);
     width: max-content;
     height: max-content;
   }
