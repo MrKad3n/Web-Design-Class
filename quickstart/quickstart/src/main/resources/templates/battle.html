@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Battle</title>
+    <link rel="stylesheet" type="text/css" href="/style.css">
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/5/w3.css">
+</head>
+<body id="battle">
+    <div class="w3-container w3-auto">
+        <div th:if="${battle.isBattleOver()}">
+            <div th:if="${battle.isVictory()}">
+                <h2 class="w3-text-green">Victory!</h2>
+                <a href="/map" class="w3-button w3-green">Continue</a>
+            </div>
+            <div th:unless="${battle.isVictory()}">
+                <h2 class="w3-text-red">Defeat</h2>
+                <a href="/" class="w3-button w3-red">Retry</a>
+            </div>
+        </div>
+        
+        <div th:unless="${battle.isBattleOver()}">
+            <div class="w3-row">
+                <div class="w3-col m2">
+                    <div id="party" class="w3-container w3-blue-grey w3-border w3-center m2">
+                        <div th:each="member, iterStat : ${party}" 
+                             th:class="${member.getHealth() <= 0} ? 'w3-container w3-border w3-red' : 
+                                      (member == battle.getCurrentCharacter() ? 'w3-container w3-border w3-green' : 
+                                      'w3-container w3-border')">
+                            <img src="/Assests/player.png" class="w3-circle icon w3-left">
+                            <span th:text="${member.getName()} + ' Lvl:' + ${member.getLevel()}"></span>
+                            <div class="w3-light-grey">
+                                <div class="w3-green" th:style="'width:' + ${member.getHealth() * 100 / member.getMaxHealth()} + '%'">
+                                    HP: <span th:text="${member.getHealth()} + '/' + ${member.getMaxHealth()}"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="w3-col m3">
+                    <div id="Attacks" class="w3-container w3-blue-grey w3-border w3-center">
+                        <div th:each="attack, iterStat : ${battle.getCurrentCharacter().getEquippedAttack()}" 
+                             th:if="${attack != null}">
+                            <div class="w3-container w3-border" 
+                                 th:onclick="'document.location=\'/battle/attack?attackSlot=' + ${iterStat.index} + '&targetIndex=0\''">
+                                <img th:src="'/Items/' + ${attack.getName().replace(' ', '') + '.png'" class="w3-circle icon w3-left">
+                                <span th:text="${attack.getName()}"></span>
+                                <br>
+                                <span th:text="'Str:' + ${attack.getPower()} + ' Mag:' + ${attack.magicPower()}"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="w3-light-grey">
+                        <div class="w3-green" th:style="'width:' + ${battle.getCurrentCharacter().getHealth() * 100 / battle.getCurrentCharacter().getMaxHealth()} + '%'">
+                            HP: <span th:text="${battle.getCurrentCharacter().getHealth()} + '/' + ${battle.getCurrentCharacter().getMaxHealth()}"></span>
+                        </div>
+                    </div>
+                    <img id="player" src="/Assests/player.png" style="width: 100%">
+                </div>
+                
+                <div class="w3-col m3">
+                    <div th:each="enemy, iterStat : ${battle.getEnemies()}">
+                        <div th:if="${enemy.getHealth() > 0}">
+                            <h2 class="w3-container w3-text-white" th:text="${enemy.getName()}"></h2>
+                            <div class="w3-light-grey">
+                                <div class="w3-green" th:style="'width:' + ${enemy.getHealth() * 100 / enemy.getMaxHealth()} + '%'">
+                                    HP: <span th:text="${enemy.getHealth()} + '/' + ${enemy.getMaxHealth()}"></span>
+                                </div>
+                            </div>
+                            <img th:src="'/Enemies/' + ${enemy.getType()} + '.png'" style="width:100%">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="w3-container w3-black w3-margin-top">
+                <pre th:text="${battleLog}"></pre>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

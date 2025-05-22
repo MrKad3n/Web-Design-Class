@@ -1,0 +1,12 @@
+<div th:fragment="battleActions">
+    <div class="action-buttons">
+        <button class="attack-button" 
+                th:each="attack,iterStat : ${currentCharacter.attacks}"
+                th:data-slot="${iterStat.index}"
+                th:data-target="0">
+            <img th:src="'/static/Items/' + ${attack.name} + '.png'">
+            <span th:text="${attack.name}"></span>
+        </button>
+    </div>
+    <div class="battle-log" id="battle-log"></div>
+</div>
