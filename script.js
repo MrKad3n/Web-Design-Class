@@ -13,12 +13,16 @@ const tileData = {
   "1,2": {
     title: "Basic",
     description: "You entered a forest area.",
-    image: "https://via.placeholder.com/100/00ff00"
+    enemyOne: "Enemies/skull.png",
+    enemyTwo: "Enemies/slime.png",
+    enemyThree: "Enemies/alien.png"
   },
   "1,3": {
     title: "MiniBoss",
     description: "Rocky and cold up here.",
-    image: "https://via.placeholder.com/100/0000ff"
+    enemyOne: "Enemies/slime.png",
+    enemyTwo: "Enemies/slime.png",
+    enemyThree: "Enemies/cursedKnight.png"
   }
 };
 
@@ -44,9 +48,12 @@ for (let row = 0; row < rows; row++) {
       if (data) {
         const html = `
           <h3>${data.title}</h3>
-          <img src="${data.image}" alt="${data.title}" />
           <p>${data.description}</p>
-          <button onclick="closePopup()">Close</button>
+          <div>
+          <img src="${data.enemyOne}" alt="${data.title}" style="width:20%"/>
+          <img src="${data.enemyTwo}" alt="${data.title}" style="width:20%"/>
+          <img src="${data.enemyThree}" alt="${data.title}" style="width:20%"/>
+          </div>
         `;
         openPopup(html);
       } else {
@@ -59,8 +66,8 @@ for (let row = 0; row < rows; row++) {
   }
 }
 
-function openPopup(text) {
-  popupContent.textContent = text;
+function openPopup(htmlContent) {
+  popupContent.innerHTML = htmlContent;
   popup.style.display = "block";
 }
 
