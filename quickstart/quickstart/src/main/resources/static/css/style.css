@@ -207,3 +207,31 @@ button:hover {
 .icon {
   width: 20%;
 }
+
+/* Battle Animations */
+.attack-animation {
+    animation: attackPulse 0.3s ease;
+}
+
+@keyframes attackPulse {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+    100% { transform: translateY(0); }
+}
+
+.hit-animation {
+    animation: hitShake 0.5s ease;
+}
+
+.damage-number {
+    position: absolute;
+    color: red;
+    font-weight: bold;
+    animation: floatUp 1s ease;
+}
+
+/* Status Effects */
+.burned {
+    filter: hue-rotate(-30deg) brightness(1.5);
+    animation: burnPulse 1s infinite;
+}

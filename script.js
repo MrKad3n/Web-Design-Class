@@ -13,12 +13,16 @@ const tileData = {
   "1,2": {
     title: "Basic",
     description: "You entered a forest area.",
-    image: "https://via.placeholder.com/100/00ff00"
+    enemyOne: "Enemies/skull.png",
+    enemyTwo: "Enemies/slime.png",
+    enemyThree: "Enemies/alien.png"
   },
   "1,3": {
     title: "MiniBoss",
     description: "Rocky and cold up here.",
-    image: "https://via.placeholder.com/100/0000ff"
+    enemyOne: "Enemies/slime.png",
+    enemyTwo: "Enemies/slime.png",
+    enemyThree: "Enemies/cursedKnight.png"
   }
 };
 
@@ -35,32 +39,38 @@ for (let row = 0; row < rows; row++) {
     cell.dataset.col = col;
     cell.textContent = `${row},${col}`;
 
+    const key = `${row},${col}`;
+    const data = tileData[key];
+
+    // Hide cells without data from the start, but preserve layout
+    if (!data) {
+      cell.style.visibility = "hidden";
+    }
+
     cell.addEventListener("click", (e) => {
       e.stopPropagation(); // Prevent closing popup from body click
-    
-      const key = `${row},${col}`;
-      const data = tileData[key];
-    
+
       if (data) {
         const html = `
           <h3>${data.title}</h3>
-          <img src="${data.image}" alt="${data.title}" />
           <p>${data.description}</p>
-          <button onclick="closePopup()">Close</button>
+          <div>
+            <img src="${data.enemyOne}" alt="${data.title}" style="width:20%"/>
+            <img src="${data.enemyTwo}" alt="${data.title}" style="width:20%"/>
+            <img src="${data.enemyThree}" alt="${data.title}" style="width:20%"/>
+          </div>
         `;
         openPopup(html);
-      } else {
-        openPopup(`<p>No data for tile [${row}, ${col}]</p>`);
       }
     });
-    
 
     map.appendChild(cell);
   }
 }
 
-function openPopup(text) {
-  popupContent.textContent = text;
+
+function openPopup(htmlContent) {
+  popupContent.innerHTML = htmlContent;
   popup.style.display = "block";
 }
 
