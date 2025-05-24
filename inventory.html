@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Kaden's Dungeon Game</title>
+        <link rel="stylesheet" type="text/css" href="style.css">
+        <link rel="stylesheet" href="https://www.w3schools.com/w3css/5/w3.css">
+        <link rel="stylesheet" href="https://www.w3schools.com/lib/w3-theme-blue.css">
+    </head>
+<body style="background-color:black;">
+     <div class="w3-container w3-left" style="width:50%">
+
+            <a href="home.html"><h2 class="glow">Back</h2></a>
+
+        </div>
+    <br><br>
+    <div class="w3-container w3-auto">
+        <!--span hlights green if member is selected-->
+        <div id="inv-party-nav" class="w3-container w3-grey w3-border-black" style="font-size:21px">
+            Characters Name | <span id="inv-1">first member</span> | <span id="inv-2">Second member</span> | <span id="inv-3">Thrid member</span> | <span id="inv-4">Fourth member</span> | <span id="inv-5">fifth member</span>
+            
+
+
+        </div>
+        <div class="w3-row">
+            <div id="inventory" class="w3-col m9 w3-container w3-grey w3-border">
+                <!--5x10 containing items slots that use the float animation when hovered-->
+                <!--when cliked it will change values of info-item to contain its info-->
+                <!--should have a grey outline around each item/box to seperate the items.-->
+                <!--each party member has same inventory just different equiped items-->
+                s
+
+            </div>
+        
+
+            <div class="w3-col m3">
+                <!--Equiped items-->
+                <div class="w3-container w3-center w3-grey w3-border-grey w3-bottombar w3-topbar">
+                    <div id="helmet" class="w3-black w3-border-white w3-center">
+                        <img src="Items/frostHelmet.png" style="width:30%">
+                    </div>
+                    <div id="chestplate" class="w3-black w3-border-white w3-center">
+                        <img src="Items/frostChest.png" style="width:30%">
+                    </div>
+                    <div id="legs" class="w3-black w3-border-white w3-center">
+                        <img src="Items/frostPants.png" style="width:30%">
+                    </div>
+                    <div id="boots" class="w3-black w3-border-white w3-center">
+                        <img src="Items/frostBoots.png" style="width:30%">
+                    </div>
+                    <div class="w3-black w3-border-white w3-center">
+                        <img id="main-hand" src="Items/frostStaff.png" style="width:30%">
+                        <img id="off-hand" src="Items/spellShield.png" style="width:30%">
+                    </div>
+                </div>
+                <br>
+                <!--info of all the items-->
+                <div class="w3-container w3-center w3-grey w3-border-grey w3-bottombar w3-topbar">
+                    <div id="info-item" class="w3-black w3-border-white w3-center">
+                        <h3>Name Level</h3>
+                        <img src="Items/frostHelmet.png" style="width:30%">
+                        <p>Strength: # Magic: # Speed: #</p>
+                        <p>Health: # Defense: #</p>
+                    </div>
+                    
+                </div>
+
+                    
+                
+            </div>
+
+        </div>
+        <br>
+        <div class="w3-row">
+            <!--contains equiped attacks-->
+            <div class="w3-col m6 w3-container w3-grey w3-border-black">
+                <span id="equip-attack-1" class="w3-container w3-grey w3-border-black"><img src="Items/demonSythe.png" style="width:10%">Attack Name Magic: # Strength: #</span>
+                <span id="equip-attack-2" class="w3-container w3-grey w3-border-black"><img src="Items/demonSythe.png" style="width:10%">Attack Name Magic: # Strength: #</span>
+                <span id="equip-attack-3" class="w3-container w3-grey w3-border-black"><img src="Items/demonSythe.png" style="width:10%">Attack Name Magic: # Strength: #</span>
+                <span id="equip-attack-4" class="w3-container w3-grey w3-border-black"><img src="Items/demonSythe.png" style="width:10%">Attack Name Magic: # Strength: #</span>
+                <span id="equip-attack-5" class="w3-container w3-grey w3-border-black"><img src="Items/demonSythe.png" style="width:10%">Attack Name Magic: # Strength: #</span>
+            </div>
+            <!--contains all unequiped attacks-->
+            <!--can add ass many or less as you want-->
+            <div class="w3-col m6 w3-container w3-grey w3-border-black">
+                <span id="inv-attack-1" class="w3-container w3-grey w3-border-black"><img src="Items/demonSythe.png" style="width:10%">Attack Name Magic: # Strength: #</span>
+                <span id="inv-attack-2" class="w3-container w3-grey w3-border-black"><img src="Items/demonSythe.png" style="width:10%">Attack Name Magic: # Strength: #</span>
+                <span id="inv-attack-3" class="w3-container w3-grey w3-border-black"><img src="Items/demonSythe.png" style="width:10%">Attack Name Magic: # Strength: #</span>
+            </div>
+        </div>
+    </div>
+</body>
+    <footer>
+        Kaden Cruts - 2025
+    </footer>
+</html>
