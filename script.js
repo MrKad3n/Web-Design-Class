@@ -23,6 +23,11 @@ const tileData = {
     enemyOne: "Enemies/slime.png",
     enemyTwo: "Enemies/slime.png",
     enemyThree: "Enemies/cursedKnight.png"
+  },
+  "1,4": {
+    title: "Boss",
+    description: "You Finally Reached it",
+    enemyOne: "Enemies/shadow.png"
   }
 };
 
@@ -47,22 +52,28 @@ for (let row = 0; row < rows; row++) {
       cell.style.visibility = "hidden";
     }
 
-    cell.addEventListener("click", (e) => {
-      e.stopPropagation(); // Prevent closing popup from body click
+cell.addEventListener("click", (e) => {
+  e.stopPropagation();
 
-      if (data) {
-        const html = `
-          <h3>${data.title}</h3>
-          <p>${data.description}</p>
-          <div>
-            <img src="${data.enemyOne}" alt="${data.title}" style="width:20%"/>
-            <img src="${data.enemyTwo}" alt="${data.title}" style="width:20%"/>
-            <img src="${data.enemyThree}" alt="${data.title}" style="width:20%"/>
-          </div>
-        `;
-        openPopup(html);
-      }
-    });
+  if (data) {
+    const enemies = [
+      data.enemyOne,
+      data.enemyTwo,
+      data.enemyThree
+    ].filter(enemy => enemy); // Remove empty/undefined entries
+
+    const enemiesHTML = enemies.map(enemy => 
+      `<img src="${enemy}" alt="${data.title}" style="width:${100/enemies.length}%"/>`
+    ).join('');
+
+    const html = `
+      <h3>${data.title}</h3>
+      <p>${data.description}</p>
+      <div>${enemiesHTML}</div>
+    `;
+    openPopup(html);
+  }
+});
 
     map.appendChild(cell);
   }
