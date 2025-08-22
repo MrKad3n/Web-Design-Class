@@ -89,6 +89,10 @@ function closePopup() {
   popup.style.display = "none";
 }
 
+function dungeonClick() {
+  
+}
+
 // Close popup if clicking outside it
 document.body.addEventListener("click", () => {
   closePopup();
