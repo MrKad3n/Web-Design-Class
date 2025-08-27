@@ -5,6 +5,7 @@ const popupContent = document.getElementById("popup-content");
 const tileData = {
   "1,1": {
     title: "Start Tile",
+    status: true,
     description: "This is the beginning of the map.",
     enemyOne: "Enemies/skull.png",
     enemyTwo: "Enemies/skull.png",
@@ -12,6 +13,7 @@ const tileData = {
   },
   "1,2": {
     title: "Basic",
+    status: false,
     description: "You entered a forest area.",
     enemyOne: "Enemies/skull.png",
     enemyTwo: "Enemies/slime.png",
@@ -19,6 +21,7 @@ const tileData = {
   },
   "1,3": {
     title: "MiniBoss",
+    status: false,
     description: "Rocky and cold up here.",
     enemyOne: "Enemies/slime.png",
     enemyTwo: "Enemies/slime.png",
@@ -26,6 +29,7 @@ const tileData = {
   },
   "1,4": {
     title: "Boss",
+    status: false,
     description: "You Finally Reached it",
     enemyOne: "Enemies/shadow.png"
   }
@@ -48,7 +52,12 @@ for (let row = 0; row < rows; row++) {
     const data = tileData[key];
 
     // Hide cells without data from the start, but preserve layout
-    if (!data) {
+    if (data){
+      if (!data.status){
+        
+      }
+    }
+    else if (!data) {
       cell.style.visibility = "hidden";
     }
 
