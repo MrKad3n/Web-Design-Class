@@ -9,7 +9,7 @@
     </head>
 <body id="battle">
     <!--Eveything hides when you lose and a box with text saying you lose pops up in the middle sending you back to homescreen with progress reset-->
-    <div class="w3-container w3-auto">
+    <div class="w3-container">
           
         <div class="w3-row">
             <div class="w3-col m2">
@@ -19,27 +19,27 @@
                 <!--when a div is clicked you switch to that party member-->
                 <div id="party" class="w3-container w3-blue-grey w3-border w3-center m2">
                     <!--Party member 1-->
-                    <div id="slot one" class="w3-container w3-border">
+                    <div id="slot-one" class="w3-container w3-border">
                         <img src="Assests/player.png" class="w3-circle icon w3-left">
                             Player name lvl#
                     </div>
                     <!--Party member 2, etc-->
-                    <div id="slot two" class="w3-container w3-border">
+                    <div id="slot-two" class="w3-container w3-border">
                         <img src="Assests/player.png" class="w3-circle icon w3-left">
                             Player name lvl#
                     </div>
 
-                    <div id="slot three" class="w3-container w3-border">
+                    <div id="slot-three" class="w3-container w3-border">
                         <img src="Assests/player.png" class="w3-circle icon w3-left">
                             Player name lvl#
                     </div>
 
-                    <div id="slot four" class="w3-container w3-border">
+                    <div id="slot-four" class="w3-container w3-border">
                         <img src="Assests/player.png" class="w3-circle icon w3-left">
                             Player name lvl#
                     </div>
 
-                    <div id="slot five" class="w3-container w3-border">
+                    <div id="slot-five" class="w3-container w3-border">
                         <img src="Assests/player.png" class="w3-circle icon w3-left">
                             Player name lvl#
                     </div>
@@ -107,14 +107,18 @@
                     <!--width of div below changes based of hp percent on max health-->
                     <div class="w3-green" style="width:50%">HP #</div>
                 </div>
-                <img src="Enemies/cursedKnight.png" style="width:100%">
+                <div id="enemies">
+                    <img src="Enemies/cursedKnight.png" style="position:absolute; right:290px; width:25%">
+                    <img src="Enemies/cursedKnight.png" style="position:absolute; right:140px; width:25%">
+                    <img src="Enemies/cursedKnight.png" style="position:absolute; right:0px; width:25%">
+                </div>
             </div>
             
 
         </div>
     </div>
-</body>
     <footer>
         Kaden Cruts - 2025
     </footer>
+</body>
 </html>
