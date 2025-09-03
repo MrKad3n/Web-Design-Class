@@ -1,3 +1,6 @@
+
+/*animations*/
+
 @keyframes title-grow {
     0% {
         transform: scale(0.9) rotate(9deg);
@@ -112,6 +115,8 @@
     }
   }
 
+
+
 #esc{
     color:gray;
     display: inline-block;
@@ -129,7 +134,7 @@
     animation: glow 2s infinite ease-in-out;
   }
 
-button:hover {
+.select-button:hover {
     animation: wiggle 2s linear infinite;
 }
 
@@ -139,6 +144,8 @@ button:hover {
     text-shadow:1px 1px 0 #444;
     font-size: 25px;
 }
+
+/*text rotate*/
 
   .clickable {
     transition: all 0.3s ease;
@@ -171,6 +178,8 @@ button:hover {
     width: 100%;
   }
   
+/*Body ID's*/
+
   #battle {
     margin: 0;
     padding: 0;
@@ -185,20 +194,20 @@ button:hover {
   margin: 0;
   padding: 0;
   background-image: url('Backgrounds/blacksmith.png');
-  background-size: 100% 100%; /* Ensures the image covers the entire background */
-  background-position: center; /* Centers the image */
-  background-repeat: no-repeat; /* Prevents repeating */
-  background-attachment: fixed; /* Optional: Makes it fixed while scrolling */
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 
 #home {
   margin: 0;
   padding: 0;
   background-image: url('Backgrounds/homeScreen.png');
-  background-size: 100% 100%; /* Ensures the image covers the entire background */
-  background-position: center; /* Centers the image */
-  background-repeat: no-repeat; /* Prevents repeating */
-  background-attachment: fixed; /* Optional: Makes it fixed while scrolling */
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed; 
 }
 .hit-animation {
   animation: hitEffect 0.6s ease;
@@ -207,6 +216,8 @@ button:hover {
 .icon {
   width: 20%;
 }
+
+/*battle select styles*/
 
 #linear {
     background-color: red; /* For browsers that do not support gradients */
@@ -243,10 +254,27 @@ button:hover {
 .boss {
     width:200px !important
 }
+
+/*Inventory style sheet*/
+
 .inv-slot {
-  width:50px;
-  height:50px;
+  display: flex;
   background-color: rgb(96,96,96);
   border: 3px;
-  border-color:#1a1a1a
+  border-color:#1a1a1a;
+  border-style: solid;
+}
+.inv-slot img {
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+}
+#inventory {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr); 
+  grid-template-rows: repeat(10, 1fr);   
+  gap: 5px;                              
+  padding: 5px;
+  height: 550px;
+  width: 75%
 }
