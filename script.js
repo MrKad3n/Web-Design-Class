@@ -73,15 +73,13 @@ function generateAndSaveDungeon() {
       tile.cleared = true;
       tile.status = true;
       tile.enemyOne = "Enemies/skull.png";
-      tile.enemyTwo = "Enemies/skull.png";
-      tile.enemyThree = "Enemies/skull.png";
     } else if (level === pathLength) {
       tile.title = "Boss";
       tile.description = "You've finally reached it.";
       tile.cleared = false;
       tile.status = false;
       tile.enemyOne = "Enemies/shadow.png";
-    } else if (level === pathLength - 1) {
+    } else if ((level === pathLength/2)||(level===pathLength-1)) {
       tile.title = "MiniBoss";
       tile.description = "Rocky and cold up here.";
       tile.cleared = false;
@@ -96,7 +94,7 @@ function generateAndSaveDungeon() {
       tile.status = true;
       tile.enemyOne = "Enemies/skull.png";
       tile.enemyTwo = "Enemies/slime.png";
-      tile.enemyThree = "Enemies/alien.png";
+      tile.enemyThree = null;
     } else {
       tile.title = "Basic";
       tile.description = `A path leads you deeper into the dungeon.`;
@@ -104,7 +102,7 @@ function generateAndSaveDungeon() {
       tile.status = false;
       tile.enemyOne = "Enemies/skull.png";
       tile.enemyTwo = "Enemies/slime.png";
-      tile.enemyThree = null;
+      tile.enemyThree = "Enemies/alien.png";
     }
 
     tileData[key] = tile;
@@ -242,3 +240,148 @@ function dungeonClick() {
 
 // Run the initialization function when the page is loaded
 window.onload = initialize;
+
+
+//------------------------------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------------
+
+//Battle Logic
+
+
+const ENEMY_BASE_STATS = {
+  //Unknown Type Enemy Stats
+  'skull': {
+    health:15,
+    strength:3.5,
+    magic:0,
+    speed:3.5,
+    defense:0,
+    hBars:1,
+  },
+  'slime': {
+    health:45,
+    strength:4,
+    magic:0,
+    speed:2,
+    defense:0.15,
+    hBars:1,
+  },
+  'alien': {
+    health:20,
+    strength:0,
+    magic:8.5,
+    speed:4,
+    defense:0,
+    hBars:1,
+  },
+  'Cursed_Knight': {
+    health:65,
+    strength:12,
+    magic:0,
+    speed:6.5,
+    defense:30,
+    hBars:1,
+  },
+  'Shadow': {
+    health:110,
+    strength:7,
+    magic:5,
+    speed:20,
+    defense:0,
+    hBars:1,
+  },
+  //Forest Type Enemy Stats
+  'Sapling': {
+    health:20,
+    strength:0,
+    magic:4,
+    speed:1,
+    defense:0,
+    hBars:1,
+  },
+  'Vine_Lasher': {
+    health:30,
+    strength:5.5,
+    magic:0,
+    speed:3,
+    defense:0,
+    hBars:1,
+  },
+  'Treant': {
+    health:50,
+    strength:9,
+    magic:0,
+    speed:2,
+    defense:15,
+    hBars:1,
+  },
+  'Elder_Ent': {
+    health:30,
+    strength:0,
+    magic:14,
+    speed:4,
+    defense:70,
+    hBars:1,
+  },
+  'Worldroot': {
+    health:150,
+    strength:3,
+    magic:15,
+    speed:6,
+    defense:0,
+    hBars:1,
+  }
+};
+
+const PARTY_STATS = {
+  'ONE': {
+    NAME: 'Kaden',
+    HELMET: null,
+    CHEST: null,
+    LEGS: null,
+    BOOTS: null,
+    MAINHAND: null,
+    OFFHAND: null,
+  },
+  'TWO': {
+    NAME: 'null',
+    HELMET: null,
+    CHEST: null,
+    LEGS: null,
+    BOOTS: null,
+    MAINHAND: null,
+    OFFHAND: null,
+  },
+  'THREE': {
+    NAME: 'null',
+    HELMET: null,
+    CHEST: null,
+    LEGS: null,
+    BOOTS: null,
+    MAINHAND: null,
+    OFFHAND: null,
+  },
+  'FOUR': {
+    NAME: 'null',
+    HELMET: null,
+    CHEST: null,
+    LEGS: null,
+    BOOTS: null,
+    MAINHAND: null,
+    OFFHAND: null,
+  },
+  'FIVE': {
+    NAME: 'null',
+    HELMET: null,
+    CHEST: null,
+    LEGS: null,
+    BOOTS: null,
+    MAINHAND: null,
+    OFFHAND: null,
+  },
+};
+
+
+function getEnemyStats(enemyName) {
+  return ENEMY_BASE_STAT[enemyName]||null;
+}
