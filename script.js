@@ -333,6 +333,13 @@ const ENEMY_BASE_STATS = {
   }
 };
 
+// Item Stats/weight
+
+
+
+
+
+//party member stats
 const PARTY_STATS = {
   'ONE': {
     NAME: 'Kaden',
@@ -342,6 +349,8 @@ const PARTY_STATS = {
     BOOTS: null,
     MAINHAND: null,
     OFFHAND: null,
+    LEVEL: 1,
+    HEALTH: null,
   },
   'TWO': {
     NAME: 'null',
@@ -351,6 +360,8 @@ const PARTY_STATS = {
     BOOTS: null,
     MAINHAND: null,
     OFFHAND: null,
+    LEVEL: null,
+    HEALTH: null,
   },
   'THREE': {
     NAME: 'null',
@@ -360,6 +371,8 @@ const PARTY_STATS = {
     BOOTS: null,
     MAINHAND: null,
     OFFHAND: null,
+    LEVEL: null,
+    HEALTH: null,
   },
   'FOUR': {
     NAME: 'null',
@@ -369,6 +382,8 @@ const PARTY_STATS = {
     BOOTS: null,
     MAINHAND: null,
     OFFHAND: null,
+    LEVEL: null,
+    HEALTH: null,
   },
   'FIVE': {
     NAME: 'null',
@@ -378,10 +393,20 @@ const PARTY_STATS = {
     BOOTS: null,
     MAINHAND: null,
     OFFHAND: null,
+    LEVEL: null,
+    HEALTH: null
   },
 };
 
 
+
+
 function getEnemyStats(enemyName) {
-  return ENEMY_BASE_STAT[enemyName]||null;
+  return ENEMY_BASE_STATS[enemyName]||null;
+}
+
+function updateHealth(amount, member) {
+  if (PARTY_STATS[member] && typeof PARTY_STATS[member].HEALTH === 'number'){
+    PARTY_STATS[member].data.HEALTH-=amount;
+  }
 }
