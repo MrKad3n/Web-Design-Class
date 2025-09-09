@@ -1,5 +1,5 @@
 const inventory = document.getElementById("inventory");
-const rows = 10;
+const rows = 6;
 const cols = 5;
 
 const inventoryData = [
@@ -30,7 +30,7 @@ for (let row = 0; row < rows; row++) {
       });
     } else {
       // If no data, display the empty slot image
-      img.src = "Assets/empty-slot.png";
+      img.src = "Assests/empty-slot.png";
       img.alt = "Empty Slot";
     }
 

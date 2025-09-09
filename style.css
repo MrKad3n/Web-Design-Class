@@ -263,6 +263,8 @@
   border: 3px;
   border-color:#1a1a1a;
   border-style: solid;
+  height:90px;
+  width:90px;
 }
 .inv-slot img {
   max-width: 90%;
@@ -275,6 +277,14 @@
   grid-template-rows: repeat(10, 1fr);   
   gap: 5px;                              
   padding: 5px;
-  height: 550px;
-  width: 75%
+  height: 600px;
+  width: 75%;
+}
+
+.hoverable {
+  background-color: rgba(229, 255, 0,0.5)
+}
+.hoverable:hover {
+  background-color: rgba(0, 255, 13, 0.5)
+  
 }

@@ -335,7 +335,415 @@ const ENEMY_BASE_STATS = {
 
 // Item Stats/weight
 
-
+const ITEM_TABLE = {
+  "Wooden Sword": {
+    slot: "Weapon",
+    rarity: "Common",
+    strength: 3,
+    speed: 0.5,
+    magic: 0,
+    defense: 2,
+    health: 0,
+    attack: "stap",
+    ability: 1,
+  },
+  "Stick": {
+    slot: "Weapon",
+    rarity: "Base",
+    strength: 1,
+    speed: 1,
+    magic: 1,
+    defense: 0,
+    health: 0,
+    attack: "slap",
+    ability: 0,
+  },
+  "Grass Staff": {
+    slot: "Weapon",
+    rarity: "Common",
+    strength: 0,
+    speed: 0.5,
+    magic: 3,
+    defense: 2,
+    health: 0,
+    attack: "leaf impale",
+    ability: 1,
+  },
+  "Coral Dagger": {
+    slot: "Weapon",
+    rarity: "Uncommon",
+    strength: 4,
+    speed: 2,
+    magic: 1.5,
+    defense: 0,
+    health: 0,
+    attack: "coral leech",
+    ability: 2,
+  },
+  "Spell Shield": {
+    slot: "Offhand",
+    rarity: "Uncommon",
+    strength: 0,
+    speed: -0.5,
+    magic: 1.5,
+    defense: 10,
+    health: 5,
+    attack: "reflection",
+    ability: 3,
+  },
+  "Sea Crystal": {
+    slot: "Offhand",
+    rarity: "Uncommon",
+    strength: 0,
+    speed: 0.5,
+    magic: 4,
+    defense: 0,
+    health: 5,
+    attack: "sea shield",
+    ability: 2,
+  },
+  "Shell": {
+    slot: "Offhand",
+    rarity: "Uncommon",
+    strength: 2.5,
+    speed: -1,
+    magic: -1,
+    defense: 15,
+    health: 5,
+    attack: "none",
+    ability: 0,
+  },
+  "Iron Helmet": {
+    slot: "Helmet",
+    rarity: "Uncommon",
+    strength: 0,
+    speed: 0,
+    magic: 0,
+    defense: 5,
+    health: 3,
+    attack: "none",
+    ability: 0,
+  },
+  "Iron Chestplate": {
+    slot: "Chest",
+    rarity: "Uncommon",
+    strength: 0.5,
+    speed: 0,
+    magic: 0,
+    defense: 10,
+    health: 6,
+    attack: "none",
+    ability: 0,
+  },
+  "Iron Legging": {
+    slot: "Leg",
+    rarity: "Uncommon",
+    strength: 0,
+    speed: 0.5,
+    magic: 0,
+    defense: 7,
+    health: 2,
+    attack: "none",
+    ability: 0,
+  },
+  "Iron Boots": {
+    slot: "Boot",
+    rarity: "Uncommon",
+    strength: 0,
+    speed: 1,
+    magic: 0,
+    defense: 3,
+    health: 1,
+    attack: "none",
+    ability: 0,
+  },
+  "Spiked Shield": {
+    slot: "Weapon",
+    rarity: "Rare",
+    strength: 7,
+    speed: 0,
+    magic: 0,
+    defense: 15,
+    health: 10,
+    attack: "Charge",
+    ability: 4,
+  },
+  "Grimore": {
+    slot: "Weapon",
+    rarity: "Rare",
+    strength: -2,
+    speed: 1.5,
+    magic: 12,
+    defense: -2,
+    health: -2,
+    attack: "Plasma Blast",
+    ability: 5,
+  },
+  "Forest Crown": {
+    slot: "Helmet",
+    rarity: "Rare",
+    strength: 0,
+    speed: 3,
+    magic: 5,
+    defense: 5,
+    health: 15,
+    attack: "Tree People",
+    ability: 6,
+  },
+  "Frosted Helmet": {
+    slot: "Helmet",
+    rarity: "Rare",
+    strength: 0,
+    speed: -0.5,
+    magic: 2,
+    defense: 5,
+    health: 8,
+    attack: "none",
+    ability: 0,
+  },
+  "Frosted Chest": {
+    slot: "Chest",
+    rarity: "Rare",
+    strength: 0,
+    speed: -1.5,
+    magic: 2,
+    defense: 20,
+    health: 14,
+    attack: "none",
+    ability: 0,
+  },
+  "Frosted Leg": {
+    slot: "Leg",
+    rarity: "Rare",
+    strength: 0,
+    speed: 0,
+    magic: 1,
+    defense: 10,
+    health: 6,
+    attack: "none",
+    ability: 0,
+  },
+  "Frosted Boots": {
+    slot: "Boot",
+    rarity: "Rare",
+    strength: 0,
+    speed: 3,
+    magic: 1,
+    defense: 3,
+    health: 3,
+    attack: "none",
+    ability: 0,
+  },
+  "Ice Spear": {
+    slot: "Weapon",
+    rarity: "Rare",
+    strength: 10,
+    speed: 1.5,
+    magic: 1,
+    defense: 0,
+    health: 0,
+    attack: "plunge",
+    ability: 1,
+  },
+  "Shadow Staff": {
+    slot: "Weapon",
+    rarity: "Epic",
+    strength: 2,
+    speed: 1,
+    magic: 22,
+    defense: 0,
+    health: -5,
+    attack: "shadow vortex",
+    ability: 7,
+  },
+  "Blaze Blade": {
+    slot: "Weapon",
+    rarity: "Epic",
+    strength: 16,
+    speed: 5,
+    magic: 7,
+    defense: 3,
+    health: 0,
+    attack: "Incenerate",
+    ability: 8,
+  },
+  "Gem Helmet": {
+    slot: "Helmet",
+    rarity: "Epic",
+    strength: 3,
+    speed: 0,
+    magic: 4,
+    defense: 12,
+    health: 13,
+    attack: "none",
+    ability: 3,
+  },
+  "Gem Chest": {
+    slot: "Chest",
+    rarity: "Epic",
+    strength: 4,
+    speed: -0.5,
+    magic: 5,
+    defense: 26,
+    health: 17,
+    attack: "none",
+    ability: 0,
+  },
+  "Gem Legs": {
+    slot: "Leg",
+    rarity: "Epic",
+    strength: 3,
+    speed: 2,
+    magic: 4,
+    defense: 15,
+    health: 12,
+    attack: "none",
+    ability: 0,
+  },
+  "Gem Boots": {
+    slot: "Boots",
+    rarity: "Epic",
+    strength: 2,
+    speed: 3,
+    magic: 3,
+    defense: 25,
+    health: 10,
+    attack: "none",
+    ability: 3,
+  },
+  "Water Skaters": {
+    slot: "Boots",
+    rarity: "Epic",
+    strength: 0,
+    speed: -1,
+    magic: 1,
+    defense: 11,
+    health: 15,
+    attack: "skater slice",
+    ability: 9,
+  },
+  "Energy Saber": {
+    slot: "Weapon",
+    rarity: "Legendary",
+    strength: 30,
+    speed: 1,
+    magic: 4,
+    defense: 20,
+    health: -5,
+    attack: "force strike",
+    ability: 10,
+  },
+  "Demon Sythe": {
+    slot: "Weapon",
+    rarity: "Legendary",
+    strength: 50,
+    speed: 1,
+    magic: 4,
+    defense: -10,
+    health: 0,
+    attack: "Grim slice",
+    ability: 11,
+  },
+  "Lightning Spear": {
+    slot: "Offhand",
+    rarity: "Legendary",
+    strength: 3,
+    speed: -3,
+    magic: 3,
+    defense: 5,
+    health: 0,
+    attack: "Thunder",
+    ability: 12,
+  },
+  "Pixel Sword": {
+    slot: "Weapon",
+    rarity: "Legendary",
+    strength: 40,
+    speed: 1,
+    magic: 2,
+    defense: 15,
+    health: 10,
+    attack: "Combo",
+    ability: 13,
+  },
+  "Ice Cream Gun": {
+    slot: "Weapon",
+    rarity: "Legendary",
+    strength: 0,
+    speed: -2,
+    magic: 5,
+    defense: 1,
+    health: 0,
+    attack: "Chilled Cream",
+    ability: 14,
+  },
+  "Running Spikes": {
+    slot: "Boots",
+    rarity: "Mythical",
+    strength: 5,
+    speed: 3,
+    magic: 2,
+    defense: -10,
+    health: 0,
+    attack: "none",
+    ability: 15,
+  },
+  "Rulers Hand": {
+    slot: "Weapon",
+    rarity: "Mythical",
+    strength: 65,
+    speed: 1,
+    magic: 0,
+    defense: 65,
+    health: 25,
+    attack: "Arise",
+    ability: 16,
+  },
+  "Muramasa": {
+    slot: "Weapon",
+    rarity: "Mythical",
+    strength: 110,
+    speed: 2,
+    magic: 0,
+    defense: 0,
+    health: 10,
+    attack: "Pure skill",
+    ability: 17,
+  },
+  "Spell Blade": {
+    slot: "Weapon",
+    rarity: "Mythical",
+    strength: 50,
+    speed: 1,
+    magic: 5,
+    defense: 9,
+    health: 0,
+    attack: "spell infused",
+    ability: 18,
+  },
+  "Enahnced Stick": {
+    slot: "Weapon",
+    rarity: "Mythical",
+    strength: 20,
+    speed: 2,
+    magic: 2,
+    defense: 6,
+    health: 0,
+    attack: "enhance",
+    ability: 19,
+  },
+  "Divine Crown": {
+    slot: "Helmet",
+    rarity: "Artifact",
+    strength: 0,
+    speed: -1,
+    magic: 0,
+    defense: 100,
+    health: 40,
+    attack: "Rulers Authority",
+    ability: 20,
+  },
+};
 
 
 
@@ -399,7 +807,69 @@ const PARTY_STATS = {
 };
 
 
+function updateStats(){
+  // Loop through each party member in the PARTY_STATS object
+  for (const memberKey in PARTY_STATS) {
+    const member = PARTY_STATS[memberKey];
 
+    // Only process members who have a defined level
+    if (member.LEVEL === null) {
+      continue;
+    }
+
+    const level = member.LEVEL;
+    const sqrtLevel = Math.sqrt(level);
+
+    const baseHealth = Math.round(level * sqrtLevel * 3);
+    const baseStrength = Math.round(level * sqrtLevel);
+    const baseMagic = Math.round(level * sqrtLevel);
+    const baseSpeed = Math.round(sqrtLevel + level);
+    
+    const baseDefense = 0;
+
+    //Initialize equipped stat bonuses to zero
+    let equippedStrength = 0;
+    let equippedSpeed = 0;
+    let equippedMagic = 0;
+    let equippedDefense = 0;
+    let equippedHealth = 0;
+
+    //Iterate through all equipment slots and add stat bonuses from equipped items
+    const equipmentSlots = ['HELMET', 'CHEST', 'LEGS', 'BOOTS', 'MAINHAND', 'OFFHAND'];
+    for (const slot of equipmentSlots) {
+      const itemName = member[slot];
+      // Check if an item is equipped in this slot and it exists in the ITEM_TABLE
+      if (itemName !== null && ITEM_TABLE[itemName]) {
+        const itemStats = ITEM_TABLE[itemName];
+        equippedStrength += itemStats.strength;
+        equippedSpeed += itemStats.speed;
+        equippedMagic += itemStats.magic;
+        equippedDefense += itemStats.defense;
+        equippedHealth += itemStats.health;
+      }
+    }
+
+    // 4. Calculate total stats by combining base stats and equipped item bonuses
+    const totalStrength = baseStrength + equippedStrength;
+    const totalSpeed = baseSpeed + equippedSpeed;
+    const totalMagic = baseMagic + equippedMagic;
+    const totalDefense = baseDefense + equippedDefense;
+    const totalMaxHealth = baseHealth + equippedHealth;
+
+    // 5. Update the party member's stats with the new totals
+    member.MAX_HEALTH = totalMaxHealth;
+    member.STRENGTH = totalStrength;
+    member.SPEED = totalSpeed;
+    member.MAGIC = totalMagic;
+    member.DEFENSE = totalDefense;
+    
+    // Set the current HEALTH to MAX_HEALTH if it's currently null
+    if (member.HEALTH === null) {
+      member.HEALTH = totalMaxHealth;
+    }
+
+  }
+}
 
 function getEnemyStats(enemyName) {
   return ENEMY_BASE_STATS[enemyName]||null;
