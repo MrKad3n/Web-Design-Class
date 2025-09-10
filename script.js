@@ -384,7 +384,7 @@ const ITEM_TABLE = {
     slot: "Offhand",
     rarity: "Uncommon",
     strength: 0,
-    speed: -0.5,
+    speed: -5,
     magic: 1.5,
     defense: 10,
     health: 5,
@@ -406,8 +406,8 @@ const ITEM_TABLE = {
     slot: "Offhand",
     rarity: "Uncommon",
     strength: 2.5,
-    speed: -1,
-    magic: -1,
+    speed: -10,
+    magic: -10,
     defense: 15,
     health: 5,
     attack: "none",
@@ -471,7 +471,7 @@ const ITEM_TABLE = {
   "Grimore": {
     slot: "Weapon",
     rarity: "Rare",
-    strength: -2,
+    strength: -20,
     speed: 1.5,
     magic: 12,
     defense: -2,
@@ -494,7 +494,7 @@ const ITEM_TABLE = {
     slot: "Helmet",
     rarity: "Rare",
     strength: 0,
-    speed: -0.5,
+    speed: -5,
     magic: 2,
     defense: 5,
     health: 8,
@@ -505,7 +505,7 @@ const ITEM_TABLE = {
     slot: "Chest",
     rarity: "Rare",
     strength: 0,
-    speed: -1.5,
+    speed: -15,
     magic: 2,
     defense: 20,
     health: 14,
@@ -552,7 +552,7 @@ const ITEM_TABLE = {
     speed: 1,
     magic: 22,
     defense: 0,
-    health: -5,
+    health: -30,
     attack: "shadow vortex",
     ability: 7,
   },
@@ -582,7 +582,7 @@ const ITEM_TABLE = {
     slot: "Chest",
     rarity: "Epic",
     strength: 4,
-    speed: -0.5,
+    speed: -5,
     magic: 5,
     defense: 26,
     health: 17,
@@ -615,7 +615,7 @@ const ITEM_TABLE = {
     slot: "Boots",
     rarity: "Epic",
     strength: 0,
-    speed: -1,
+    speed: -10,
     magic: 1,
     defense: 11,
     health: 15,
@@ -629,7 +629,7 @@ const ITEM_TABLE = {
     speed: 1,
     magic: 4,
     defense: 20,
-    health: -5,
+    health: -30,
     attack: "force strike",
     ability: 10,
   },
@@ -639,7 +639,7 @@ const ITEM_TABLE = {
     strength: 50,
     speed: 1,
     magic: 4,
-    defense: -10,
+    defense: -15,
     health: 0,
     attack: "Grim slice",
     ability: 11,
@@ -648,7 +648,7 @@ const ITEM_TABLE = {
     slot: "Offhand",
     rarity: "Legendary",
     strength: 3,
-    speed: -3,
+    speed: -15,
     magic: 3,
     defense: 5,
     health: 0,
@@ -736,7 +736,7 @@ const ITEM_TABLE = {
     slot: "Helmet",
     rarity: "Artifact",
     strength: 0,
-    speed: -1,
+    speed: -10,
     magic: 0,
     defense: 100,
     health: 40,
@@ -880,3 +880,60 @@ function updateHealth(amount, member) {
     PARTY_STATS[member].data.HEALTH-=amount;
   }
 }
+
+// ...existing code...
+
+// --- Inventory Array ---
+const INVENTORY = []; // Holds generated items
+
+/**
+ * Generates a random item scaled to the given level, applies stat scaling, and adds it to the inventory.
+ * @param {number} level - The level to scale the item to.
+ * @returns {object} The generated item object.
+ */
+function generateRandomItem(level) {
+  // Get all item names from ITEM_TABLE
+  const itemNames = Object.keys(ITEM_TABLE);
+  // Pick a random item
+  const randomName = itemNames[Math.floor(Math.random() * itemNames.length)];
+  const baseItem = ITEM_TABLE[randomName];
+
+  // Deep copy base stats
+  const item = JSON.parse(JSON.stringify(baseItem));
+  item.name = randomName;
+
+  // Scaling factor
+  const scale = level * Math.sqrt(level);
+
+  // Helper to scale stat (positive: scale, negative: percent)
+  function scaleStat(stat, baseValue) {
+    if (baseValue === 0) return 0;
+    if (baseValue > 0) {
+      return Math.round(baseValue * scale);
+    } else {
+      // Negative values are percent-based, e.g. -10 means -10% after scaling
+      return Math.round(baseValue); // Keep as percent for later use
+    }
+  }
+
+  // Scale stats
+  item.strength = scaleStat('strength', item.strength);
+  item.speed = scaleStat('speed', item.speed);
+  item.magic = scaleStat('magic', item.magic);
+  item.defense = scaleStat('defense', item.defense);
+  item.health = scaleStat('health', item.health);
+
+  // Add level info
+  item.level = level;
+
+  // Add to inventory
+  INVENTORY.push(item);
+
+  return item;
+}
+
+
+// Example usage: generateRandomItem(5);
+// The item will be added to INVENTORY
+
+// ...existing code...
