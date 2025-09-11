@@ -38,25 +38,49 @@ function renderInventoryGrid() {
 }
 
 // Update renderInventory to call renderInventoryGrid
+
 function renderInventory() {
   renderInventoryGrid();
+  renderEquippedItems('ONE');
+  updateStatsDisplay();
 }
 
-function renderInventory() {
-  const inventoryContainer = document.getElementById('inventory-list');
-  if (!inventoryContainer) return;
+function getItemImage(item) {
+  return item && item.image ? item.image : "Assests/empty-slot.png";
+}
 
-  inventoryContainer.innerHTML = '';
-  INVENTORY.forEach(item => {
-    const itemDiv = document.createElement('div');
-    itemDiv.className = 'inventory-item';
-    itemDiv.innerHTML = `
-      <strong>${item.name}</strong> (Lvl ${item.level})<br>
-      Strength: ${item.strength}, Speed: ${item.speed}, Magic: ${item.magic}, Defense: ${item.defense}, Health: ${item.health}
+// Render equipped items for a party member
+function renderEquippedItems(memberKey = 'ONE') {
+  const member = PARTY_STATS[memberKey];
+  const equipDiv = document.getElementById("equipped-items");
+  if (!equipDiv) return;
+
+  equipDiv.innerHTML = ""; // Clear
+
+  const slots = [
+    { key: "HELMET", label: "Helmet" },
+    { key: "CHEST", label: "Chest" },
+    { key: "LEGS", label: "Legs" },
+    { key: "BOOTS", label: "Boots" },
+    { key: "MAINHAND", label: "Mainhand" },
+    { key: "OFFHAND", label: "Offhand" }
+  ];
+
+  slots.forEach(slot => {
+    const itemName = member[slot.key];
+    const item = ITEM_TABLE[itemName] || null;
+    const imgSrc = item && item.image ? item.image : "Assests/empty-slot.png";
+    const slotDiv = document.createElement("div");
+    slotDiv.className = "equip-slot";
+    slotDiv.innerHTML = `
+      <div>${slot.label}</div>
+      <img src="${imgSrc}" alt="${slot.label}" style="width:50px;height:50px;">
+      <div style="font-size:12px">${itemName ? itemName : "Empty"}</div>
     `;
-    inventoryContainer.appendChild(itemDiv);
+    equipDiv.appendChild(slotDiv);
   });
 }
+
 
 // Function to display item information
 function displayItemInfo(item) {
@@ -66,7 +90,34 @@ function displayItemInfo(item) {
     <img src="${item.image}" style="width:30%">
     <p>Strength: ${item.strength} Magic: ${item.magic} Speed: ${item.speed}</p>
     <p>Health: ${item.health} Defense: ${item.defense} Attack: ${item.attack}</p>
+    <button id="equip-btn">Equip</button>
   `;
+
+  document.getElementById("equip-btn").onclick = function() {
+    equipItemToMember(item);
+  };
+}
+
+function equipItemToMember(item, memberKey = 'ONE') {
+  const member = PARTY_STATS[memberKey];
+  // Find the slot this item goes in
+  let slotKey = null;
+  switch (item.slot) {
+    case "Helmet": slotKey = "HELMET"; break;
+    case "Chest": slotKey = "CHEST"; break;
+    case "Leg": slotKey = "LEGS"; break;
+    case "Boot": 
+    case "Boots": slotKey = "BOOTS"; break;
+    case "Weapon": slotKey = "MAINHAND"; break;
+    case "Offhand": slotKey = "OFFHAND"; break;
+    default: return;
+  }
+  // Equip the item
+  member[slotKey] = item.name;
+  updateStats();
+  renderEquippedItems(memberKey);
+  // Optionally, show a message or update stats display
+  updateStatsDisplay();
 }
 
 // Example attack inventory (should be loaded from save or backend in a real app)
@@ -142,19 +193,14 @@ function updateStatsDisplay() {
 // --- Initialize on load ---
 window.addEventListener('DOMContentLoaded', () => {
   renderAttacks();
-  updateStatsDisplay();
   renderInventory();
 });
 
 // ...existing code...
 
-// Render inventory items
-
-// Call this after generating a new item
-// Example: 
-// generateRandomItem(5);
-// renderInventory();
-
-// Optionally, call renderInventory() on page load
-
-// ...existing code...
+function generateAndShowItem() {
+  // You can set the level however you want, here it's random between 1 and 10
+  const level = Math.floor(Math.random() * 10) + 1;
+  generateRandomItem(level);
+  renderInventory();
+}

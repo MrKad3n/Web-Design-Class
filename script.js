@@ -1,4 +1,7 @@
 const map = document.getElementById("map");
+if (map){
+  
+
 const popup = document.getElementById("popup");
 const popupContent = document.getElementById("popup-content");
 
@@ -240,7 +243,7 @@ function dungeonClick() {
 
 // Run the initialization function when the page is loaded
 window.onload = initialize;
-
+}
 
 //------------------------------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------------------------------
@@ -903,7 +906,7 @@ function generateRandomItem(level) {
   item.name = randomName;
 
   // Scaling factor
-  const scale = level * Math.sqrt(level);
+  const scale = Math.sqrt(level);
 
   // Helper to scale stat (positive: scale, negative: percent)
   function scaleStat(stat, baseValue) {
