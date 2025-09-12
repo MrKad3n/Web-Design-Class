@@ -349,6 +349,7 @@ const ITEM_TABLE = {
     health: 0,
     attack: "stap",
     ability: 1,
+    image: "Items/woodenSword.png",
   },
   "Stick": {
     slot: "Weapon",
@@ -371,6 +372,7 @@ const ITEM_TABLE = {
     health: 0,
     attack: "leaf impale",
     ability: 1,
+    image: "Items/grassStaff.png",
   },
   "Coral Dagger": {
     slot: "Weapon",
@@ -382,6 +384,7 @@ const ITEM_TABLE = {
     health: 0,
     attack: "coral leech",
     ability: 2,
+    image: "Items/coralDagger.png",
   },
   "Spell Shield": {
     slot: "Offhand",
@@ -393,6 +396,7 @@ const ITEM_TABLE = {
     health: 5,
     attack: "reflection",
     ability: 3,
+    image: "Items/spellShield.png",
   },
   "Sea Crystal": {
     slot: "Offhand",
@@ -481,6 +485,7 @@ const ITEM_TABLE = {
     health: -2,
     attack: "Plasma Blast",
     ability: 5,
+    image: "Items/grimoire.png",
   },
   "Forest Crown": {
     slot: "Helmet",
@@ -503,6 +508,7 @@ const ITEM_TABLE = {
     health: 8,
     attack: "none",
     ability: 0,
+    image: "Items/frostHelmet.png",
   },
   "Frosted Chest": {
     slot: "Chest",
@@ -514,6 +520,7 @@ const ITEM_TABLE = {
     health: 14,
     attack: "none",
     ability: 0,
+    image: "Items/frostChest.png",
   },
   "Frosted Leg": {
     slot: "Leg",
@@ -525,6 +532,7 @@ const ITEM_TABLE = {
     health: 6,
     attack: "none",
     ability: 0,
+    image: "Items/frostPants.png",
   },
   "Frosted Boots": {
     slot: "Boot",
@@ -536,6 +544,7 @@ const ITEM_TABLE = {
     health: 3,
     attack: "none",
     ability: 0,
+    image: "Items/frostBoots.png",
   },
   "Ice Spear": {
     slot: "Weapon",
@@ -547,6 +556,7 @@ const ITEM_TABLE = {
     health: 0,
     attack: "plunge",
     ability: 1,
+    image: "Items/iceSpear.png",
   },
   "Shadow Staff": {
     slot: "Weapon",
@@ -558,6 +568,7 @@ const ITEM_TABLE = {
     health: -30,
     attack: "shadow vortex",
     ability: 7,
+    image: "Items/shadowStaff.png",
   },
   "Blaze Blade": {
     slot: "Weapon",
@@ -646,6 +657,7 @@ const ITEM_TABLE = {
     health: 0,
     attack: "Grim slice",
     ability: 11,
+    image: "Items/demonSythe.png",
   },
   "Lightning Spear": {
     slot: "Offhand",
@@ -668,6 +680,7 @@ const ITEM_TABLE = {
     health: 10,
     attack: "Combo",
     ability: 13,
+    image: "Items/pixelSword.png",
   },
   "Ice Cream Gun": {
     slot: "Weapon",
@@ -723,8 +736,9 @@ const ITEM_TABLE = {
     health: 0,
     attack: "spell infused",
     ability: 18,
+    image: "Items/spellBlade.png",
   },
-  "Enahnced Stick": {
+  "Enhanced Stick": {
     slot: "Weapon",
     rarity: "Mythical",
     strength: 20,
