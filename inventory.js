@@ -91,10 +91,15 @@ function displayItemInfo(item) {
     <p>Strength: ${item.strength} Magic: ${item.magic} Speed: ${item.speed}</p>
     <p>Health: ${item.health} Defense: ${item.defense} Attack: ${item.attack}</p>
     <button id="equip-btn">Equip</button>
+    <button id="unequip-btn">Unequip</button>
   `;
 
   document.getElementById("equip-btn").onclick = function() {
     equipItemToMember(item);
+  };
+
+  document.getElementById("unequip-btn").onclick = function() {
+    unequipItemFromMember(item);
   };
 }
 
@@ -118,7 +123,57 @@ function equipItemToMember(item, memberKey = 'ONE') {
   renderEquippedItems(memberKey);
   // Optionally, show a message or update stats display
   updateStatsDisplay();
+
+   if (item.attack && item.attack !== "none") {
+    // Check if attack is already in ATTACKS (by name and item source)
+    const alreadyInInventory = ATTACKS.some(a => a.name === item.attack && a.sourceItem === item.name);
+    if (!alreadyInInventory) {
+      ATTACKS.push({
+        id: Date.now() + Math.floor(Math.random()*1000), // unique id
+        name: item.attack,
+        image: item.image,
+        magic: item.magic,
+        strength: item.strength,
+        equipped: false,
+        sourceItem: item.name // Track which item gave this attack
+      });
+      renderAttacks();
+    }
+  }
 }
+
+
+function unequipItemFromMember(item, memberKey = 'ONE') {
+  const member = PARTY_STATS[memberKey];
+  // Find the slot this item goes in
+  let slotKey = null;
+  switch (item.slot) {
+    case "Helmet": slotKey = "HELMET"; break;
+    case "Chest": slotKey = "CHEST"; break;
+    case "Leg": slotKey = "LEGS"; break;
+    case "Boot":
+    case "Boots": slotKey = "BOOTS"; break;
+    case "Weapon": slotKey = "MAINHAND"; break;
+    case "Offhand": slotKey = "OFFHAND"; break;
+    default: return;
+  }
+  // Only unequip if this item is currently equipped
+  if (member[slotKey] === item.name) {
+    member[slotKey] = null;
+    updateStats();
+    renderEquippedItems(memberKey);
+    updateStatsDisplay();
+
+    for (let i = ATTACKS.length - 1; i >= 0; i--) {
+      if (ATTACKS[i].sourceItem === item.name && !ATTACKS[i].equipped) {
+        ATTACKS.splice(i, 1);
+      }
+    }
+    renderAttacks();
+  }
+}
+
+
 
 // Example attack inventory (should be loaded from save or backend in a real app)
 const ATTACKS = [
@@ -128,8 +183,32 @@ const ATTACKS = [
   { id: 4, name: "Plasma Blast", image: "Items/grimoire.png", magic: 15, strength: 2, equipped: false },
 ];
 
+
+function getEquippedAttacks(memberKey = 'ONE') {
+  const member = PARTY_STATS[memberKey];
+  const slots = ['HELMET', 'CHEST', 'LEGS', 'BOOTS', 'MAINHAND', 'OFFHAND'];
+  const attacks = [];
+
+  for (const slot of slots) {
+    const itemName = member[slot];
+    if (itemName) {
+      // Find the item in INVENTORY by name
+      const item = INVENTORY.find(i => i.name === itemName);
+      if (item && item.attack && item.attack !== "none") {
+        attacks.push({
+          name: item.attack,
+          itemName: item.name,
+          ...ATTACK_STATS[item.attack]
+        });
+      }
+    }
+  }
+  return attacks;
+}
+
+
 // Render equipped and inventory attacks
-function renderAttacks() {
+/*function renderAttacks() {
   const equippedContainer = document.querySelectorAll('[id^="equip-attack-"]');
   const invContainer = document.querySelectorAll('[id^="inv-attack-"]');
 
@@ -159,6 +238,27 @@ function renderAttacks() {
       el.innerHTML = '';
       el.style.display = 'none';
     }
+  });
+}*/
+
+function renderAttacks(memberKey = 'ONE') {
+  const attacks = getEquippedAttacks(memberKey);
+  const attackContainer = document.getElementById('equipped-attacks');
+  if (!attackContainer) return;
+
+  attackContainer.innerHTML = '';
+  if (attacks.length === 0) {
+    attackContainer.innerHTML = '<div>No attacks equipped.</div>';
+    return;
+  }
+
+  attacks.forEach(atk => {
+    attackContainer.innerHTML += `
+      <div class="attack-entry">
+        <strong>${atk.name}</strong> (from ${atk.itemName})<br>
+        Str x${atk.strMultiplier}, Magic x${atk.magicMultiplier}, Status: ${atk.status}
+      </div>
+    `;
   });
 }
 

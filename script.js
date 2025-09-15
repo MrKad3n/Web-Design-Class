@@ -390,7 +390,7 @@ const ITEM_TABLE = {
     slot: "Offhand",
     rarity: "Uncommon",
     strength: 0,
-    speed: -5,
+    speed: 0,
     magic: 1.5,
     defense: 10,
     health: 5,
@@ -413,12 +413,13 @@ const ITEM_TABLE = {
     slot: "Offhand",
     rarity: "Uncommon",
     strength: 2.5,
-    speed: -10,
-    magic: -10,
+    speed: 0,
+    magic: 0,
     defense: 15,
     health: 5,
     attack: "none",
     ability: 0,
+    image: "Items/shell.png",
   },
   "Iron Helmet": {
     slot: "Helmet",
@@ -430,6 +431,7 @@ const ITEM_TABLE = {
     health: 3,
     attack: "none",
     ability: 0,
+    image: "Items/ironHelmet.png",
   },
   "Iron Chestplate": {
     slot: "Chest",
@@ -441,6 +443,7 @@ const ITEM_TABLE = {
     health: 6,
     attack: "none",
     ability: 0,
+    image: "Items/ironChest.png",
   },
   "Iron Legging": {
     slot: "Leg",
@@ -452,6 +455,7 @@ const ITEM_TABLE = {
     health: 2,
     attack: "none",
     ability: 0,
+    image: "Items/ironPants.png",
   },
   "Iron Boots": {
     slot: "Boot",
@@ -478,11 +482,11 @@ const ITEM_TABLE = {
   "Grimore": {
     slot: "Weapon",
     rarity: "Rare",
-    strength: -20,
+    strength: 0,
     speed: 1.5,
     magic: 12,
-    defense: -2,
-    health: -2,
+    defense: 0,
+    health: 0,
     attack: "Plasma Blast",
     ability: 5,
     image: "Items/grimoire.png",
@@ -502,7 +506,7 @@ const ITEM_TABLE = {
     slot: "Helmet",
     rarity: "Rare",
     strength: 0,
-    speed: -5,
+    speed: 0,
     magic: 2,
     defense: 5,
     health: 8,
@@ -514,7 +518,7 @@ const ITEM_TABLE = {
     slot: "Chest",
     rarity: "Rare",
     strength: 0,
-    speed: -15,
+    speed: 0,
     magic: 2,
     defense: 20,
     health: 14,
@@ -565,7 +569,7 @@ const ITEM_TABLE = {
     speed: 1,
     magic: 22,
     defense: 0,
-    health: -30,
+    health: 0,
     attack: "shadow vortex",
     ability: 7,
     image: "Items/shadowStaff.png",
@@ -596,7 +600,7 @@ const ITEM_TABLE = {
     slot: "Chest",
     rarity: "Epic",
     strength: 4,
-    speed: -5,
+    speed: 0,
     magic: 5,
     defense: 26,
     health: 17,
@@ -629,7 +633,7 @@ const ITEM_TABLE = {
     slot: "Boots",
     rarity: "Epic",
     strength: 0,
-    speed: -10,
+    speed: 0,
     magic: 1,
     defense: 11,
     health: 15,
@@ -643,9 +647,10 @@ const ITEM_TABLE = {
     speed: 1,
     magic: 4,
     defense: 20,
-    health: -30,
+    health: 0,
     attack: "force strike",
     ability: 10,
+    image: "Items/energySaber.png",
   },
   "Demon Sythe": {
     slot: "Weapon",
@@ -653,7 +658,7 @@ const ITEM_TABLE = {
     strength: 50,
     speed: 1,
     magic: 4,
-    defense: -15,
+    defense: 0,
     health: 0,
     attack: "Grim slice",
     ability: 11,
@@ -662,8 +667,8 @@ const ITEM_TABLE = {
   "Lightning Spear": {
     slot: "Offhand",
     rarity: "Legendary",
-    strength: 3,
-    speed: -15,
+    strength: 30,
+    speed: 8,
     magic: 3,
     defense: 5,
     health: 0,
@@ -686,7 +691,7 @@ const ITEM_TABLE = {
     slot: "Weapon",
     rarity: "Legendary",
     strength: 0,
-    speed: -2,
+    speed: 0,
     magic: 5,
     defense: 1,
     health: 0,
@@ -699,7 +704,7 @@ const ITEM_TABLE = {
     strength: 5,
     speed: 3,
     magic: 2,
-    defense: -10,
+    defense: 0,
     health: 0,
     attack: "none",
     ability: 15,
@@ -753,7 +758,7 @@ const ITEM_TABLE = {
     slot: "Helmet",
     rarity: "Artifact",
     strength: 0,
-    speed: -10,
+    speed: 0,
     magic: 0,
     defense: 100,
     health: 40,
@@ -762,6 +767,33 @@ const ITEM_TABLE = {
   },
 };
 
+// attack stats multipliers and status effects
+
+const ATTACK_STATS = {
+  "stap":            { strMultiplier: 1,    magicMultiplier: 0,    status: "none" },
+  "slap":            { strMultiplier: 0.45, magicMultiplier: 0.45, status: "none" },
+  "leaf impale":     { strMultiplier: 0,    magicMultiplier: 1,    status: "none" },
+  "coral leech":     { strMultiplier: 1.1,  magicMultiplier: 0,    status: "leech" },
+  "reflection":      { strMultiplier: 0,    magicMultiplier: 1.2,  status: "none" },
+  "sea shield":      { strMultiplier: 0,    magicMultiplier: 1,    status: "none" },
+  "Charge":          { strMultiplier: 1.4,  magicMultiplier: 0,    status: "none" },
+  "Plasma Blast":    { strMultiplier: 0,    magicMultiplier: 1.4,  status: "none" },
+  "Tree People":     { strMultiplier: 0.4,  magicMultiplier: 0.9,  status: "leech" },
+  "plunge":          { strMultiplier: 1.5,  magicMultiplier: 0,    status: "bleed" },
+  "shadow vortex":   { strMultiplier: 0,    magicMultiplier: 1.7,  status: "none" },
+  "Incenerate":      { strMultiplier: 1.4,  magicMultiplier: 1,    status: "burn" },
+  "skater slice":    { strMultiplier: 1.6,  magicMultiplier: 0.4,  status: "bleed" },
+  "force strike":    { strMultiplier: 2.2,  magicMultiplier: 1.3,  status: "none" },
+  "Grim slice":      { strMultiplier: 3,    magicMultiplier: 0,    status: "grim" },
+  "Thunder":         { strMultiplier: 1.8,  magicMultiplier: 1.8,  status: "burn" },
+  "Combo":           { strMultiplier: 2.3,  magicMultiplier: 0,    status: "none" },
+  "Chilled Cream":   { strMultiplier: 0,    magicMultiplier: 0,    status: "chill" },
+  "Arise":           { strMultiplier: 0,    magicMultiplier: 2,    status: "none" },
+  "Pure skill":      { strMultiplier: 3.4,  magicMultiplier: 0,    status: "bleed" },
+  "spell infused":   { strMultiplier: 2,    magicMultiplier: 2.5,  status: "random" },
+  "enhance":         { strMultiplier: 0,    magicMultiplier: 0,    status: "player buff" },
+  "Rulers Authority":{ strMultiplier: 0,    magicMultiplier: 4,    status: "player buff" }
+};
 
 
 //party member stats
@@ -854,17 +886,19 @@ function updateStats(){
     //Iterate through all equipment slots and add stat bonuses from equipped items
     const equipmentSlots = ['HELMET', 'CHEST', 'LEGS', 'BOOTS', 'MAINHAND', 'OFFHAND'];
     for (const slot of equipmentSlots) {
-      const itemName = member[slot];
-      // Check if an item is equipped in this slot and it exists in the ITEM_TABLE
-      if (itemName !== null && ITEM_TABLE[itemName]) {
-        const itemStats = ITEM_TABLE[itemName];
-        equippedStrength += itemStats.strength;
-        equippedSpeed += itemStats.speed;
-        equippedMagic += itemStats.magic;
-        equippedDefense += itemStats.defense;
-        equippedHealth += itemStats.health;
-      }
+  const itemName = member[slot];
+  if (itemName !== null) {
+    // Find the item in the INVENTORY array by name
+    const item = INVENTORY.find(i => i.name === itemName);
+    if (item) {
+      equippedStrength += item.strength;
+      equippedSpeed += item.speed;
+      equippedMagic += item.magic;
+      equippedDefense += item.defense;
+      equippedHealth += item.health;
     }
+  }
+}
 
     // 4. Calculate total stats by combining base stats and equipped item bonuses
     const totalStrength = baseStrength + equippedStrength;
