@@ -3,10 +3,7 @@ const rows = 6;
 const cols = 5;
 
 function renderInventoryGrid() {
-  // Clear the inventory grid
   inventory.innerHTML = "";
-
-  // Fill the grid with INVENTORY items or empty slots
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
       const slot = document.createElement("div");
@@ -21,11 +18,9 @@ function renderInventoryGrid() {
       img.className = "inv-img";
 
       if (data) {
-        img.src = data.image;
+        img.src = data.image || "Assests/empty-slot.png";
         img.alt = data.name;
-        slot.addEventListener('click', () => {
-          displayItemInfo(data);
-        });
+        slot.addEventListener('click', () => displayItemInfo(data));
       } else {
         img.src = "Assests/empty-slot.png";
         img.alt = "Empty Slot";
@@ -37,270 +32,178 @@ function renderInventoryGrid() {
   }
 }
 
-// Update renderInventory to call renderInventoryGrid
-
 function renderInventory() {
   renderInventoryGrid();
   renderEquippedItems('ONE');
   updateStatsDisplay();
+  renderAttacks('ONE');
 }
 
-function getItemImage(item) {
-  return item && item.image ? item.image : "Assests/empty-slot.png";
-}
+function getItemImage(item) { return item && item.image ? item.image : "Assests/empty-slot.png"; }
 
-// Render equipped items for a party member
 function renderEquippedItems(memberKey = 'ONE') {
   const member = PARTY_STATS[memberKey];
   const equipDiv = document.getElementById("equipped-items");
   if (!equipDiv) return;
-
-  equipDiv.innerHTML = ""; // Clear
-
-  const slots = [
-    { key: "HELMET", label: "Helmet" },
-    { key: "CHEST", label: "Chest" },
-    { key: "LEGS", label: "Legs" },
-    { key: "BOOTS", label: "Boots" },
-    { key: "MAINHAND", label: "Mainhand" },
-    { key: "OFFHAND", label: "Offhand" }
-  ];
-
-  slots.forEach(slot => {
-    const itemName = member[slot.key];
-    const item = ITEM_TABLE[itemName] || null;
+  equipDiv.innerHTML = "";
+  const slots = ["HELMET","CHEST","LEGS","BOOTS","MAINHAND","OFFHAND"];
+  slots.forEach(s => {
+    const itemName = member[s];
+    const item = ITEM_TABLE[itemName] || INVENTORY.find(i => i.name === itemName) || null;
     const imgSrc = item && item.image ? item.image : "Assests/empty-slot.png";
-    const slotDiv = document.createElement("div");
-    slotDiv.className = "equip-slot";
-    slotDiv.innerHTML = `
-      <div>${slot.label}</div>
-      <img src="${imgSrc}" alt="${slot.label}" style="width:50px;height:50px;">
-      <div style="font-size:12px">${itemName ? itemName : "Empty"}</div>
-    `;
+    const slotDiv = document.createElement('div');
+    slotDiv.className = 'equip-slot';
+    slotDiv.innerHTML = `<div>${s}</div><img src="${imgSrc}" style="width:50px;height:50px"><div style="font-size:12px">${itemName||'Empty'}</div>`;
     equipDiv.appendChild(slotDiv);
   });
 }
 
-
-// Function to display item information
 function displayItemInfo(item) {
-  const infoItem = document.getElementById("info-item");
-  infoItem.innerHTML = `
-    <h3>${item.name} Level ${item.level}</h3>
-    <img src="${item.image}" style="width:30%">
-    <p>Strength: ${item.strength} Magic: ${item.magic} Speed: ${item.speed}</p>
-    <p>Health: ${item.health} Defense: ${item.defense} Attack: ${item.attack}</p>
-    <button id="equip-btn">Equip</button>
-    <button id="unequip-btn">Unequip</button>
-  `;
-
-  document.getElementById("equip-btn").onclick = function() {
-    equipItemToMember(item);
-  };
-
-  document.getElementById("unequip-btn").onclick = function() {
-    unequipItemFromMember(item);
-  };
+  const infoItem = document.getElementById('info-item');
+  infoItem.innerHTML = `\n    <h3>${item.name} Level ${item.level||1}</h3>\n    <img src="${item.image||'Assests/empty-slot.png'}" style="width:30%">\n    <p>Strength: ${item.strength||0} Magic: ${item.magic||0} Speed: ${item.speed||0}</p>\n    <p>Health: ${item.health||0} Defense: ${item.defense||0} Attack: ${item.attack||'none'}</p>\n    <button id="equip-btn">Equip</button>\n    <button id="unequip-btn">Unequip</button>\n  `;
+  document.getElementById('equip-btn').onclick = () => equipItemToMember(item);
+  document.getElementById('unequip-btn').onclick = () => unequipItemFromMember(item);
 }
 
 function equipItemToMember(item, memberKey = 'ONE') {
   const member = PARTY_STATS[memberKey];
-  // Find the slot this item goes in
   let slotKey = null;
   switch (item.slot) {
-    case "Helmet": slotKey = "HELMET"; break;
-    case "Chest": slotKey = "CHEST"; break;
-    case "Leg": slotKey = "LEGS"; break;
-    case "Boot": 
-    case "Boots": slotKey = "BOOTS"; break;
-    case "Weapon": slotKey = "MAINHAND"; break;
-    case "Offhand": slotKey = "OFFHAND"; break;
+    case 'Helmet': slotKey='HELMET'; break;
+    case 'Chest': slotKey='CHEST'; break;
+    case 'Leg': slotKey='LEGS'; break;
+    case 'Boot': case 'Boots': slotKey='BOOTS'; break;
+    case 'Weapon': slotKey='MAINHAND'; break;
+    case 'Offhand': slotKey='OFFHAND'; break;
     default: return;
   }
-  // Equip the item
   member[slotKey] = item.name;
   updateStats();
   renderEquippedItems(memberKey);
-  // Optionally, show a message or update stats display
   updateStatsDisplay();
-
-   if (item.attack && item.attack !== "none") {
-    // Check if attack is already in ATTACKS (by name and item source)
-    const alreadyInInventory = ATTACKS.some(a => a.name === item.attack && a.sourceItem === item.name);
-    if (!alreadyInInventory) {
-      ATTACKS.push({
-        id: Date.now() + Math.floor(Math.random()*1000), // unique id
-        name: item.attack,
-        image: item.image,
-        magic: item.magic,
-        strength: item.strength,
-        equipped: false,
-        sourceItem: item.name // Track which item gave this attack
-      });
-      renderAttacks();
-    }
+  // If the item grants an attack, add it to the attack inventory
+  if (item.attack && item.attack !== 'none') {
+    if (!item._uid) item._uid = Date.now() + Math.floor(Math.random()*1000);
+    addAttackFromItem(item);
   }
+  renderAttacks(memberKey);
 }
-
 
 function unequipItemFromMember(item, memberKey = 'ONE') {
   const member = PARTY_STATS[memberKey];
-  // Find the slot this item goes in
   let slotKey = null;
   switch (item.slot) {
-    case "Helmet": slotKey = "HELMET"; break;
-    case "Chest": slotKey = "CHEST"; break;
-    case "Leg": slotKey = "LEGS"; break;
-    case "Boot":
-    case "Boots": slotKey = "BOOTS"; break;
-    case "Weapon": slotKey = "MAINHAND"; break;
-    case "Offhand": slotKey = "OFFHAND"; break;
+    case 'Helmet': slotKey='HELMET'; break;
+    case 'Chest': slotKey='CHEST'; break;
+    case 'Leg': slotKey='LEGS'; break;
+    case 'Boot': case 'Boots': slotKey='BOOTS'; break;
+    case 'Weapon': slotKey='MAINHAND'; break;
+    case 'Offhand': slotKey='OFFHAND'; break;
     default: return;
   }
-  // Only unequip if this item is currently equipped
   if (member[slotKey] === item.name) {
     member[slotKey] = null;
     updateStats();
     renderEquippedItems(memberKey);
     updateStatsDisplay();
-
-    for (let i = ATTACKS.length - 1; i >= 0; i--) {
-      if (ATTACKS[i].sourceItem === item.name && !ATTACKS[i].equipped) {
-        ATTACKS.splice(i, 1);
-      }
-    }
-    renderAttacks();
+    // Remove any attacks that originated from this item (from equip list and inventory)
+    if (item._uid) removeAttackBySourceUid(item._uid);
+    renderAttacks(memberKey);
   }
 }
 
-
-
-// Example attack inventory (should be loaded from save or backend in a real app)
-const ATTACKS = [
-  { id: 1, name: "Grim Slice", image: "Items/demonSythe.png", magic: 10, strength: 20, equipped: true },
-  { id: 2, name: "Force Strike", image: "Items/energySaber.png", magic: 5, strength: 15, equipped: true },
-  { id: 3, name: "Leaf Impale", image: "Items/grassStaff.png", magic: 8, strength: 5, equipped: false },
-  { id: 4, name: "Plasma Blast", image: "Items/grimoire.png", magic: 15, strength: 2, equipped: false },
-];
-
-
-function getEquippedAttacks(memberKey = 'ONE') {
+function getEquippedAttackItems(memberKey = 'ONE') {
   const member = PARTY_STATS[memberKey];
-  const slots = ['HELMET', 'CHEST', 'LEGS', 'BOOTS', 'MAINHAND', 'OFFHAND'];
+  if (!member) return [];
+  const slots = ['HELMET','CHEST','LEGS','BOOTS','MAINHAND','OFFHAND'];
   const attacks = [];
-
-  for (const slot of slots) {
-    const itemName = member[slot];
-    if (itemName) {
-      // Find the item in INVENTORY by name
-      const item = INVENTORY.find(i => i.name === itemName);
-      if (item && item.attack && item.attack !== "none") {
-        attacks.push({
-          name: item.attack,
-          itemName: item.name,
-          ...ATTACK_STATS[item.attack]
-        });
-      }
+  for (const s of slots) {
+    const itemName = member[s];
+    if (!itemName) continue;
+    const item = INVENTORY.find(i=>i.name===itemName) || ITEM_TABLE[itemName];
+    if (item && item.attack && item.attack!=='none') {
+      const stats = ATTACK_STATS[item.attack] || { strMultiplier:0, magicMultiplier:0, status:'none' };
+      attacks.push({ item, attackName: item.attack, ...stats });
     }
   }
   return attacks;
 }
 
-
-// Render equipped and inventory attacks
-/*function renderAttacks() {
-  const equippedContainer = document.querySelectorAll('[id^="equip-attack-"]');
-  const invContainer = document.querySelectorAll('[id^="inv-attack-"]');
-
-  // Get equipped and unequipped attacks
-  const equipped = ATTACKS.filter(a => a.equipped);
-  const unequipped = ATTACKS.filter(a => !a.equipped);
-
-  // Render equipped attacks
-  equippedContainer.forEach((el, i) => {
-    if (equipped[i]) {
-      el.innerHTML = `<img src="${equipped[i].image}" style="width:10%">${equipped[i].name} Magic: ${equipped[i].magic} Strength: ${equipped[i].strength}`;
-      el.onclick = () => unequipAttack(equipped[i].id);
-      el.style.display = '';
-    } else {
-      el.innerHTML = '';
-      el.style.display = 'none';
-    }
-  });
-
-  // Render unequipped attacks
-  invContainer.forEach((el, i) => {
-    if (unequipped[i]) {
-      el.innerHTML = `<img src="${unequipped[i].image}" style="width:10%">${unequipped[i].name} Magic: ${unequipped[i].magic} Strength: ${unequipped[i].strength}`;
-      el.onclick = () => equipAttack(unequipped[i].id);
-      el.style.display = '';
-    } else {
-      el.innerHTML = '';
-      el.style.display = 'none';
-    }
-  });
-}*/
+function getUnequippedAttackItems() {
+  const equippedNames = new Set();
+  for (const mKey in PARTY_STATS) {
+    const m = PARTY_STATS[mKey];
+    if (!m) continue;
+    ['HELMET','CHEST','LEGS','BOOTS','MAINHAND','OFFHAND'].forEach(s => { if (m[s]) equippedNames.add(m[s]); });
+  }
+  const unequipped = INVENTORY.filter(it => it && it.attack && it.attack!=='none' && !equippedNames.has(it.name));
+  return unequipped.map(item => ({ item, attackName: item.attack, ...(ATTACK_STATS[item.attack]||{strMultiplier:0,magicMultiplier:0,status:'none'}) }));
+}
 
 function renderAttacks(memberKey = 'ONE') {
-  const attacks = getEquippedAttacks(memberKey);
   const attackContainer = document.getElementById('equipped-attacks');
-  if (!attackContainer) return;
+  const invContainer = document.getElementById('inventory-attacks');
+  if (!attackContainer && !invContainer) return;
 
-  attackContainer.innerHTML = '';
-  if (attacks.length === 0) {
-    attackContainer.innerHTML = '<div>No attacks equipped.</div>';
-    return;
+  // Equipped attacks show entries from ATTACK_INVENTORY that are in ATTACK_EQUIPPED
+  if (attackContainer) {
+    attackContainer.innerHTML = '';
+    const equippedList = ATTACK_INVENTORY.filter(a => ATTACK_EQUIPPED.has(a.id));
+    if (equippedList.length === 0) attackContainer.innerHTML = '<div>No attacks equipped.</div>';
+    equippedList.forEach(a => {
+      attackContainer.innerHTML += '<div class="attack-entry" data-id="'+a.id+'">' +
+        '<strong>'+a.name+'</strong> (from '+a.itemName+')<br>' +
+        'Str x'+a.strMultiplier+', Magic x'+a.magicMultiplier+', Status: '+a.status +
+      '</div>';
+    });
+    attackContainer.querySelectorAll('.attack-entry').forEach(el => {
+      el.onclick = () => {
+        const id = el.dataset.id;
+        unequipAttackById(id);
+        renderAttacks(memberKey);
+      };
+    });
   }
 
-  attacks.forEach(atk => {
-    attackContainer.innerHTML += `
-      <div class="attack-entry">
-        <strong>${atk.name}</strong> (from ${atk.itemName})<br>
-        Str x${atk.strMultiplier}, Magic x${atk.magicMultiplier}, Status: ${atk.status}
-      </div>
-    `;
-  });
+  // Inventory attacks show ATTACK_INVENTORY entries that are not equipped
+  if (invContainer) {
+    invContainer.innerHTML = '';
+    const invList = ATTACK_INVENTORY.filter(a => !ATTACK_EQUIPPED.has(a.id));
+    if (invList.length === 0) invContainer.innerHTML = '<div>No attacks in inventory.</div>';
+    invList.forEach(a => {
+      invContainer.innerHTML += '<div class="attack-entry inv" data-id="'+a.id+'">' +
+        '<strong>'+a.name+'</strong> (from '+a.itemName+')<br>' +
+        'Str x'+a.strMultiplier+', Magic x'+a.magicMultiplier+', Status: '+a.status +
+      '</div>';
+    });
+    invContainer.querySelectorAll('.attack-entry').forEach(el => {
+      el.onclick = () => {
+        const id = el.dataset.id;
+        equipAttackById(id);
+        renderAttacks(memberKey);
+      };
+    });
+  }
 }
-
-function equipAttack(id) {
-  // Max 5 equipped
-  if (ATTACKS.filter(a => a.equipped).length >= 5) return;
-  const atk = ATTACKS.find(a => a.id === id);
-  if (atk) atk.equipped = true;
-  renderAttacks();
-}
-
-function unequipAttack(id) {
-  const atk = ATTACKS.find(a => a.id === id);
-  if (atk) atk.equipped = false;
-  renderAttacks();
-}
-
-// --- Stats Update ---
 
 function updateStatsDisplay() {
-  // Use the first party member for stats
   if (typeof PARTY_STATS === 'undefined' || typeof updateStats !== 'function') return;
   updateStats();
   const member = PARTY_STATS['ONE'];
   const statsDiv = document.getElementById('total-stats');
   if (statsDiv && member) {
-    statsDiv.textContent =
-      `Health: ${member.MAX_HEALTH}; Strength: ${member.STRENGTH}; Magic: ${member.MAGIC}; Speed: ${member.SPEED}; Defense: ${member.DEFENSE};`;
+    statsDiv.textContent = `Health: ${member.MAX_HEALTH}; Strength: ${member.STRENGTH}; Magic: ${member.MAGIC}; Speed: ${member.SPEED}; Defense: ${member.DEFENSE};`;
   }
 }
 
-// --- Initialize on load ---
 window.addEventListener('DOMContentLoaded', () => {
   renderAttacks();
   renderInventory();
 });
 
-// ...existing code...
-
 function generateAndShowItem() {
-  // You can set the level however you want, here it's random between 1 and 10
   const level = Math.floor(Math.random() * 10) + 1;
   generateRandomItem(level);
   renderInventory();
 }
+
