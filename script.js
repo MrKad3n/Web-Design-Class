@@ -595,6 +595,7 @@ const ITEM_TABLE = {
     health: 13,
     attack: "none",
     ability: 3,
+    image: "Items/gemHelmet.png",
   },
   "Gem Chest": {
     slot: "Chest",
@@ -606,6 +607,7 @@ const ITEM_TABLE = {
     health: 17,
     attack: "none",
     ability: 0,
+    image: "Items/gemChest.png",
   },
   "Gem Legs": {
     slot: "Leg",
@@ -617,6 +619,7 @@ const ITEM_TABLE = {
     health: 12,
     attack: "none",
     ability: 0,
+    image: "Items/gemLegs.png",
   },
   "Gem Boots": {
     slot: "Boots",
@@ -628,6 +631,7 @@ const ITEM_TABLE = {
     health: 10,
     attack: "none",
     ability: 3,
+    image: "Items/gemBoots.png",
   },
   "Water Skaters": {
     slot: "Boots",
@@ -674,6 +678,7 @@ const ITEM_TABLE = {
     health: 0,
     attack: "Thunder",
     ability: 12,
+    image: "Items/lightningSpear.png",
   },
   "Pixel Sword": {
     slot: "Weapon",
@@ -697,6 +702,7 @@ const ITEM_TABLE = {
     health: 0,
     attack: "Chilled Cream",
     ability: 14,
+    image: "Items/iceCreamGun.png",
   },
   "Running Spikes": {
     slot: "Boots",
