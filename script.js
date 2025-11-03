@@ -1,3 +1,7 @@
+const ATTACK_INVENTORY = []; // Holds all available attacks for the current member
+const ATTACK_EQUIPPED = new Set(); // Stores the unique 'id' of equipped attacks
+
+let attackCounter = 1; // A simple counter to generate unique IDs
 const map = document.getElementById("map");
 if (map){
   
@@ -9,6 +13,7 @@ let tileData = {};
 const rows = 10;
 const cols = 10;
 const pathLength = 10;
+// --- Global Attack Data Structures ---
 
 // Function to generate the dungeon using recursive backtracking and save to local storage
 function generateAndSaveDungeon() {
@@ -467,6 +472,7 @@ const ITEM_TABLE = {
     health: 1,
     attack: "none",
     ability: 0,
+    image: "Items/ironBoots.png",
   },
   "Spiked Shield": {
     slot: "Weapon",
@@ -993,4 +999,80 @@ function generateRandomItem(level) {
 // Example usage: generateRandomItem(5);
 // The item will be added to INVENTORY
 
-// ...existing code...
+/**
+ * Adds an attack from a newly equipped item to the ATTACK_INVENTORY.
+ * @param {object} item - The equipped item object.
+ */
+function addAttackFromItem(item) {
+    // 1. Check if attack is actually granted and not 'none'
+    if (!item.attack || item.attack === 'none') return;
+
+    // 2. Assign a unique source ID to the item if it doesn't have one
+    if (!item._uid) item._uid = Date.now() + Math.floor(Math.random() * 1000000);
+
+    // 3. Get attack stats
+    const attackStats = ATTACK_STATS[item.attack];
+    if (!attackStats) return;
+
+    // 4. Create the new attack object
+    const newAttack = {
+        // Use a global counter for a unique ID
+        id: attackCounter++,
+        // Use the item's UID to track the source for easy removal
+        sourceUid: item._uid,
+        name: item.attack,
+        itemName: item.name,
+        strMultiplier: attackStats.strMultiplier,
+        magicMultiplier: attackStats.magicMultiplier,
+        status: attackStats.status,
+    };
+
+    // 5. Add to the global inventory
+    ATTACK_INVENTORY.push(newAttack);
+
+    // 6. Automatically equip the attack if there are fewer than 5 equipped attacks
+    if (ATTACK_EQUIPPED.size < 5) {
+        ATTACK_EQUIPPED.add(newAttack.id);
+    }
+}
+
+/**
+ * Removes all attacks associated with a specific item (by its unique ID).
+ * This is called when an item is unequipped.
+ * @param {number} uid - The unique ID of the item that granted the attack.
+ */
+function removeAttackBySourceUid(uid) {
+    // Filter the ATTACK_INVENTORY to keep only attacks NOT from this UID
+    const attacksToRemove = ATTACK_INVENTORY.filter(a => a.sourceUid === uid);
+
+    // Remove the IDs of these attacks from the equipped set
+    attacksToRemove.forEach(a => ATTACK_EQUIPPED.delete(a.id));
+
+    // Update the ATTACK_INVENTORY in place (or reassign)
+    // We reassign the array to a new filtered array
+    ATTACK_INVENTORY.length = 0; // Clear the old array
+    ATTACK_INVENTORY.push(...ATTACK_INVENTORY.filter(a => a.sourceUid !== uid));
+}
+
+// --- Functions for managing equipped attacks (called from renderAttacks in inventory.js) ---
+
+/**
+ * Equips an attack by adding its ID to the ATTACK_EQUIPPED set.
+ * @param {number} id - The unique ID of the attack to equip.
+ */
+function equipAttackById(id) {
+    // Only equip if there is room (max 5)
+    if (ATTACK_EQUIPPED.size < 5) {
+        ATTACK_EQUIPPED.add(parseInt(id, 10));
+    } else {
+        console.warn("Cannot equip attack: Maximum of 5 attacks already equipped.");
+    }
+}
+
+/**
+ * Unequips an attack by removing its ID from the ATTACK_EQUIPPED set.
+ * @param {number} id - The unique ID of the attack to unequip.
+ */
+function unequipAttackById(id) {
+    ATTACK_EQUIPPED.delete(parseInt(id, 10));
+}
