@@ -366,6 +366,7 @@ const ITEM_TABLE = {
     health: 0,
     attack: "slap",
     ability: 0,
+    image: "Items/stick.png",
   },
   "Grass Staff": {
     slot: "Weapon",
@@ -413,6 +414,7 @@ const ITEM_TABLE = {
     health: 5,
     attack: "sea shield",
     ability: 2,
+    image: "Items/seaCrystal.png",
   },
   "Shell": {
     slot: "Offhand",
@@ -484,6 +486,7 @@ const ITEM_TABLE = {
     health: 10,
     attack: "Charge",
     ability: 4,
+    image: "Items/spikedShield.png",
   },
   "Grimore": {
     slot: "Weapon",
@@ -507,6 +510,7 @@ const ITEM_TABLE = {
     health: 15,
     attack: "Tree People",
     ability: 6,
+    image: "Items/forestCrownn.png",
   },
   "Frosted Helmet": {
     slot: "Helmet",
@@ -720,6 +724,7 @@ const ITEM_TABLE = {
     health: 0,
     attack: "none",
     ability: 15,
+    image: "Items/runningSpikes.png",
   },
   "Rulers Hand": {
     slot: "Weapon",
@@ -731,6 +736,7 @@ const ITEM_TABLE = {
     health: 25,
     attack: "Arise",
     ability: 16,
+    image: "Items/rulersHand.png",
   },
   "Muramasa": {
     slot: "Weapon",
@@ -742,6 +748,7 @@ const ITEM_TABLE = {
     health: 10,
     attack: "Pure skill",
     ability: 17,
+    image: "Items/muramasa.png",
   },
   "Spell Blade": {
     slot: "Weapon",
@@ -765,6 +772,7 @@ const ITEM_TABLE = {
     health: 0,
     attack: "enhance",
     ability: 19,
+    image: "Items/enhancedStick.png",
   },
   "Divine Crown": {
     slot: "Helmet",
@@ -776,6 +784,7 @@ const ITEM_TABLE = {
     health: 40,
     attack: "Rulers Authority",
     ability: 20,
+    image: "Items/divineCrown.png",
   },
 };
 
@@ -900,8 +909,8 @@ function updateStats(){
     for (const slot of equipmentSlots) {
   const itemName = member[slot];
   if (itemName !== null) {
-    // Find the item in the INVENTORY array by name
-    const item = INVENTORY.find(i => i.name === itemName);
+    // Find the item in the INVENTORY array by name; prefer the one marked equipped (handles duplicates)
+    const item = INVENTORY.find(i => i.name === itemName && i.equipped) || INVENTORY.find(i => i.name === itemName);
     if (item) {
       equippedStrength += item.strength;
       equippedSpeed += item.speed;
@@ -1050,8 +1059,9 @@ function removeAttackBySourceUid(uid) {
 
     // Update the ATTACK_INVENTORY in place (or reassign)
     // We reassign the array to a new filtered array
-    ATTACK_INVENTORY.length = 0; // Clear the old array
-    ATTACK_INVENTORY.push(...ATTACK_INVENTORY.filter(a => a.sourceUid !== uid));
+  const remaining = ATTACK_INVENTORY.filter(a => a.sourceUid !== uid);
+  ATTACK_INVENTORY.length = 0; // Clear the old array
+  ATTACK_INVENTORY.push(...remaining);
 }
 
 // --- Functions for managing equipped attacks (called from renderAttacks in inventory.js) ---

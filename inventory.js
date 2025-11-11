@@ -17,11 +17,13 @@ function renderInventoryGrid() {
       const img = document.createElement("img");
       img.className = "inv-img";
 
-      if (data) {
+      if (data && !data.equipped) {
+        // Only show items that are not currently equipped
         img.src = data.image || "Assests/empty-slot.png";
         img.alt = data.name;
         slot.addEventListener('click', () => displayItemInfo(data));
       } else {
+        // Either empty slot or item is equipped (hidden)
         img.src = "Assests/empty-slot.png";
         img.alt = "Empty Slot";
       }
@@ -49,20 +51,63 @@ function renderEquippedItems(memberKey = 'ONE') {
   const slots = ["HELMET","CHEST","LEGS","BOOTS","MAINHAND","OFFHAND"];
   slots.forEach(s => {
     const itemName = member[s];
-    const item = ITEM_TABLE[itemName] || INVENTORY.find(i => i.name === itemName) || null;
+    // Prefer the actual INVENTORY object that is marked equipped for this slot (handles duplicates)
+    const item = (itemName ? INVENTORY.find(i => i.name === itemName && i.equipped) : null) || ITEM_TABLE[itemName] || null;
     const imgSrc = item && item.image ? item.image : "Assests/empty-slot.png";
     const slotDiv = document.createElement('div');
     slotDiv.className = 'equip-slot';
     slotDiv.innerHTML = `<div>${s}</div><img src="${imgSrc}" style="width:50px;height:50px"><div style="font-size:12px">${itemName||'Empty'}</div>`;
+    // If there's an equipped item object, make the slot clickable to inspect/unequip it
+    if (item) {
+      slotDiv.style.cursor = 'pointer';
+      slotDiv.addEventListener('click', () => {
+        // Ensure we pass the inventory object when possible so equip/unequip work on the same reference
+        const invItem = INVENTORY.find(i => i === item) || INVENTORY.find(i => (i._uid && item._uid && i._uid === item._uid)) || INVENTORY.find(i => i.name === item.name && i.equipped) || item;
+        displayItemInfo(invItem);
+      });
+    }
     equipDiv.appendChild(slotDiv);
   });
 }
 
 function displayItemInfo(item) {
   const infoItem = document.getElementById('info-item');
-  infoItem.innerHTML = `\n    <h3>${item.name} Level ${item.level||1}</h3>\n    <img src="${item.image||'Assests/empty-slot.png'}" style="width:30%">\n    <p>Strength: ${item.strength||0} Magic: ${item.magic||0} Speed: ${item.speed||0}</p>\n    <p>Health: ${item.health||0} Defense: ${item.defense||0} Attack: ${item.attack||'none'}</p>\n    <button id="equip-btn">Equip</button>\n    <button id="unequip-btn">Unequip</button>\n  `;
-  document.getElementById('equip-btn').onclick = () => equipItemToMember(item);
-  document.getElementById('unequip-btn').onclick = () => unequipItemFromMember(item);
+  infoItem.innerHTML = `\n    <h3>${item.name} Level ${item.level||1}</h3>\n    <img src="${item.image||'Assests/empty-slot.png'}" style="width:30%">\n    <p>Strength: ${item.strength||0} Magic: ${item.magic||0} Speed: ${item.speed||0}</p>\n    <p>Health: ${item.health||0} Defense: ${item.defense||0} Attack: ${item.attack||'none'}</p>\n    <div style="margin-top:8px">\n      <button id="equip-btn">Equip</button>\n      <button id="unequip-btn">Unequip</button>\n    </div>\n  `;
+  const equipBtn = document.getElementById('equip-btn');
+  const unequipBtn = document.getElementById('unequip-btn');
+  // Determine equipped state: check item.equipped flag AND verify it's actually in a slot
+  let isEquipped = item.equipped;
+  if (isEquipped) {
+    // Double-check: is this specific item (by ref/uid) in a slot?
+    let foundInSlot = false;
+    for (const mKey in PARTY_STATS) {
+      const m = PARTY_STATS[mKey];
+      if (!m) continue;
+      ['HELMET','CHEST','LEGS','BOOTS','MAINHAND','OFFHAND'].forEach(s => {
+        if (m[s] === item.name) {
+          // Slot name matches; now verify the inventory item in INVENTORY with this name and equipped=true is THIS one
+          const equippedInv = INVENTORY.find(i => i.name === item.name && i.equipped);
+          if (equippedInv === item) {
+            foundInSlot = true;
+          }
+        }
+      });
+    }
+    isEquipped = foundInSlot;
+  }
+  if (isEquipped) {
+    equipBtn.style.display = 'none';
+    unequipBtn.style.display = 'inline-block';
+  } else {
+    equipBtn.style.display = 'inline-block';
+    unequipBtn.style.display = 'none';
+  }
+  equipBtn.onclick = () => {
+    equipItemToMember(item);
+  };
+  unequipBtn.onclick = () => {
+    unequipItemFromMember(item);
+  };
 }
 
 function equipItemToMember(item, memberKey = 'ONE') {
@@ -77,16 +122,50 @@ function equipItemToMember(item, memberKey = 'ONE') {
     case 'Offhand': slotKey='OFFHAND'; break;
     default: return;
   }
-  member[slotKey] = item.name;
-  updateStats();
-  renderEquippedItems(memberKey);
-  updateStatsDisplay();
-  // If the item grants an attack, add it to the attack inventory
-  if (item.attack && item.attack !== 'none') {
-    if (!item._uid) item._uid = Date.now() + Math.floor(Math.random()*1000);
-    addAttackFromItem(item);
+  // If there's an item already equipped in that slot, unequip that specific inventory instance first (so it returns to inventory)
+  // This applies even if the names are the same (e.g., duplicate items)
+  const prevName = member[slotKey];
+  if (prevName) {
+    // Find the previously equipped item by name and equipped flag
+    const prevInv = INVENTORY.find(i => i.name === prevName && i.equipped);
+    if (prevInv) {
+      prevInv.equipped = false;
+      if (prevInv._uid) removeAttackBySourceUid(prevInv._uid);
+    }
   }
-  renderAttacks(memberKey);
+
+  // Now equip the new item: find the exact inventory item
+  // Prefer exact reference first, then uid match, then unequipped copy, then any copy
+  let invItem = INVENTORY.find(i => i === item);
+  if (!invItem) {
+    invItem = INVENTORY.find(i => (item._uid && i._uid && i._uid === item._uid));
+  }
+  if (!invItem) {
+    invItem = INVENTORY.find(i => i.name === item.name && !i.equipped);
+  }
+  if (!invItem) {
+    invItem = INVENTORY.find(i => i.name === item.name);
+  }
+  if (!invItem) {
+    invItem = item;
+    INVENTORY.push(invItem);
+  }
+  invItem.equipped = true;
+
+  // Equip by name on the member (after we've marked the item as equipped)
+  member[slotKey] = item.name;
+
+  // Ensure the item has a stable uid for attack tracking
+  if (!invItem._uid) invItem._uid = Date.now() + Math.floor(Math.random()*1000);
+
+  // If the item grants an attack, add it to the attack inventory
+  if (invItem.attack && invItem.attack !== 'none') {
+    addAttackFromItem(invItem);
+  }
+
+  // Recalculate and re-render full inventory/equips/attacks/stats
+  updateStats();
+  renderInventory();
 }
 
 function unequipItemFromMember(item, memberKey = 'ONE') {
@@ -101,14 +180,33 @@ function unequipItemFromMember(item, memberKey = 'ONE') {
     case 'Offhand': slotKey='OFFHAND'; break;
     default: return;
   }
-  if (member[slotKey] === item.name) {
+  
+  // Check if the item being unequipped is actually the equipped one (handles duplicates)
+  const isItemEquipped = member[slotKey] === item.name && item.equipped;
+  
+  if (isItemEquipped) {
+    // This is the actual equipped item; unequip from the slot
     member[slotKey] = null;
+
+    // Find the exact inventory item being unequipped
+    let invItem = INVENTORY.find(i => i === item) || INVENTORY.find(i => (item._uid && i._uid && i._uid === item._uid)) || INVENTORY.find(i => i.name === item.name);
+    if (!invItem) {
+      invItem = item;
+      INVENTORY.push(invItem);
+    }
+    invItem.equipped = false;
+
+    // Remove any attacks that originated from this item
+    if (invItem._uid) removeAttackBySourceUid(invItem._uid);
+
+    // Recalculate and re-render everything
     updateStats();
-    renderEquippedItems(memberKey);
-    updateStatsDisplay();
-    // Remove any attacks that originated from this item (from equip list and inventory)
-    if (item._uid) removeAttackBySourceUid(item._uid);
-    renderAttacks(memberKey);
+    renderInventory();
+  } else if (member[slotKey] === item.name && !item.equipped) {
+    // Item with same name is equipped, but the one clicked is unequipped (duplicate case)
+    // Just mark this unequipped copy as not equipped (it should already be false)
+    item.equipped = false;
+    // Do NOT unequip the slot or remove attacks; the other copy is still equipped
   }
 }
 
