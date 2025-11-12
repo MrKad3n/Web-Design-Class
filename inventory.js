@@ -1,17 +1,26 @@
-const inventory = document.getElementById("inventory");
-const rows = 6;
-const cols = 5;
+// Helper to get the selected member (from script.js)
+function getSelectedMember() {
+  return typeof SELECTED_MEMBER !== 'undefined' ? SELECTED_MEMBER : 'ONE';
+}
+
+const invRows = 10;
+const invCols = 5;
 
 function renderInventoryGrid() {
+  const inventory = document.getElementById("inventory");
+  if (!inventory) {
+    console.error("Inventory element not found!");
+    return;
+  }
   inventory.innerHTML = "";
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < cols; col++) {
+  for (let row = 0; row < invRows; row++) {
+    for (let col = 0; col < invCols; col++) {
       const slot = document.createElement("div");
       slot.className = "inv-slot";
       slot.dataset.row = row;
       slot.dataset.col = col;
 
-      const index = row * cols + col;
+      const index = row * invCols + col;
       const data = (typeof INVENTORY !== "undefined" && INVENTORY[index]) ? INVENTORY[index] : null;
 
       const img = document.createElement("img");
@@ -36,14 +45,15 @@ function renderInventoryGrid() {
 
 function renderInventory() {
   renderInventoryGrid();
-  renderEquippedItems('ONE');
-  updateStatsDisplay();
-  renderAttacks('ONE');
+  const memberKey = getSelectedMember();
+  renderEquippedItems(memberKey);
+  updateStatsDisplay(memberKey);
+  renderAttacks(memberKey);
 }
 
 function getItemImage(item) { return item && item.image ? item.image : "Assests/empty-slot.png"; }
 
-function renderEquippedItems(memberKey = 'ONE') {
+function renderEquippedItems(memberKey = getSelectedMember()) {
   const member = PARTY_STATS[memberKey];
   const equipDiv = document.getElementById("equipped-items");
   if (!equipDiv) return;
@@ -71,6 +81,7 @@ function renderEquippedItems(memberKey = 'ONE') {
 }
 
 function displayItemInfo(item) {
+  const memberKey = getSelectedMember();
   const infoItem = document.getElementById('info-item');
   infoItem.innerHTML = `\n    <h3>${item.name} Level ${item.level||1}</h3>\n    <img src="${item.image||'Assests/empty-slot.png'}" style="width:30%">\n    <p>Strength: ${item.strength||0} Magic: ${item.magic||0} Speed: ${item.speed||0}</p>\n    <p>Health: ${item.health||0} Defense: ${item.defense||0} Attack: ${item.attack||'none'}</p>\n    <div style="margin-top:8px">\n      <button id="equip-btn">Equip</button>\n      <button id="unequip-btn">Unequip</button>\n    </div>\n  `;
   const equipBtn = document.getElementById('equip-btn');
@@ -103,14 +114,14 @@ function displayItemInfo(item) {
     unequipBtn.style.display = 'none';
   }
   equipBtn.onclick = () => {
-    equipItemToMember(item);
+    equipItemToMember(item, memberKey);
   };
   unequipBtn.onclick = () => {
-    unequipItemFromMember(item);
+    unequipItemFromMember(item, memberKey);
   };
 }
 
-function equipItemToMember(item, memberKey = 'ONE') {
+function equipItemToMember(item, memberKey = getSelectedMember()) {
   const member = PARTY_STATS[memberKey];
   let slotKey = null;
   switch (item.slot) {
@@ -130,7 +141,7 @@ function equipItemToMember(item, memberKey = 'ONE') {
     const prevInv = INVENTORY.find(i => i.name === prevName && i.equipped);
     if (prevInv) {
       prevInv.equipped = false;
-      if (prevInv._uid) removeAttackBySourceUid(prevInv._uid);
+  if (prevInv._uid) removeAttackBySourceUid(prevInv._uid, memberKey);
     }
   }
 
@@ -160,7 +171,7 @@ function equipItemToMember(item, memberKey = 'ONE') {
 
   // If the item grants an attack, add it to the attack inventory
   if (invItem.attack && invItem.attack !== 'none') {
-    addAttackFromItem(invItem);
+    addAttackFromItem(invItem, memberKey);
   }
 
   // Recalculate and re-render full inventory/equips/attacks/stats
@@ -168,7 +179,7 @@ function equipItemToMember(item, memberKey = 'ONE') {
   renderInventory();
 }
 
-function unequipItemFromMember(item, memberKey = 'ONE') {
+function unequipItemFromMember(item, memberKey = getSelectedMember()) {
   const member = PARTY_STATS[memberKey];
   let slotKey = null;
   switch (item.slot) {
@@ -197,11 +208,11 @@ function unequipItemFromMember(item, memberKey = 'ONE') {
     invItem.equipped = false;
 
     // Remove any attacks that originated from this item
-    if (invItem._uid) removeAttackBySourceUid(invItem._uid);
+  if (invItem._uid) removeAttackBySourceUid(invItem._uid, memberKey);
 
     // Recalculate and re-render everything
-    updateStats();
-    renderInventory();
+  updateStats();
+  renderInventory();
   } else if (member[slotKey] === item.name && !item.equipped) {
     // Item with same name is equipped, but the one clicked is unequipped (duplicate case)
     // Just mark this unequipped copy as not equipped (it should already be false)
@@ -238,15 +249,17 @@ function getUnequippedAttackItems() {
   return unequipped.map(item => ({ item, attackName: item.attack, ...(ATTACK_STATS[item.attack]||{strMultiplier:0,magicMultiplier:0,status:'none'}) }));
 }
 
-function renderAttacks(memberKey = 'ONE') {
+function renderAttacks(memberKey = getSelectedMember()) {
   const attackContainer = document.getElementById('equipped-attacks');
   const invContainer = document.getElementById('inventory-attacks');
   if (!attackContainer && !invContainer) return;
 
   // Equipped attacks show entries from ATTACK_INVENTORY that are in ATTACK_EQUIPPED
+  const attacks = typeof PARTY_ATTACKS !== 'undefined' && PARTY_ATTACKS[memberKey] ? PARTY_ATTACKS[memberKey].ATTACK_INVENTORY : [];
+  const equipped = typeof PARTY_ATTACKS !== 'undefined' && PARTY_ATTACKS[memberKey] ? PARTY_ATTACKS[memberKey].ATTACK_EQUIPPED : new Set();
   if (attackContainer) {
     attackContainer.innerHTML = '';
-    const equippedList = ATTACK_INVENTORY.filter(a => ATTACK_EQUIPPED.has(a.id));
+    const equippedList = attacks.filter(a => equipped.has(a.id));
     if (equippedList.length === 0) attackContainer.innerHTML = '<div>No attacks equipped.</div>';
     equippedList.forEach(a => {
       attackContainer.innerHTML += '<div class="attack-entry" data-id="'+a.id+'">' +
@@ -257,7 +270,7 @@ function renderAttacks(memberKey = 'ONE') {
     attackContainer.querySelectorAll('.attack-entry').forEach(el => {
       el.onclick = () => {
         const id = el.dataset.id;
-        unequipAttackById(id);
+        unequipAttackById(id, memberKey);
         renderAttacks(memberKey);
       };
     });
@@ -266,7 +279,7 @@ function renderAttacks(memberKey = 'ONE') {
   // Inventory attacks show ATTACK_INVENTORY entries that are not equipped
   if (invContainer) {
     invContainer.innerHTML = '';
-    const invList = ATTACK_INVENTORY.filter(a => !ATTACK_EQUIPPED.has(a.id));
+    const invList = attacks.filter(a => !equipped.has(a.id));
     if (invList.length === 0) invContainer.innerHTML = '<div>No attacks in inventory.</div>';
     invList.forEach(a => {
       invContainer.innerHTML += '<div class="attack-entry inv" data-id="'+a.id+'">' +
@@ -277,27 +290,36 @@ function renderAttacks(memberKey = 'ONE') {
     invContainer.querySelectorAll('.attack-entry').forEach(el => {
       el.onclick = () => {
         const id = el.dataset.id;
-        equipAttackById(id);
+        equipAttackById(id, memberKey);
         renderAttacks(memberKey);
       };
     });
   }
 }
 
-function updateStatsDisplay() {
+function updateStatsDisplay(memberKey = getSelectedMember()) {
   if (typeof PARTY_STATS === 'undefined' || typeof updateStats !== 'function') return;
   updateStats();
-  const member = PARTY_STATS['ONE'];
+  const member = PARTY_STATS[memberKey];
   const statsDiv = document.getElementById('total-stats');
   if (statsDiv && member) {
     statsDiv.textContent = `Health: ${member.MAX_HEALTH}; Strength: ${member.STRENGTH}; Magic: ${member.MAGIC}; Speed: ${member.SPEED}; Defense: ${member.DEFENSE};`;
   }
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-  renderAttacks();
-  renderInventory();
-});
+// THIS IS THE FIXED CODE
+// Add event listeners to party nav buttons
+for (let i = 1; i <= 5; i++) {
+   const btn = document.getElementById(`inv-${i}`);
+   if (btn) {
+    btn.addEventListener('click', () => {
+      if (typeof SELECTED_MEMBER !== 'undefined') {
+       SELECTED_MEMBER = ['ONE','TWO','THREE','FOUR','FIVE'][i-1];
+      }
+    renderInventory();
+    });
+   }
+}
 
 function generateAndShowItem() {
   const level = Math.floor(Math.random() * 10) + 1;
@@ -305,3 +327,4 @@ function generateAndShowItem() {
   renderInventory();
 }
 
+renderInventory();

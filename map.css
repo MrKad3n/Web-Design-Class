@@ -48,7 +48,7 @@ body {
   
   #popup {
     position: fixed;
-    top: 20%;
+    top: 10%;
     left: 50%;
     transform: translateX(-50%);
     background: #222;
@@ -61,6 +61,35 @@ body {
   
   #popup button {
     margin-top: 10px;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    margin-right: 0.5rem;
+  }
+  
+  .battle-btn {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: black;
+  }
+  
+  .battle-btn:hover {
+    background: linear-gradient(135deg, #FFA500, #FF8C00);
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(255, 165, 0, 0.5);
+  }
+  
+  .close-btn {
+    background: #666;
+    color: white;
+  }
+  
+  .close-btn:hover {
+    background: #888;
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   }
   
   .hidden {

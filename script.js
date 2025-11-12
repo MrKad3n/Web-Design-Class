@@ -1,19 +1,28 @@
-const ATTACK_INVENTORY = []; // Holds all available attacks for the current member
-const ATTACK_EQUIPPED = new Set(); // Stores the unique 'id' of equipped attacks
+
+// Per-member attacks and equipped sets
+const PARTY_ATTACKS = {
+  'ONE': { ATTACK_INVENTORY: [], ATTACK_EQUIPPED: new Set() },
+  'TWO': { ATTACK_INVENTORY: [], ATTACK_EQUIPPED: new Set() },
+  'THREE': { ATTACK_INVENTORY: [], ATTACK_EQUIPPED: new Set() },
+  'FOUR': { ATTACK_INVENTORY: [], ATTACK_EQUIPPED: new Set() },
+  'FIVE': { ATTACK_INVENTORY: [], ATTACK_EQUIPPED: new Set() },
+};
+
+// Track which member is currently selected in the UI
+let SELECTED_MEMBER = 'ONE';
 
 let attackCounter = 1; // A simple counter to generate unique IDs
 const map = document.getElementById("map");
-if (map){
-  
-
 const popup = document.getElementById("popup");
 const popupContent = document.getElementById("popup-content");
 
-let tileData = {};
 const rows = 10;
 const cols = 10;
 const pathLength = 10;
-// --- Global Attack Data Structures ---
+let tileData = {};
+
+if (map){
+  console.log("Map found, initializing...");
 
 // Function to generate the dungeon using recursive backtracking and save to local storage
 function generateAndSaveDungeon() {
@@ -148,6 +157,7 @@ function renderGrid() {
 
 // Event listener for the entire map container
 map.addEventListener("click", (e) => {
+  e.stopPropagation(); // Prevent body click listener from firing
   const cell = e.target.closest('.grid-cell');
   if (cell) {
     const row = cell.dataset.row;
@@ -166,18 +176,41 @@ map.addEventListener("click", (e) => {
         `<img src="${enemy}" alt="${data.title}" style="width:${100 / enemies.length}%"/>`
       ).join('');
 
+      // Determine if this level is accessible (cleared or one above highest cleared)
+      const highestCleared = getHighestClearedLevel();
+      const isAccessible = data.cleared || data.level === highestCleared + 1;
+      
+      let battleButtonHTML = '';
+      if (isAccessible) {
+        battleButtonHTML = `<button onclick="startBattle('${data.title}', ${data.level}, '${enemies.join(',')}')" class="battle-btn">Battle</button>`;
+      }
+
       const html = `
         <h3>${data.title}</h3>
         <p>${data.description}</p>
         <p>Level: ${data.level}</p>
         <div>${enemiesHTML}</div>
+        <div style="margin-top: 1rem;">
+          ${battleButtonHTML}
+          <button onclick="closePopup()" class="close-btn">Close</button>
+        </div>
       `;
       openPopup(html);
     }
   }
 });
 
-// Other functions
+// Function to get the highest cleared level
+function getHighestClearedLevel() {
+  let highest = 0;
+  for (const key in tileData) {
+    if (tileData[key].cleared && tileData[key].level > highest) {
+      highest = tileData[key].level;
+    }
+  }
+  return highest;
+}
+
 // Function to open the popup
 function openPopup(htmlContent) {
     popupContent.innerHTML = htmlContent;
@@ -189,44 +222,29 @@ function closePopup() {
     popup.style.display = "none";
 }
 
-// Event listener for the entire map container
-map.addEventListener("click", (e) => {
-    // Check if the click occurred on a grid cell
-    const cell = e.target.closest(".grid-cell");
-    if (cell) {
-        // Prevent the body's click listener from firing immediately
-        e.stopPropagation();
+// Function to start a battle with the selected enemies
+function startBattle(stageName, level, enemyImages) {
+    // Store battle data in sessionStorage for use in battle.html
+    const battleData = {
+        stageName: stageName,
+        level: level,
+        enemies: enemyImages.split(',')
+    };
+    sessionStorage.setItem('battleData', JSON.stringify(battleData));
+    
+    // Navigate to battle.html
+    window.location.href = 'battle.html';
+}
 
-        const row = cell.dataset.row;
-        const col = cell.dataset.col;
-        const key = `${row},${col}`;
-        const data = tileData[key];
-
-        if (data) {
-            const enemies = [
-                data.enemyOne,
-                data.enemyTwo,
-                data.enemyThree
-            ].filter(enemy => enemy);
-
-            const enemiesHTML = enemies.map(enemy =>
-                `<img src="${enemy}" alt="${data.title}" style="width:${100 / enemies.length}%"/>`
-            ).join('');
-
-            const html = `
-                <h3>${data.title}</h3>
-                <p>${data.description}</p>
-                <p>Level: ${data.level}</p>
-                <div>${enemiesHTML}</div>
-            `;
-            openPopup(html);
-        }
-    }
-});
+// Event listener for the entire map container (REMOVED - duplicate listener)
+// map.addEventListener("click", (e) => { ... });  <- This duplicate has been removed
 
 // Close popup if clicking outside it
-document.body.addEventListener("click", () => {
-    closePopup();
+document.body.addEventListener("click", (e) => {
+    // Only close if clicking outside the popup itself
+    if (!popup.contains(e.target) && popup.style.display !== "none") {
+        closePopup();
+    }
 });
 
 // Initial setup on page load
@@ -250,98 +268,9 @@ function dungeonClick() {
 window.onload = initialize;
 }
 
-//------------------------------------------------------------------------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------------------------------------------------------------
-
-//Battle Logic
-
-
-const ENEMY_BASE_STATS = {
-  //Unknown Type Enemy Stats
-  'skull': {
-    health:15,
-    strength:3.5,
-    magic:0,
-    speed:3.5,
-    defense:0,
-    hBars:1,
-  },
-  'slime': {
-    health:45,
-    strength:4,
-    magic:0,
-    speed:2,
-    defense:0.15,
-    hBars:1,
-  },
-  'alien': {
-    health:20,
-    strength:0,
-    magic:8.5,
-    speed:4,
-    defense:0,
-    hBars:1,
-  },
-  'Cursed_Knight': {
-    health:65,
-    strength:12,
-    magic:0,
-    speed:6.5,
-    defense:30,
-    hBars:1,
-  },
-  'Shadow': {
-    health:110,
-    strength:7,
-    magic:5,
-    speed:20,
-    defense:0,
-    hBars:1,
-  },
-  //Forest Type Enemy Stats
-  'Sapling': {
-    health:20,
-    strength:0,
-    magic:4,
-    speed:1,
-    defense:0,
-    hBars:1,
-  },
-  'Vine_Lasher': {
-    health:30,
-    strength:5.5,
-    magic:0,
-    speed:3,
-    defense:0,
-    hBars:1,
-  },
-  'Treant': {
-    health:50,
-    strength:9,
-    magic:0,
-    speed:2,
-    defense:15,
-    hBars:1,
-  },
-  'Elder_Ent': {
-    health:30,
-    strength:0,
-    magic:14,
-    speed:4,
-    defense:70,
-    hBars:1,
-  },
-  'Worldroot': {
-    health:150,
-    strength:3,
-    magic:15,
-    speed:6,
-    defense:0,
-    hBars:1,
-  }
-};
-
-// Item Stats/weight
+// --- Global game data accessible on all pages ---
+// These are declared here (after if(map) block) so they're globally accessible
+const INVENTORY = []; // Holds all inventory items globally
 
 const ITEM_TABLE = {
   "Wooden Sword": {
@@ -510,7 +439,7 @@ const ITEM_TABLE = {
     health: 15,
     attack: "Tree People",
     ability: 6,
-    image: "Items/forestCrownn.png",
+    image: "Items/forestCrown.png",
   },
   "Frosted Helmet": {
     slot: "Helmet",
@@ -594,6 +523,7 @@ const ITEM_TABLE = {
     health: 0,
     attack: "Incenerate",
     ability: 8,
+    image: "Items/blazeBlade.png",
   },
   "Gem Helmet": {
     slot: "Helmet",
@@ -653,6 +583,7 @@ const ITEM_TABLE = {
     health: 15,
     attack: "skater slice",
     ability: 9,
+    image: "Items/waterSkaters.png",
   },
   "Energy Saber": {
     slot: "Weapon",
@@ -718,7 +649,7 @@ const ITEM_TABLE = {
     slot: "Boots",
     rarity: "Mythical",
     strength: 5,
-    speed: 3,
+    speed: 8,
     magic: 2,
     defense: 0,
     health: 0,
@@ -788,6 +719,97 @@ const ITEM_TABLE = {
   },
 };
 
+//------------------------------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------------------------
+
+//Battle Logic
+
+
+const ENEMY_BASE_STATS = {
+  //Unknown Type Enemy Stats
+  'skull': {
+    health:15,
+    strength:3.5,
+    magic:0,
+    speed:3.5,
+    defense:0,
+    hBars:1,
+  },
+  'slime': {
+    health:45,
+    strength:4,
+    magic:0,
+    speed:2,
+    defense:0.15,
+    hBars:1,
+  },
+  'alien': {
+    health:20,
+    strength:0,
+    magic:8.5,
+    speed:4,
+    defense:0,
+    hBars:1,
+  },
+  'Cursed_Knight': {
+    health:65,
+    strength:12,
+    magic:0,
+    speed:6.5,
+    defense:30,
+    hBars:1,
+  },
+  'Shadow': {
+    health:110,
+    strength:7,
+    magic:5,
+    speed:20,
+    defense:0,
+    hBars:1,
+  },
+  //Forest Type Enemy Stats
+  'Sapling': {
+    health:20,
+    strength:0,
+    magic:4,
+    speed:1,
+    defense:0,
+    hBars:1,
+  },
+  'Vine_Lasher': {
+    health:30,
+    strength:5.5,
+    magic:0,
+    speed:3,
+    defense:0,
+    hBars:1,
+  },
+  'Treant': {
+    health:50,
+    strength:9,
+    magic:0,
+    speed:2,
+    defense:15,
+    hBars:1,
+  },
+  'Elder_Ent': {
+    health:30,
+    strength:0,
+    magic:14,
+    speed:4,
+    defense:70,
+    hBars:1,
+  },
+  'Worldroot': {
+    health:150,
+    strength:3,
+    magic:15,
+    speed:6,
+    defense:0,
+    hBars:1,
+  }
+};
+
 // attack stats multipliers and status effects
 
 const ATTACK_STATS = {
@@ -831,47 +853,47 @@ const PARTY_STATS = {
     HEALTH: null,
   },
   'TWO': {
-    NAME: 'null',
+    NAME: 'Member 2',
     HELMET: null,
     CHEST: null,
     LEGS: null,
     BOOTS: null,
     MAINHAND: null,
     OFFHAND: null,
-    LEVEL: null,
+    LEVEL: 1,
     HEALTH: null,
   },
   'THREE': {
-    NAME: 'null',
+    NAME: 'Member 3',
     HELMET: null,
     CHEST: null,
     LEGS: null,
     BOOTS: null,
     MAINHAND: null,
     OFFHAND: null,
-    LEVEL: null,
+    LEVEL: 1,
     HEALTH: null,
   },
   'FOUR': {
-    NAME: 'null',
+    NAME: 'Member 4',
     HELMET: null,
     CHEST: null,
     LEGS: null,
     BOOTS: null,
     MAINHAND: null,
     OFFHAND: null,
-    LEVEL: null,
+    LEVEL: 1,
     HEALTH: null,
   },
   'FIVE': {
-    NAME: 'null',
+    NAME: 'Member 5',
     HELMET: null,
     CHEST: null,
     LEGS: null,
     BOOTS: null,
     MAINHAND: null,
     OFFHAND: null,
-    LEVEL: null,
+    LEVEL: 1,
     HEALTH: null
   },
 };
@@ -955,9 +977,6 @@ function updateHealth(amount, member) {
 
 // ...existing code...
 
-// --- Inventory Array ---
-const INVENTORY = []; // Holds generated items
-
 /**
  * Generates a random item scaled to the given level, applies stat scaling, and adds it to the inventory.
  * @param {number} level - The level to scale the item to.
@@ -1009,80 +1028,68 @@ function generateRandomItem(level) {
 // The item will be added to INVENTORY
 
 /**
- * Adds an attack from a newly equipped item to the ATTACK_INVENTORY.
+ * Adds an attack from a newly equipped item to the ATTACK_INVENTORY for the selected member.
  * @param {object} item - The equipped item object.
+ * @param {string} memberKey - The party member key (e.g., 'ONE').
  */
-function addAttackFromItem(item) {
-    // 1. Check if attack is actually granted and not 'none'
-    if (!item.attack || item.attack === 'none') return;
-
-    // 2. Assign a unique source ID to the item if it doesn't have one
-    if (!item._uid) item._uid = Date.now() + Math.floor(Math.random() * 1000000);
-
-    // 3. Get attack stats
-    const attackStats = ATTACK_STATS[item.attack];
-    if (!attackStats) return;
-
-    // 4. Create the new attack object
-    const newAttack = {
-        // Use a global counter for a unique ID
-        id: attackCounter++,
-        // Use the item's UID to track the source for easy removal
-        sourceUid: item._uid,
-        name: item.attack,
-        itemName: item.name,
-        strMultiplier: attackStats.strMultiplier,
-        magicMultiplier: attackStats.magicMultiplier,
-        status: attackStats.status,
-    };
-
-    // 5. Add to the global inventory
-    ATTACK_INVENTORY.push(newAttack);
-
-    // 6. Automatically equip the attack if there are fewer than 5 equipped attacks
-    if (ATTACK_EQUIPPED.size < 5) {
-        ATTACK_EQUIPPED.add(newAttack.id);
-    }
+function addAttackFromItem(item, memberKey = SELECTED_MEMBER) {
+  if (!item.attack || item.attack === 'none') return;
+  if (!item._uid) item._uid = Date.now() + Math.floor(Math.random() * 1000000);
+  const attackStats = ATTACK_STATS[item.attack];
+  if (!attackStats) return;
+  const newAttack = {
+    id: attackCounter++,
+    sourceUid: item._uid,
+    name: item.attack,
+    itemName: item.name,
+    strMultiplier: attackStats.strMultiplier,
+    magicMultiplier: attackStats.magicMultiplier,
+    status: attackStats.status,
+  };
+  const attacks = PARTY_ATTACKS[memberKey].ATTACK_INVENTORY;
+  const equipped = PARTY_ATTACKS[memberKey].ATTACK_EQUIPPED;
+  attacks.push(newAttack);
+  if (equipped.size < 5) {
+    equipped.add(newAttack.id);
+  }
 }
 
 /**
- * Removes all attacks associated with a specific item (by its unique ID).
- * This is called when an item is unequipped.
+ * Removes all attacks associated with a specific item (by its unique ID) for the selected member.
  * @param {number} uid - The unique ID of the item that granted the attack.
+ * @param {string} memberKey - The party member key (e.g., 'ONE').
  */
-function removeAttackBySourceUid(uid) {
-    // Filter the ATTACK_INVENTORY to keep only attacks NOT from this UID
-    const attacksToRemove = ATTACK_INVENTORY.filter(a => a.sourceUid === uid);
-
-    // Remove the IDs of these attacks from the equipped set
-    attacksToRemove.forEach(a => ATTACK_EQUIPPED.delete(a.id));
-
-    // Update the ATTACK_INVENTORY in place (or reassign)
-    // We reassign the array to a new filtered array
-  const remaining = ATTACK_INVENTORY.filter(a => a.sourceUid !== uid);
-  ATTACK_INVENTORY.length = 0; // Clear the old array
-  ATTACK_INVENTORY.push(...remaining);
+function removeAttackBySourceUid(uid, memberKey = SELECTED_MEMBER) {
+  const attacks = PARTY_ATTACKS[memberKey].ATTACK_INVENTORY;
+  const equipped = PARTY_ATTACKS[memberKey].ATTACK_EQUIPPED;
+  const attacksToRemove = attacks.filter(a => a.sourceUid === uid);
+  attacksToRemove.forEach(a => equipped.delete(a.id));
+  const remaining = attacks.filter(a => a.sourceUid !== uid);
+  attacks.length = 0;
+  attacks.push(...remaining);
 }
 
 // --- Functions for managing equipped attacks (called from renderAttacks in inventory.js) ---
 
 /**
- * Equips an attack by adding its ID to the ATTACK_EQUIPPED set.
+ * Equips an attack by adding its ID to the ATTACK_EQUIPPED set for the selected member.
  * @param {number} id - The unique ID of the attack to equip.
+ * @param {string} memberKey - The party member key (e.g., 'ONE').
  */
-function equipAttackById(id) {
-    // Only equip if there is room (max 5)
-    if (ATTACK_EQUIPPED.size < 5) {
-        ATTACK_EQUIPPED.add(parseInt(id, 10));
-    } else {
-        console.warn("Cannot equip attack: Maximum of 5 attacks already equipped.");
-    }
+function equipAttackById(id, memberKey = SELECTED_MEMBER) {
+  const equipped = PARTY_ATTACKS[memberKey].ATTACK_EQUIPPED;
+  if (equipped.size < 5) {
+    equipped.add(parseInt(id, 10));
+  } else {
+    console.warn("Cannot equip attack: Maximum of 5 attacks already equipped.");
+  }
 }
 
 /**
- * Unequips an attack by removing its ID from the ATTACK_EQUIPPED set.
+ * Unequips an attack by removing its ID from the ATTACK_EQUIPPED set for the selected member.
  * @param {number} id - The unique ID of the attack to unequip.
+ * @param {string} memberKey - The party member key (e.g., 'ONE').
  */
-function unequipAttackById(id) {
-    ATTACK_EQUIPPED.delete(parseInt(id, 10));
+function unequipAttackById(id, memberKey = SELECTED_MEMBER) {
+  PARTY_ATTACKS[memberKey].ATTACK_EQUIPPED.delete(parseInt(id, 10));
 }

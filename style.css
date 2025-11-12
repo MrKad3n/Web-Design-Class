@@ -274,11 +274,10 @@
 #inventory {
   display: grid;
   grid-template-columns: repeat(5, 1fr); 
-  grid-template-rows: repeat(10, 1fr);   
+  grid-template-rows: repeat(6, 90px);   
   gap: 5px;                              
   padding: 5px;
-  height: 600px;
-  width: 75%;
+  box-sizing: border-box;
 }
 
 .hoverable {
