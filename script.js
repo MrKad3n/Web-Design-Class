@@ -724,6 +724,107 @@ const ITEM_TABLE = {
 
 //Battle Logic
 
+// Persistence: save/load/reset game data (inventory, party stats, attacks)
+const SAVE_KEY = 'game_save_v1';
+
+function saveGameData() {
+  try {
+    const payload = {
+      inventory: INVENTORY,
+      partyStats: typeof PARTY_STATS !== 'undefined' ? PARTY_STATS : null,
+      partyAttacks: typeof PARTY_ATTACKS !== 'undefined' ? {
+        ONE: { ATTACK_INVENTORY: PARTY_ATTACKS.ONE.ATTACK_INVENTORY || [], ATTACK_EQUIPPED: Array.from(PARTY_ATTACKS.ONE.ATTACK_EQUIPPED || []) },
+        TWO: { ATTACK_INVENTORY: PARTY_ATTACKS.TWO.ATTACK_INVENTORY || [], ATTACK_EQUIPPED: Array.from(PARTY_ATTACKS.TWO.ATTACK_EQUIPPED || []) },
+        THREE: { ATTACK_INVENTORY: PARTY_ATTACKS.THREE.ATTACK_INVENTORY || [], ATTACK_EQUIPPED: Array.from(PARTY_ATTACKS.THREE.ATTACK_EQUIPPED || []) },
+        FOUR: { ATTACK_INVENTORY: PARTY_ATTACKS.FOUR.ATTACK_INVENTORY || [], ATTACK_EQUIPPED: Array.from(PARTY_ATTACKS.FOUR.ATTACK_EQUIPPED || []) },
+        FIVE: { ATTACK_INVENTORY: PARTY_ATTACKS.FIVE.ATTACK_INVENTORY || [], ATTACK_EQUIPPED: Array.from(PARTY_ATTACKS.FIVE.ATTACK_EQUIPPED || []) },
+      } : null,
+      attackCounter: typeof attackCounter !== 'undefined' ? attackCounter : 1,
+    };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
+    //console.log('Saved game data');
+  } catch (e) {
+    console.error('Failed to save game data', e);
+  }
+}
+
+function loadGameData() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return;
+    const payload = JSON.parse(raw);
+    if (payload) {
+      if (Array.isArray(payload.inventory)) {
+        // Replace contents of INVENTORY in-place so references remain valid
+        INVENTORY.length = 0;
+        payload.inventory.forEach(it => INVENTORY.push(it));
+      }
+      if (payload.partyStats && typeof PARTY_STATS !== 'undefined') {
+        // Overwrite PARTY_STATS keys but preserve object reference
+        for (const k in payload.partyStats) {
+          if (!PARTY_STATS[k]) PARTY_STATS[k] = payload.partyStats[k];
+          else Object.assign(PARTY_STATS[k], payload.partyStats[k]);
+        }
+      }
+      if (payload.partyAttacks && typeof PARTY_ATTACKS !== 'undefined') {
+        for (const k of ['ONE','TWO','THREE','FOUR','FIVE']) {
+          if (payload.partyAttacks[k]) {
+            PARTY_ATTACKS[k].ATTACK_INVENTORY = payload.partyAttacks[k].ATTACK_INVENTORY || [];
+            PARTY_ATTACKS[k].ATTACK_EQUIPPED = new Set(payload.partyAttacks[k].ATTACK_EQUIPPED || []);
+          }
+        }
+      }
+      if (typeof payload.attackCounter === 'number') {
+        attackCounter = payload.attackCounter;
+      } else {
+        // Ensure attackCounter is at least max existing id + 1
+        try {
+          let maxId = 0;
+          for (const k of ['ONE','TWO','THREE','FOUR','FIVE']) {
+            const arr = PARTY_ATTACKS[k] && PARTY_ATTACKS[k].ATTACK_INVENTORY ? PARTY_ATTACKS[k].ATTACK_INVENTORY : [];
+            for (const a of arr) if (a && a.id && a.id > maxId) maxId = a.id;
+          }
+          attackCounter = maxId + 1;
+        } catch (e) { attackCounter = attackCounter || 1; }
+      }
+    }
+    //console.log('Loaded game data');
+  } catch (e) {
+    console.error('Failed to load game data', e);
+  }
+}
+
+function resetInventory() {
+  if (!confirm('Reset inventory and equipped items? This cannot be undone.')) return;
+  try {
+    localStorage.removeItem(SAVE_KEY);
+    // Clear arrays/objects in-place
+    if (Array.isArray(INVENTORY)) INVENTORY.length = 0;
+    if (typeof PARTY_STATS !== 'undefined') {
+      for (const k in PARTY_STATS) {
+        if (!PARTY_STATS[k]) continue;
+        PARTY_STATS[k].HELMET = null; PARTY_STATS[k].CHEST = null; PARTY_STATS[k].LEGS = null; PARTY_STATS[k].BOOTS = null;
+        PARTY_STATS[k].MAINHAND = null; PARTY_STATS[k].OFFHAND = null;
+      }
+    }
+    if (typeof PARTY_ATTACKS !== 'undefined') {
+      for (const k in PARTY_ATTACKS) {
+        if (!PARTY_ATTACKS[k]) continue;
+        PARTY_ATTACKS[k].ATTACK_INVENTORY = [];
+        PARTY_ATTACKS[k].ATTACK_EQUIPPED = new Set();
+      }
+    }
+    // Persist cleared state
+    saveGameData();
+    // Re-render inventory if the page has it
+    if (typeof renderInventory === 'function') renderInventory();
+  } catch (e) {
+    console.error('Failed to reset inventory', e);
+  }
+}
+
+// NOTE: loadGameData() will be called after core structures (PARTY_STATS, PARTY_ATTACKS) are defined
+
 
 const ENEMY_BASE_STATS = {
   //Unknown Type Enemy Stats
@@ -1052,6 +1153,7 @@ function addAttackFromItem(item, memberKey = SELECTED_MEMBER) {
   if (equipped.size < 5) {
     equipped.add(newAttack.id);
   }
+  if (typeof saveGameData === 'function') saveGameData();
 }
 
 /**
@@ -1067,6 +1169,7 @@ function removeAttackBySourceUid(uid, memberKey = SELECTED_MEMBER) {
   const remaining = attacks.filter(a => a.sourceUid !== uid);
   attacks.length = 0;
   attacks.push(...remaining);
+  if (typeof saveGameData === 'function') saveGameData();
 }
 
 // --- Functions for managing equipped attacks (called from renderAttacks in inventory.js) ---
@@ -1080,6 +1183,7 @@ function equipAttackById(id, memberKey = SELECTED_MEMBER) {
   const equipped = PARTY_ATTACKS[memberKey].ATTACK_EQUIPPED;
   if (equipped.size < 5) {
     equipped.add(parseInt(id, 10));
+    if (typeof saveGameData === 'function') saveGameData();
   } else {
     console.warn("Cannot equip attack: Maximum of 5 attacks already equipped.");
   }
@@ -1092,4 +1196,8 @@ function equipAttackById(id, memberKey = SELECTED_MEMBER) {
  */
 function unequipAttackById(id, memberKey = SELECTED_MEMBER) {
   PARTY_ATTACKS[memberKey].ATTACK_EQUIPPED.delete(parseInt(id, 10));
+  if (typeof saveGameData === 'function') saveGameData();
 }
+
+// Now that core structures (PARTY_STATS, PARTY_ATTACKS, INVENTORY) are defined, load persisted data
+if (typeof loadGameData === 'function') loadGameData();

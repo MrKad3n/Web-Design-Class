@@ -230,7 +230,7 @@
                 border: 2px solid rgba(255, 255, 255, 0.3);
                 border-radius: 5px;
                 padding: 0.5rem;
-                justify-content: flex-start;
+                justify-content: flex-end;
             }
             
             .attack-slot {
@@ -386,7 +386,10 @@
         </div>
         
         <!--Leave Battle Button - top right-->
-        <button id="leave-battle-btn" onclick="leaveBattle()">Leave Battle</button>
+        <div style="display:flex;gap:8px;justify-content:flex-end;align-items:center;">
+            <button id="leave-battle-btn" onclick="leaveBattle()">Leave Battle</button>
+            <button id="start-combat-btn" style="background:rgba(40,167,69,0.85);color:white;border:2px solid rgba(40,167,69,1);padding:0.5rem 1rem;border-radius:5px;cursor:pointer;">Start Combat</button>
+        </div>
         
         <!--Central Arena-->
         <div class="arena">
@@ -405,10 +408,7 @@
             
             <!--Enemy area - right side of arena-->
             <div id="enemy-area">
-                <h2 class="w3-text-white">Enemy Name</h2>
-                <div class="enemy-health-bar w3-light-grey">
-                    <div class="w3-green" style="width:50%; height:100%">HP #</div>
-                </div>
+                
                 <div id="enemies">
                     <img class="hoverable" src="Enemies/cursedKnight.png" alt="Enemy 1">
                     <img class="hoverable" src="Enemies/cursedKnight.png" alt="Enemy 2">
@@ -447,6 +447,11 @@
     <footer>
         Kaden Cruts - 2025
     </footer>
+
+        <!-- Combat debug panel (visible during testing) -->
+        <div id="combat-debug" style="position:fixed;left:8px;bottom:8px;max-width:320px;max-height:220px;overflow:auto;background:rgba(0,0,0,0.6);color:#fff;padding:8px;border-radius:6px;font-size:12px;z-index:9999;border:1px solid rgba(255,255,255,0.08);">
+            <strong style="display:block;margin-bottom:6px">Combat Debug</strong>
+        </div>
     
     <script>
         function leaveBattle() {
@@ -454,5 +459,473 @@
             window.location.href = 'home.html';
         }
     </script>
+        <!-- Core game script to access PARTY_STATS, INVENTORY, ENEMY_BASE_STATS, etc. -->
+        <script src="script.js"></script>
+        <script>
+        // Battle page initialization: read session battleData, update UI
+        (function(){
+            // Read battleData from sessionStorage
+            let battleData = {};
+            try { battleData = JSON.parse(sessionStorage.getItem('battleData')||'{}'); } catch(e) { battleData = {}; }
+            const level = battleData.level || 1;
+            const enemyImages = battleData.enemies && battleData.enemies.length ? battleData.enemies : ['Enemies/skull.png'];
+
+            // Ensure game data loaded and stats are up-to-date
+            if (typeof loadGameData === 'function') loadGameData();
+            if (typeof updateStats === 'function') updateStats();
+
+            // Update party sidebar and player stats
+            function updatePartyDisplay(){
+                for (let i=1;i<=5;i++){
+                    const key = ['ONE','TWO','THREE','FOUR','FIVE'][i-1];
+                    const slot = document.getElementById(`slot-${['one','two','three','four','five'][i-1]}`);
+                    if (!slot) continue;
+                    const member = (typeof PARTY_STATS !== 'undefined' && PARTY_STATS[key]) ? PARTY_STATS[key] : null;
+                    const span = slot.querySelector('span');
+                    if (member){
+                        span.textContent = `${member.NAME} lv${member.LEVEL||1}`;
+                    } else {
+                        span.textContent = `P${i} lv#`;
+                    }
+                }
+            }
+
+            // Main player area uses member ONE
+            function updatePlayerArea(){
+                const member = (typeof PARTY_STATS !== 'undefined' && PARTY_STATS['ONE']) ? PARTY_STATS['ONE'] : null;
+                if (!member) return;
+                // Ensure mana fields
+                if (typeof member.MAX_MANA === 'undefined') member.MAX_MANA = 100;
+                if (typeof member.MANA === 'undefined') member.MANA = 75;
+
+                // Ensure health/stats up-to-date
+                if (typeof updateStats === 'function') updateStats();
+                // Ensure HEALTH is set (avoid immediate death if undefined/0)
+                if (typeof member.MAX_HEALTH === 'undefined') member.MAX_HEALTH = 10;
+                if (typeof member.HEALTH === 'undefined' || Number(member.HEALTH) <= 0) {
+                    member.HEALTH = Number(member.MAX_HEALTH);
+                }
+
+                        const healthBar = document.querySelector('.health-bar div');
+                        const manaBar = document.querySelector('.mana-bar div');
+                        if (healthBar) {
+                            // Ensure numeric values
+                            const cur = Number(member.HEALTH || 0);
+                            const max = Number(member.MAX_HEALTH || 1);
+                            // If max is zero or invalid, treat as 1 to avoid division by zero
+                            const safeMax = max > 0 ? max : 1;
+                            // Compute percentage as ratio of current to max
+                            let pct = Math.round((cur / safeMax) * 100);
+                            if (pct > 100) pct = 100;
+                            if (pct < 0) pct = 0;
+                            healthBar.style.width = pct + '%';
+                            // Show fractional HP (current/max) so small max values make sense
+                            healthBar.textContent = `HP ${cur}/${safeMax}`;
+                        }
+                        if (manaBar) {
+                            const curM = Number(member.MANA || 0);
+                            const maxM = Number(member.MAX_MANA || 100);
+                            const safeMaxM = maxM > 0 ? maxM : 100;
+                            let mpct = Math.round((curM / safeMaxM) * 100);
+                            if (mpct > 100) mpct = 100;
+                            if (mpct < 0) mpct = 0;
+                            manaBar.style.width = mpct + '%';
+                            manaBar.textContent = `MP ${curM}/${safeMaxM}`;
+                        }
+            }
+
+            // Helper to map image filename to enemy key
+            function enemyKeyFromImage(path){
+                if (!path) return null;
+                const name = path.split('/').pop().split('.')[0];
+                // Try to find matching key in ENEMY_BASE_STATS
+                for (const k in ENEMY_BASE_STATS) if (k.toLowerCase() === name.toLowerCase()) return k;
+                return name;
+            }
+
+            function renderEnemies(){
+                const enemyArea = document.getElementById('enemy-area');
+                const enemiesDiv = document.getElementById('enemies');
+                if (!enemyArea || !enemiesDiv) return;
+                // Clear existing enemy health bars (we'll create per-enemy bars above enemiesDiv)
+                const existingBars = enemyArea.querySelectorAll('.enemy-single');
+                existingBars.forEach(n=>n.remove());
+                enemiesDiv.innerHTML = '';
+
+                enemyImages.forEach((imgPath, idx) => {
+                    const key = enemyKeyFromImage(imgPath) || imgPath;
+                    const base = ENEMY_BASE_STATS[key] || { health:20, strength:3, magic:0, speed:2, defense:0, hBars:1 };
+                    const scaled = Object.assign({}, base);
+                    // Scale health and stats by level
+                    scaled.health = Math.max(1, Math.round(base.health * level));
+                    scaled.strength = Math.round(base.strength * level);
+                    scaled.magic = Math.round(base.magic * level);
+                    scaled.speed = Math.round(base.speed * level);
+
+                    // Create enemy visual
+                    const wrap = document.createElement('div');
+                    wrap.className = 'enemy-single';
+                    wrap.style.width = '100%';
+                    wrap.style.display = 'flex';
+                    wrap.style.flexDirection = 'column';
+                    wrap.style.alignItems = 'center';
+                    wrap.style.marginBottom = '8px';
+
+                    const nameH = document.createElement('h3');
+                    nameH.className = 'w3-text-white';
+                    nameH.textContent = (key || 'Enemy') + ` (Lv ${level})`;
+
+                    const barWrap = document.createElement('div');
+                    barWrap.className = 'enemy-health-bar w3-light-grey';
+                    barWrap.style.width = '80%';
+                    barWrap.style.height = '12px';
+                    barWrap.style.marginBottom = '6px';
+                    const inner = document.createElement('div');
+                    inner.className = 'w3-green';
+                    inner.style.width = '100%';
+                    inner.style.height = '100%';
+                    inner.textContent = `HP ${scaled.health}`;
+                    barWrap.appendChild(inner);
+
+                    const img = document.createElement('img');
+                    img.src = imgPath || (`Enemies/${key.toLowerCase()}.png`);
+                    img.alt = key;
+                    img.style.maxWidth = '28%';
+                    img.style.objectFit = 'contain';
+                    img.className = 'hoverable';
+
+                    wrap.appendChild(nameH);
+                    wrap.appendChild(barWrap);
+                    wrap.appendChild(img);
+
+                    // Store scaled stats on element for later (if needed)
+                    wrap.dataset.hp = scaled.health;
+                    wrap.dataset.maxHp = scaled.health;
+                    wrap.dataset.str = scaled.strength;
+                    wrap.dataset.speed = scaled.speed;
+                    wrap.dataset.mag = scaled.magic;
+
+                    // Make enemy clickable for target selection
+                    wrap.style.cursor = 'pointer';
+                    wrap.onclick = () => {
+                        // clear previous highlights
+                        getEnemyWrappers().forEach(w=>w.style.outline='');
+                        wrap.style.outline = '3px solid red';
+                        selectedTarget = wrap;
+                        logCombat(`Selected target: ${wrap.querySelector('img').alt}`);
+                        // Only perform attack from clicking an enemy if it's the player's turn AND an attack is selected (or no attacks exist)
+                        const attacks = (PARTY_ATTACKS && PARTY_ATTACKS['ONE']) ? PARTY_ATTACKS['ONE'].ATTACK_INVENTORY : [];
+                        const equipped = (PARTY_ATTACKS && PARTY_ATTACKS['ONE']) ? PARTY_ATTACKS['ONE'].ATTACK_EQUIPPED : new Set();
+                        const finalList = (attacks.filter(a=>equipped.has(a.id)).concat(attacks.filter(a=>!equipped.has(a.id)))).slice(0,5);
+                        const hasAttacks = finalList.length > 0;
+                        if (playerCanAct && typeof window.playerPerformAttackOn === 'function') {
+                            if (!hasAttacks || (hasAttacks && selectedAttackId)) {
+                                window.playerPerformAttackOn(wrap);
+                            } else {
+                                // Prompt player to select an attack first
+                                logCombat('Please select an attack before targeting an enemy.');
+                            }
+                        }
+                    };
+
+                    enemyArea.insertBefore(wrap, enemiesDiv);
+                });
+            }
+
+            // Populate attacks area for member ONE
+            function renderAttacksForPlayer(){
+                const atkArea = document.getElementById('Attacks');
+                if (!atkArea) return;
+                atkArea.innerHTML = '';
+                const memberKey = 'ONE';
+                const attacks = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_INVENTORY : [];
+                const equipped = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_EQUIPPED : new Set();
+                // Show up to 5 attack slots, mark equipped ones first
+                const equippedList = attacks.filter(a=>equipped.has(a.id));
+                const invList = attacks.filter(a=>!equipped.has(a.id));
+                const finalList = equippedList.concat(invList).slice(0,5);
+                finalList.forEach(a=>{
+                    const slot = document.createElement('div');
+                    slot.className = 'attack-slot';
+                    slot.innerHTML = `<img src="${(ITEM_TABLE && ITEM_TABLE[a.itemName] && ITEM_TABLE[a.itemName].image) || 'Assests/empty-slot.png'}" alt="${a.name}"><span>${a.name}</span>`;
+                    atkArea.appendChild(slot);
+                });
+            }
+
+            // Run updates
+            updatePartyDisplay();
+            updatePlayerArea();
+            renderEnemies();
+            renderAttacksForPlayer();
+
+                            // -------------------- Combat engine --------------------
+                            const DEBUG_COMBAT = true;
+                            function logCombat(msg){
+                                try { console.log('[combat] '+msg); } catch(e){}
+                                if (!DEBUG_COMBAT) return;
+                                const box = document.getElementById('combat-debug');
+                                if (!box) return;
+                                const line = document.createElement('div');
+                                line.textContent = msg;
+                                box.appendChild(line);
+                                box.scrollTop = box.scrollHeight;
+                            }
+
+                            let selectedAttackId = null;
+                    // Map of enemy wrappers in order
+                    function getEnemyWrappers(){
+                        return Array.from(document.querySelectorAll('.enemy-single'));
+                    }
+
+                    // Make attack slots clickable/selectable
+                    function enableAttackSelection(){
+                        const atkArea = document.getElementById('Attacks');
+                        if (!atkArea) return;
+                        atkArea.querySelectorAll('.attack-slot').forEach(slot=>{
+                            slot.style.cursor = 'pointer';
+                            slot.onclick = () => {
+                                // clear previous highlights
+                                atkArea.querySelectorAll('.attack-slot').forEach(s=>s.style.outline='');
+                                slot.style.outline = '3px solid gold';
+                                // find index of slot among children
+                                const idx = Array.prototype.indexOf.call(atkArea.children, slot);
+                                // selectedAttackId will map to the attack objects displayed order
+                                const memberKey = 'ONE';
+                                const attacks = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_INVENTORY : [];
+                                const equipped = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_EQUIPPED : new Set();
+                                const equippedList = attacks.filter(a=>equipped.has(a.id));
+                                const invList = attacks.filter(a=>!equipped.has(a.id));
+                                const finalList = equippedList.concat(invList).slice(0,5);
+                                const atk = finalList[idx];
+                                                        selectedAttackId = atk ? atk.id : null;
+                                                        // Clear any previously selected enemy — selecting attack should not auto-attack
+                                                        getEnemyWrappers().forEach(w=>w.style.outline='');
+                                                        selectedTarget = null;
+                            };
+                        });
+                    }
+                    enableAttackSelection();
+
+                    // Helper to update enemy bar visuals when hp changes
+                    function updateEnemyBar(wrap){
+                        const bar = wrap.querySelector('.enemy-health-bar .w3-green');
+                        if (!bar) return;
+                        const cur = Number(wrap.dataset.hp);
+                        const max = Number(wrap.dataset.maxHp) || 1;
+                        const pct = Math.max(0, Math.min(100, Math.round((cur/max)*100)));
+                        bar.style.width = pct + '%';
+                        bar.textContent = `HP ${Math.max(0,cur)}/${max}`;
+                    }
+
+                            // Track whether player is allowed to act this turn (set by scheduler)
+                            let playerCanAct = false;
+                            let playerWaiting = false; // avoids re-prompting repeatedly
+                            let selectedTarget = null;
+
+                    // Combat scheduler using time-to-next-action = 1/speed
+                    let combatRunning = true;
+                    function startCombatLoop(){
+                        const member = PARTY_STATS['ONE'];
+                        if (!member) return;
+                        // Gather active enemy wrappers and their stats
+                        const enemies = getEnemyWrappers().map(w=>({wrap:w, hp: Number(w.dataset.hp), maxHp: Number(w.dataset.maxHp), str: Number(w.dataset.str)||0}));
+
+                        // If no enemies, nothing to do
+                        if (enemies.length === 0) return;
+
+                        // Initialize next action times
+                        const pSpeed = Number(member.SPEED) || 1;
+                        const playerInterval = 1 / (pSpeed > 0 ? pSpeed : 1);
+                        let nextPlayer = playerInterval;
+
+                        // For simplicity, create a single enemy controller by using the first alive enemy as attacker
+                        // Enemy speed uses first enemy's speed value from dataset (we didn't store speed numerically, assume dataset.str as proxy for aggression if no speed)
+                        // We'll attempt to read data-speed if present, else fallback to 1
+                        const firstWrap = enemies[0].wrap;
+                        const enemySpeedVal = Number(firstWrap.dataset.speed) || Number(firstWrap.dataset.str) || 1;
+                        const enemyInterval = 1 / (enemySpeedVal > 0 ? enemySpeedVal : 1);
+                        let nextEnemy = enemyInterval;
+
+                        // If both intervals equal at start, we set both to their interval values (they will be compared)
+
+                        function pickNextActor(){
+                            // return 'player' or 'enemy' (tie resolved: slower speed goes first)
+                            if (Math.abs(nextPlayer - nextEnemy) < 1e-9) {
+                                // tie -> slower speed goes first (smaller speed value = slower)
+                                if (pSpeed < enemySpeedVal) return 'enemy';
+                                if (enemySpeedVal < pSpeed) return 'player';
+                                // equal speeds - coin flip
+                                return (Math.random()<0.5)?'player':'enemy';
+                            }
+                            return (nextPlayer < nextEnemy) ? 'player' : 'enemy';
+                        }
+
+                                function getFirstAliveEnemy(){
+                                    const arr = getEnemyWrappers();
+                                    for (const w of arr){
+                                        if (Number(w.dataset.hp) > 0) return w;
+                                    }
+                                    return null;
+                                }
+
+                                // Perform a player attack on a specific enemy wrapper (called when player clicks an enemy)
+                                function playerPerformAttackOn(enemyWrap){
+                                    if (!enemyWrap) return false;
+                                      const atkArea = document.getElementById('Attacks');
+                                      const memberKey = 'ONE';
+                                      const attacks = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_INVENTORY : [];
+                                      const equipped = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_EQUIPPED : new Set();
+                                    const equippedList = attacks.filter(a=>equipped.has(a.id));
+                                    const invList = attacks.filter(a=>!equipped.has(a.id));
+                                    const finalList = equippedList.concat(invList).slice(0,5);
+
+                                    let attackObj = null;
+                                    if (selectedAttackId) attackObj = attacks.find(a=>a.id === selectedAttackId) || finalList[0] || null;
+                                    else attackObj = finalList[0] || attacks[0] || null;
+                                    if (!attackObj) attackObj = { name: 'slap', strMultiplier: 1, magicMultiplier: 0, itemName: null };
+
+                                    const enemyDefense = Number( (ENEMY_BASE_STATS[enemyWrap.querySelector('img').alt] && ENEMY_BASE_STATS[enemyWrap.querySelector('img').alt].defense) || 0 );
+                                    const attacker = PARTY_STATS['ONE'];
+                                    const str = Number(attacker.STRENGTH||0);
+                                    const mag = Number(attacker.MAGIC||0);
+                                    const strMult = Number(attackObj.strMultiplier||0);
+                                    const magMult = Number(attackObj.magicMultiplier||0);
+                                    let dmg = Math.round(mag * magMult + str * strMult - enemyDefense);
+                                    if (isNaN(dmg) || dmg < 1) dmg = 1;
+
+                                    logCombat(`Player uses ${attackObj.name} on ${enemyWrap.querySelector('img').alt} and deals ${dmg} damage`);
+                                    const curHp = Number(enemyWrap.dataset.hp) - dmg;
+                                    enemyWrap.dataset.hp = Math.max(0, curHp);
+                                    updateEnemyBar(enemyWrap);
+
+                                                // Play hit animation on the enemy image
+                                                try {
+                                                    const img = enemyWrap.querySelector('img');
+                                                    if (img) {
+                                                        img.classList.remove('hit-animation');
+                                                        // Force reflow to restart animation
+                                                        void img.offsetWidth;
+                                                        img.classList.add('hit-animation');
+                                                        setTimeout(()=> img.classList.remove('hit-animation'), 700);
+                                                    }
+                                                } catch(e){}
+
+                                                  // After attacking, clear selectedAttackId so player must re-select an attack next time
+                                                  selectedAttackId = null;
+                                                  // After attacking, consume selection and advance scheduler
+                                                  playerCanAct = false;
+                                                  playerWaiting = false;
+                                                  // Ensure a minimum spacing between player actions so the player doesn't instantly attack many times
+                                                  nextPlayer += Math.max(playerInterval, MIN_ACTION_INTERVAL);
+
+                                    // Check if this enemy dies
+                                    if (Number(enemyWrap.dataset.hp) <= 0) {
+                                        logCombat('Enemy defeated!');
+                                        const allEnemies = getEnemyWrappers();
+                                        const anyAlive = allEnemies.some(w => Number(w.dataset.hp) > 0);
+                                        if (!anyAlive) {
+                                            logCombat('All enemies defeated! Redirecting to home...');
+                                            combatRunning = false;
+                                            setTimeout(()=> window.location.href = 'home.html', 1500);
+                                            return true;
+                                        }
+                                    }
+                                    return true;
+                                }
+
+                                    // Expose attack performer so click handlers outside can call it when appropriate
+                                    try{ window.playerPerformAttackOn = playerPerformAttackOn; } catch(e){}
+
+                        function performPlayerAction(){
+                            // Called by the scheduler when it's the player's turn. We set flags so the UI can accept a target click.
+                            if (playerWaiting) return; // already waiting for the player's click
+                            playerCanAct = true;
+                            playerWaiting = true;
+                            logCombat('Player turn: select an attack then click an enemy to perform the action.');
+                        }
+
+                        function performEnemyAction(){
+                            const enemyWrap = getFirstAliveEnemy();
+                            if (!enemyWrap) { combatRunning = false; return; }
+                            // Enemy uses simple attack: strMultiplier=1 magicMultiplier=0
+                            const atk = { strMultiplier: 1, magicMultiplier: 0 };
+                            const enemyStr = Number(enemyWrap.dataset.str) || 1;
+                            const enemyMag = Number(enemyWrap.dataset.mag) || 0;
+                            const target = PARTY_STATS['ONE'];
+                            const defense = Number(target.DEFENSE || 0);
+                            let dmg = Math.round(enemyMag * atk.magicMultiplier + enemyStr * atk.strMultiplier - defense);
+                            if (isNaN(dmg) || dmg < 1) dmg = 1;
+                            target.HEALTH = (Number(target.HEALTH) || Number(target.MAX_HEALTH) || 0) - dmg;
+                            // Update player health UI
+                            updatePlayerArea();
+                                        // Play hit animation on player image
+                                        try {
+                                            const pimg = document.getElementById('player');
+                                            if (pimg) {
+                                                pimg.classList.remove('hit-animation');
+                                                void pimg.offsetWidth;
+                                                pimg.classList.add('hit-animation');
+                                                setTimeout(()=> pimg.classList.remove('hit-animation'), 700);
+                                            }
+                                        } catch(e){}
+                                        if (Number(target.HEALTH) <= 0) {
+                                                logCombat('Player died. Redirecting to home...');
+                                                combatRunning = false;
+                                                setTimeout(()=> window.location.href = 'home.html', 700);
+                                                return;
+                                        }
+                        }
+
+                        const COMBAT_TICK_MS = 900; // slower tick so actions are visible
+                        const MIN_ACTION_INTERVAL = 0.6; // minimum interval (in scheduler units) between repeated actions
+
+                        // Loop tick
+                        function combatTick(){
+                            if (!combatRunning) return;
+                            // if no alive enemies or player dead -> end
+                            const aliveEnemy = getFirstAliveEnemy();
+                            if (!aliveEnemy) { combatRunning = false; return; }
+                            const playerAlive = Number(PARTY_STATS['ONE'].HEALTH) > 0;
+                            if (!playerAlive) { logCombat('Player died. Redirecting...'); window.location.href='home.html'; combatRunning = false; return; }
+
+                            const actor = pickNextActor();
+                            if (actor === 'player'){
+                                // Prompt player to act; actual advancement of nextPlayer happens when player clicks a target
+                                performPlayerAction();
+                            } else {
+                                performEnemyAction();
+                                nextEnemy += enemyInterval;
+                            }
+
+                            // schedule next tick
+                            setTimeout(combatTick, COMBAT_TICK_MS);
+                        }
+
+                        // Start the ticking loop
+                        setTimeout(combatTick, 500);
+                    }
+
+                            // Combat will start when the player clicks Start Combat (so they can choose an attack first)
+                            const startBtn = document.getElementById('start-combat-btn');
+                            if (startBtn) {
+                                startBtn.addEventListener('click', ()=>{
+                                    logCombat('Player initiated combat');
+                                    // Log initial stats
+                                    try {
+                                        const member = PARTY_STATS && PARTY_STATS['ONE'];
+                                        logCombat(`Player HP: ${member.HEALTH}/${member.MAX_HEALTH} STR:${member.STRENGTH} MAG:${member.MAGIC} SPD:${member.SPEED}`);
+                                        const first = getEnemyWrappers()[0];
+                                        if (first) logCombat(`Enemy HP: ${first.dataset.hp}/${first.dataset.maxHp} STR:${first.dataset.str} SPD:${first.dataset.speed||first.dataset.str}`);
+                                    } catch(e){}
+                                    startCombatLoop();
+                                    // disable start button after click
+                                    startBtn.disabled = true;
+                                    startBtn.style.opacity = 0.6;
+                                });
+                            }
+                    // -------------------- End combat engine --------------------
+
+        })();
+        </script>
 </body>
 </html>

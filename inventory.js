@@ -177,6 +177,7 @@ function equipItemToMember(item, memberKey = getSelectedMember()) {
   // Recalculate and re-render full inventory/equips/attacks/stats
   updateStats();
   renderInventory();
+    if (typeof saveGameData === 'function') saveGameData();
 }
 
 function unequipItemFromMember(item, memberKey = getSelectedMember()) {
@@ -213,6 +214,7 @@ function unequipItemFromMember(item, memberKey = getSelectedMember()) {
     // Recalculate and re-render everything
   updateStats();
   renderInventory();
+      if (typeof saveGameData === 'function') saveGameData();
   } else if (member[slotKey] === item.name && !item.equipped) {
     // Item with same name is equipped, but the one clicked is unequipped (duplicate case)
     // Just mark this unequipped copy as not equipped (it should already be false)
@@ -325,6 +327,35 @@ function generateAndShowItem() {
   const level = Math.floor(Math.random() * 10) + 1;
   generateRandomItem(level);
   renderInventory();
+  if (typeof saveGameData === 'function') saveGameData();
 }
 
 renderInventory();
+
+// Create Reset Inventory button after DOM is ready
+function ensureResetButton() {
+  if (document.getElementById('reset-inv-btn')) return;
+  const btn = document.createElement('button');
+  btn.id = 'reset-inv-btn';
+  btn.textContent = 'Reset Inventory';
+  btn.style.position = 'fixed';
+  btn.style.right = '10px';
+  btn.style.bottom = '10px';
+  btn.style.zIndex = 9999;
+  btn.style.padding = '8px 10px';
+  btn.style.background = '#c0392b';
+  btn.style.color = 'white';
+  btn.style.border = 'none';
+  btn.style.borderRadius = '6px';
+  btn.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
+  btn.addEventListener('click', () => {
+    if (typeof resetInventory === 'function') resetInventory();
+  });
+  document.body.appendChild(btn);
+}
+
+if (document.readyState === 'loading') {
+  window.addEventListener('DOMContentLoaded', ensureResetButton);
+} else {
+  ensureResetButton();
+}
