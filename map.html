@@ -36,5 +36,41 @@
   </div>
 
   <script src="script.js"></script>
+  
+  <!-- Debug/Test Button -->
+  <div style="position:fixed;bottom:20px;right:20px;z-index:9999;">
+    <button onclick="skipNextLevel()" style="background:rgba(255,165,0,0.9);color:white;border:2px solid rgba(255,140,0,1);padding:12px 20px;border-radius:8px;cursor:pointer;font-weight:bold;font-size:14px;box-shadow:0 4px 8px rgba(0,0,0,0.3);">
+      Skip Next Level (Test)
+    </button>
+  </div>
+  
+  <script>
+    function skipNextLevel() {
+      // Load progression to find next locked level
+      const progression = window.loadDungeonProgression ? window.loadDungeonProgression() : { unlockedUpToLevel: 1 };
+      const nextLevel = progression.unlockedUpToLevel;
+      
+      if (nextLevel <= 100) {
+        // Unlock the level using the global function
+        if (typeof window.clearLevelAndUnlock === 'function') {
+          window.clearLevelAndUnlock(nextLevel);
+          alert(`Level ${nextLevel} completed and Level ${nextLevel + 1} unlocked!`);
+          
+          // Refresh the map display
+          if (typeof renderGrid === 'function') {
+            renderGrid();
+          } else {
+            // Fallback: reload the page
+            window.location.reload();
+          }
+        } else {
+          alert('Unable to unlock level. clearLevelAndUnlock function not found.');
+          console.error('window.clearLevelAndUnlock is not available');
+        }
+      } else {
+        alert('All levels are already unlocked!');
+      }
+    }
+  </script>
 </body>
 </html>

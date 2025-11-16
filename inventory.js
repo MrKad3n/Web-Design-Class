@@ -13,6 +13,11 @@ function renderInventoryGrid() {
     return;
   }
   inventory.innerHTML = "";
+  
+  // Filter to only unequipped items and pack them
+  const unequippedItems = INVENTORY.filter(i => i && !i.equipped);
+  let itemIdx = 0;
+  
   for (let row = 0; row < invRows; row++) {
     for (let col = 0; col < invCols; col++) {
       const slot = document.createElement("div");
@@ -20,19 +25,22 @@ function renderInventoryGrid() {
       slot.dataset.row = row;
       slot.dataset.col = col;
 
-      const index = row * invCols + col;
-      const data = (typeof INVENTORY !== "undefined" && INVENTORY[index]) ? INVENTORY[index] : null;
-
+      const data = unequippedItems[itemIdx];
       const img = document.createElement("img");
       img.className = "inv-img";
 
-      if (data && !data.equipped) {
-        // Only show items that are not currently equipped
+      if (data) {
         img.src = data.image || "Assests/empty-slot.png";
         img.alt = data.name;
+        // Add rarity color border
+        if (data.rarity && typeof window.getRarityColor === 'function') {
+          const rarityColor = window.getRarityColor(data.rarity);
+          slot.style.border = `3px solid ${rarityColor}`;
+          slot.style.boxShadow = `0 0 8px ${rarityColor}`;
+        }
         slot.addEventListener('click', () => displayItemInfo(data));
+        itemIdx++;
       } else {
-        // Either empty slot or item is equipped (hidden)
         img.src = "Assests/empty-slot.png";
         img.alt = "Empty Slot";
       }
@@ -46,6 +54,7 @@ function renderInventoryGrid() {
 function renderInventory() {
   renderInventoryGrid();
   const memberKey = getSelectedMember();
+  renderMemberNameInput(memberKey);
   renderEquippedItems(memberKey);
   updateStatsDisplay(memberKey);
   renderAttacks(memberKey);
@@ -83,7 +92,8 @@ function renderEquippedItems(memberKey = getSelectedMember()) {
 function displayItemInfo(item) {
   const memberKey = getSelectedMember();
   const infoItem = document.getElementById('info-item');
-  infoItem.innerHTML = `\n    <h3>${item.name} Level ${item.level||1}</h3>\n    <img src="${item.image||'Assests/empty-slot.png'}" style="width:30%">\n    <p>Strength: ${item.strength||0} Magic: ${item.magic||0} Speed: ${item.speed||0}</p>\n    <p>Health: ${item.health||0} Defense: ${item.defense||0} Attack: ${item.attack||'none'}</p>\n    <div style="margin-top:8px">\n      <button id="equip-btn">Equip</button>\n      <button id="unequip-btn">Unequip</button>\n    </div>\n  `;
+  const rarityColor = (item.rarity && typeof window.getRarityColor === 'function') ? window.getRarityColor(item.rarity) : '#ffffff';
+  infoItem.innerHTML = `\n    <h3 style="color: ${rarityColor}">${item.name} Level ${item.level||1}</h3>\n    <img src="${item.image||'Assests/empty-slot.png'}" style="width:30%; border: 3px solid ${rarityColor}; box-shadow: 0 0 8px ${rarityColor}">\n    <p>Strength: ${item.strength||0} Magic: ${item.magic||0} Speed: ${item.speed||0}</p>\n    <p>Health: ${item.health||0} Defense: ${item.defense||0} Attack: ${item.attack||'none'}</p>\n    <div style="margin-top:8px">\n      <button id="equip-btn">Equip</button>\n      <button id="unequip-btn">Unequip</button>\n    </div>\n  `;
   const equipBtn = document.getElementById('equip-btn');
   const unequipBtn = document.getElementById('unequip-btn');
   // Determine equipped state: check item.equipped flag AND verify it's actually in a slot
@@ -119,6 +129,43 @@ function displayItemInfo(item) {
   unequipBtn.onclick = () => {
     unequipItemFromMember(item, memberKey);
   };
+  
+  // Add Delete button
+  const deleteBtn = document.createElement('button');
+  deleteBtn.textContent = 'Delete';
+  deleteBtn.style.background = '#c0392b';
+  deleteBtn.style.color = 'white';
+  deleteBtn.style.marginLeft = '8px';
+  deleteBtn.onclick = () => {
+    // Remove from INVENTORY array
+    const idx = INVENTORY.indexOf(item);
+    if (idx > -1) {
+      INVENTORY.splice(idx, 1);
+    }
+    // If it was equipped, unequip from all members
+    if (item.equipped) {
+      for (const mKey in PARTY_STATS) {
+        const m = PARTY_STATS[mKey];
+        if (!m) continue;
+        ['HELMET','CHEST','LEGS','BOOTS','MAINHAND','OFFHAND'].forEach(s => {
+          if (m[s] === item.name) {
+            m[s] = null;
+          }
+        });
+      }
+      // Remove attacks from this item
+      if (item._uid) removeAttackBySourceUid(item._uid, memberKey);
+    }
+    updateStats();
+    renderInventory();
+    if (typeof saveGameData === 'function') saveGameData();
+    infoItem.innerHTML = '<p>Item deleted.</p>';
+  };
+  
+  const btnContainer = infoItem.querySelector('div[style*="margin-top"]');
+  if (btnContainer) {
+    btnContainer.appendChild(deleteBtn);
+  }
 }
 
 function equipItemToMember(item, memberKey = getSelectedMember()) {
@@ -193,6 +240,14 @@ function unequipItemFromMember(item, memberKey = getSelectedMember()) {
     default: return;
   }
   
+  // Check if inventory has space (count unequipped items)
+  const unequippedCount = INVENTORY.filter(i => i && !i.equipped).length;
+  const maxSlots = invRows * invCols;
+  if (unequippedCount >= maxSlots) {
+    alert('Inventory is full! Cannot unequip item.');
+    return;
+  }
+  
   // Check if the item being unequipped is actually the equipped one (handles duplicates)
   const isItemEquipped = member[slotKey] === item.name && item.equipped;
   
@@ -264,8 +319,11 @@ function renderAttacks(memberKey = getSelectedMember()) {
     const equippedList = attacks.filter(a => equipped.has(a.id));
     if (equippedList.length === 0) attackContainer.innerHTML = '<div>No attacks equipped.</div>';
     equippedList.forEach(a => {
-      attackContainer.innerHTML += '<div class="attack-entry" data-id="'+a.id+'">' +
-        '<strong>'+a.name+'</strong> (from '+a.itemName+')<br>' +
+      // Find source item for rarity color
+      const sourceItem = INVENTORY.find(i => i._uid === a.sourceUid) || INVENTORY.find(i => i.name === a.itemName);
+      const rarityColor = (sourceItem && sourceItem.rarity && typeof window.getRarityColor === 'function') ? window.getRarityColor(sourceItem.rarity) : '#ffffff';
+      attackContainer.innerHTML += '<div class="attack-entry" data-id="'+a.id+'" style="border-left: 4px solid '+rarityColor+'; padding-left: 8px; margin: 4px 0;">' +
+        '<strong style="color: '+rarityColor+'">'+a.name+'</strong> (from '+a.itemName+')<br>' +
         'Str x'+a.strMultiplier+', Magic x'+a.magicMultiplier+', Status: '+a.status +
       '</div>';
     });
@@ -284,8 +342,11 @@ function renderAttacks(memberKey = getSelectedMember()) {
     const invList = attacks.filter(a => !equipped.has(a.id));
     if (invList.length === 0) invContainer.innerHTML = '<div>No attacks in inventory.</div>';
     invList.forEach(a => {
-      invContainer.innerHTML += '<div class="attack-entry inv" data-id="'+a.id+'">' +
-        '<strong>'+a.name+'</strong> (from '+a.itemName+')<br>' +
+      // Find source item for rarity color
+      const sourceItem = INVENTORY.find(i => i._uid === a.sourceUid) || INVENTORY.find(i => i.name === a.itemName);
+      const rarityColor = (sourceItem && sourceItem.rarity && typeof window.getRarityColor === 'function') ? window.getRarityColor(sourceItem.rarity) : '#ffffff';
+      invContainer.innerHTML += '<div class="attack-entry inv" data-id="'+a.id+'" style="border-left: 4px solid '+rarityColor+'; padding-left: 8px; margin: 4px 0;">' +
+        '<strong style="color: '+rarityColor+'">'+a.name+'</strong> (from '+a.itemName+')<br>' +
         'Str x'+a.strMultiplier+', Magic x'+a.magicMultiplier+', Status: '+a.status +
       '</div>';
     });
@@ -358,4 +419,32 @@ if (document.readyState === 'loading') {
   window.addEventListener('DOMContentLoaded', ensureResetButton);
 } else {
   ensureResetButton();
+}
+
+// Party member name management
+function renderMemberNameInput(memberKey = getSelectedMember()) {
+  const member = PARTY_STATS[memberKey];
+  if (!member) return;
+  const input = document.getElementById('member-name-input');
+  if (input) {
+    input.value = member.NAME || '';
+  }
+}
+
+function saveMemberName() {
+  const memberKey = getSelectedMember();
+  const member = PARTY_STATS[memberKey];
+  if (!member) return;
+  const input = document.getElementById('member-name-input');
+  if (input) {
+    const newName = input.value.trim();
+    if (newName) {
+      member.NAME = newName;
+      // Save to local storage
+      if (typeof saveGameData === 'function') saveGameData();
+      renderInventory();
+      // Update battle display if on battle page
+      if (typeof updatePartyDisplay === 'function') updatePartyDisplay();
+    }
+  }
 }

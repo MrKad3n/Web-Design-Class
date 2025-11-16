@@ -13,13 +13,76 @@ let SELECTED_MEMBER = 'ONE';
 
 let attackCounter = 1; // A simple counter to generate unique IDs
 const map = document.getElementById("map");
+const mapContainer = document.getElementById("map-container");
 const popup = document.getElementById("popup");
 const popupContent = document.getElementById("popup-content");
 
-const rows = 10;
-const cols = 10;
-const pathLength = 10;
+const rows = 20;
+const cols = 20;
+const pathLength = 100;
 let tileData = {};
+
+// --- Dungeon Progression Functions (global - accessible on all pages) ---
+function loadDungeonProgression() {
+  try {
+    const saved = localStorage.getItem('dungeonProgressionData');
+    return saved ? JSON.parse(saved) : { clearedLevels: [], unlockedUpToLevel: 1 };
+  } catch (e) {
+    return { clearedLevels: [], unlockedUpToLevel: 1 };
+  }
+}
+
+function saveDungeonProgression(progression) {
+  try {
+    localStorage.setItem('dungeonProgressionData', JSON.stringify(progression));
+  } catch (e) {
+    console.error('Failed to save dungeon progression', e);
+  }
+}
+
+// Mark a level as cleared and unlock the next one
+function clearLevelAndUnlock(level) {
+  console.log('clearLevelAndUnlock called for level:', level);
+  const progression = loadDungeonProgression();
+  console.log('Current progression before update:', progression);
+  
+  // Mark this level as cleared if not already
+  if (!progression.clearedLevels.includes(level)) {
+    progression.clearedLevels.push(level);
+  }
+  
+  // Unlock the next level if this is a new highest cleared
+  if (level >= progression.unlockedUpToLevel) {
+    progression.unlockedUpToLevel = level + 1;
+  }
+  
+  console.log('Updated progression:', progression);
+  saveDungeonProgression(progression);
+  
+  // Update tileData if it exists (it will on map.html)
+  if (typeof tileData !== 'undefined' && Object.keys(tileData).length > 0) {
+    for (const key in tileData) {
+      if (tileData[key].level === level) {
+        tileData[key].cleared = true;
+      }
+      // Enable access to all levels up to unlocked level
+      if (tileData[key].level <= progression.unlockedUpToLevel) {
+        tileData[key].status = true;
+      }
+    }
+    localStorage.setItem('dungeonTileData', JSON.stringify(tileData));
+    console.log('Updated tileData in localStorage');
+  } else {
+    console.log('tileData not available, progression saved for map reload');
+  }
+  
+  console.log(`Level ${level} cleared! Unlocked up to level ${progression.unlockedUpToLevel}`);
+}
+
+// Make globally accessible for battle.html
+window.clearLevelAndUnlock = clearLevelAndUnlock;
+window.loadDungeonProgression = loadDungeonProgression;
+window.saveDungeonProgression = saveDungeonProgression;
 
 if (map){
   console.log("Map found, initializing...");
@@ -27,8 +90,14 @@ if (map){
 // Function to generate the dungeon using recursive backtracking and save to local storage
 function generateAndSaveDungeon() {
   tileData = {}; // Clear existing tile data
-  const dungeonPath = [];
-  const visited = new Set();
+  let dungeonPath = [];
+  let visited = new Set();
+  let success = false;
+  let attempts = 0;
+  const maxAttempts = 50;
+  
+  // Reset dungeon progression: only level 1 is playable initially
+  localStorage.removeItem('dungeonProgressionData');
   
   // A helper function to find unvisited neighbors
   function getUnvisitedNeighbors(row, col) {
@@ -65,17 +134,54 @@ function generateAndSaveDungeon() {
       }
     }
     
-    // Backtrack: If no path was found, remove the current tile and return false
+    // Backtrack: remove current tile and visited marker
     dungeonPath.pop();
+    visited.delete(currentKey);
     return false;
   }
 
-  // Find a starting point
-  let startRow, startCol;
-  do {
-    startRow = Math.floor(Math.random() * rows);
-    startCol = Math.floor(Math.random() * cols);
-  } while (!findPath(startRow, startCol));
+  // Try multiple times to generate a valid path
+  while (!success && attempts < maxAttempts) {
+    dungeonPath = [];
+    visited = new Set();
+    const startRow = Math.floor(Math.random() * rows);
+    const startCol = Math.floor(Math.random() * cols);
+    success = findPath(startRow, startCol);
+    attempts++;
+    if (!success) {
+      console.log(`Attempt ${attempts} failed, retrying...`);
+    }
+  }
+  
+  if (!success) {
+    console.error('Failed to generate dungeon after', maxAttempts, 'attempts');
+    return;
+  }
+  
+  console.log(`Successfully generated ${dungeonPath.length}-tile dungeon in ${attempts} attempt(s)`);
+
+  // Helper: collect enemies by tier
+  function getEnemiesByTier(tier){
+    const list = [];
+    for (const key in ENEMY_BASE_STATS) {
+      const e = ENEMY_BASE_STATS[key];
+      if (e && Number(e.tier) === Number(tier) && e.image) list.push(e.image);
+    }
+    return list;
+  }
+
+  function levelToTier(level){
+    const lvl = Number(level)||1;
+    // Boss levels: 25, 50, 75, 100
+    if (lvl === 100) return 6; // Divine King (tier 6)
+    if (lvl === 75 || lvl === 50 || lvl === 25) return 5; // Boss tier 5
+    // Regular tiers based on level ranges
+    if (lvl <= 20) return 1;
+    if (lvl <= 40) return 2;
+    if (lvl <= 60) return 3;
+    if (lvl <= 80) return 4;
+    return 4; // 81-99 stay at tier 4
+  }
 
   // Populate tileData from the generated path
   dungeonPath.forEach((coords, index) => {
@@ -87,39 +193,78 @@ function generateAndSaveDungeon() {
     if (level === 1) {
       tile.title = "Start Tile";
       tile.description = "This is the beginning of the map.";
-      tile.cleared = true;
-      tile.status = true;
-      tile.enemyOne = "Enemies/skull.png";
-    } else if (level === pathLength) {
+      tile.cleared = false; // must be played first
+      tile.status = true; // accessible
+      const pool = getEnemiesByTier(1);
+      tile.enemyOne = pool.length ? pool[Math.floor(Math.random()*pool.length)] : null;
+      tile.enemyTwo = null;
+      tile.enemyThree = null;
+    } else if (level === 100) {
+      // Final boss: Divine King (tier 6)
+      tile.title = "Divine King";
+      tile.description = "The ultimate challenge awaits.";
+      tile.cleared = false;
+      tile.status = false;
+      tile.enemyOne = "Enemies/divineKing.png";
+      tile.enemyTwo = null;
+      tile.enemyThree = null;
+    } else if (level === 75 || level === 50 || level === 25) {
+      // Boss levels: tier 5
       tile.title = "Boss";
-      tile.description = "You've finally reached it.";
+      tile.description = "A powerful boss blocks your path.";
       tile.cleared = false;
       tile.status = false;
-      tile.enemyOne = "Enemies/shadow.png";
-    } else if ((level === pathLength/2)||(level===pathLength-1)) {
-      tile.title = "MiniBoss";
-      tile.description = "Rocky and cold up here.";
-      tile.cleared = false;
-      tile.status = false;
-      tile.enemyOne = "Enemies/slime.png";
-      tile.enemyTwo = "Enemies/slime.png";
-      tile.enemyThree = "Enemies/cursedKnight.png";
-    } else if (level === 2) {
-      tile.title = "Basic";
-      tile.description = "You entered a forest area.";
-      tile.cleared = false;
-      tile.status = true;
-      tile.enemyOne = "Enemies/skull.png";
-      tile.enemyTwo = "Enemies/slime.png";
+      const pool = getEnemiesByTier(5);
+      tile.enemyOne = pool.length ? pool[Math.floor(Math.random()*pool.length)] : null;
+      tile.enemyTwo = null;
       tile.enemyThree = null;
     } else {
+      // Regular tiles: choose tier by level bands; tier 5 excluded until 25
       tile.title = "Basic";
       tile.description = `A path leads you deeper into the dungeon.`;
       tile.cleared = false;
       tile.status = false;
-      tile.enemyOne = "Enemies/skull.png";
-      tile.enemyTwo = "Enemies/slime.png";
-      tile.enemyThree = "Enemies/alien.png";
+      
+      // After level 10, mix enemies from different tiers
+      let pool = [];
+      if (level <= 10) {
+        // Levels 1-10: single tier only
+        const tier = levelToTier(level);
+        pool = getEnemiesByTier(tier);
+      } else {
+        // After level 10: mix enemies from multiple tiers
+        const baseTier = levelToTier(level);
+        // Get enemies from base tier and one tier above/below
+        const tierRange = [];
+        if (baseTier > 1) tierRange.push(baseTier - 1);
+        tierRange.push(baseTier);
+        if (baseTier < 5) tierRange.push(baseTier + 1);
+        
+        // Combine enemies from all tiers in range
+        tierRange.forEach(t => {
+          pool = pool.concat(getEnemiesByTier(t));
+        });
+      }
+      
+      const count = (function enemiesCountForLevel(level){
+        const lvl = Number(level)||1;
+        if (lvl === 1) return 1;
+        if (lvl <= 10) return 1 + Math.floor(Math.random()*2); // 1-2
+        if (lvl <= 25) return 2; // steady 2
+        if (lvl <= 50) return 2 + Math.floor(Math.random()*2); // 2-3
+        if (lvl <= 75) return 3; // steady 3
+        if (lvl < 100) return 3 + Math.floor(Math.random()*2); // 3-4
+        return 1; // boss
+      })(level);
+      const picks = [];
+      for (let i=0; i<count; i++) {
+        if (!pool.length) break;
+        const img = pool[Math.floor(Math.random()*pool.length)];
+        picks.push(img);
+      }
+      tile.enemyOne = picks[0] || null;
+      tile.enemyTwo = picks[1] || null;
+      tile.enemyThree = picks[2] || null;
     }
 
     tileData[key] = tile;
@@ -147,6 +292,12 @@ function renderGrid() {
         cell.style.opacity = data.status ? 1 : 0.5;
         cell.style.borderColor = data.cleared ? "green" : "black";
         cell.textContent = `Lvl ${data.level}`;
+        // Boss marker styling for levels 25, 50, 75, 100
+        if (data.level === 25 || data.level === 50 || data.level === 75 || data.level === 100) {
+          cell.classList.add('boss-cell');
+        } else {
+          cell.classList.remove('boss-cell');
+        }
       } else {
         cell.style.visibility = "hidden";
       }
@@ -180,9 +331,12 @@ map.addEventListener("click", (e) => {
       const highestCleared = getHighestClearedLevel();
       const isAccessible = data.cleared || data.level === highestCleared + 1;
       
+      // Determine if this is a boss tile
+      const isBossTile = data.level === 25 || data.level === 50 || data.level === 75 || data.level === 100;
+      
       let battleButtonHTML = '';
       if (isAccessible) {
-        battleButtonHTML = `<button onclick="startBattle('${data.title}', ${data.level}, '${enemies.join(',')}')" class="battle-btn">Battle</button>`;
+        battleButtonHTML = `<button onclick="startBattle('${data.title}', ${data.level}, '${enemies.join(',')}', ${isBossTile})" class="battle-btn">Battle</button>`;
       }
 
       const html = `
@@ -195,7 +349,7 @@ map.addEventListener("click", (e) => {
           <button onclick="closePopup()" class="close-btn">Close</button>
         </div>
       `;
-      openPopup(html);
+      openPopup(html, cell);
     }
   }
 });
@@ -203,18 +357,69 @@ map.addEventListener("click", (e) => {
 // Function to get the highest cleared level
 function getHighestClearedLevel() {
   let highest = 0;
-  for (const key in tileData) {
-    if (tileData[key].cleared && tileData[key].level > highest) {
-      highest = tileData[key].level;
+  if (typeof tileData !== 'undefined' && tileData) {
+    for (const key in tileData) {
+      if (tileData[key].cleared && tileData[key].level > highest) {
+        highest = tileData[key].level;
+      }
     }
   }
   return highest;
 }
 
+// Function to get highest unlocked level
+function getHighestUnlockedLevel() {
+  const progression = loadDungeonProgression();
+  return progression.unlockedUpToLevel;
+}
+
 // Function to open the popup
-function openPopup(htmlContent) {
+function openPopup(htmlContent, anchorEl) {
     popupContent.innerHTML = htmlContent;
-    popup.style.display = "block";
+
+    // Ensure popup is child of map (not map-container) for proper absolute positioning
+    try {
+      if (map && popup.parentElement !== map.parentElement) {
+        map.parentElement.appendChild(popup);
+      }
+    } catch(e) {}
+
+    let top = 20, left = 20;
+    if (anchorEl && map) {
+      // Get position of the cell relative to the map element
+      const mapRect = map.getBoundingClientRect();
+      const cellRect = anchorEl.getBoundingClientRect();
+      // Position relative to map's coordinate space
+      top = (cellRect.top - mapRect.top) + cellRect.height + 8;
+      left = (cellRect.left - mapRect.left) + 8;
+    }
+
+    popup.style.position = 'absolute';
+    popup.style.visibility = 'hidden';
+    popup.style.display = 'block';
+    popup.style.top = `${top}px`;
+    popup.style.left = `${left}px`;
+
+    // Adjust if overflowing the map bounds
+    try {
+      const popupW = popup.offsetWidth;
+      const popupH = popup.offsetHeight;
+      const mapW = map ? map.offsetWidth : 1000;
+      const mapH = map ? map.offsetHeight : 1000;
+
+      // If overflowing right edge, shift left
+      if (left + popupW > mapW - 8) {
+        left = Math.max(8, mapW - popupW - 8);
+      }
+      // If overflowing bottom edge, shift up
+      if (top + popupH > mapH - 8) {
+        top = Math.max(8, mapH - popupH - 8);
+      }
+    } catch(e) {}
+
+    popup.style.top = `${top}px`;
+    popup.style.left = `${left}px`;
+    popup.style.visibility = 'visible';
 }
 
 // Function to close the popup
@@ -223,12 +428,13 @@ function closePopup() {
 }
 
 // Function to start a battle with the selected enemies
-function startBattle(stageName, level, enemyImages) {
+function startBattle(stageName, level, enemyImages, isBossTile) {
     // Store battle data in sessionStorage for use in battle.html
     const battleData = {
         stageName: stageName,
         level: level,
-        enemies: enemyImages.split(',')
+        enemies: enemyImages.split(','),
+        isBossTile: isBossTile || false
     };
     sessionStorage.setItem('battleData', JSON.stringify(battleData));
     
@@ -252,6 +458,22 @@ function initialize() {
   const savedData = localStorage.getItem('dungeonTileData');
   if (savedData) {
     tileData = JSON.parse(savedData);
+    // Apply saved progression to tile status
+    const progression = loadDungeonProgression();
+    console.log('Loading progression:', progression);
+    for (const key in tileData) {
+      const level = tileData[key].level;
+      // Mark cleared levels
+      if (progression.clearedLevels.includes(level)) {
+        tileData[key].cleared = true;
+      }
+      // Enable levels up to highest unlocked (but keep 1 and 2 always accessible)
+      if (level <= progression.unlockedUpToLevel) {
+        tileData[key].status = true;
+      }
+    }
+    // Save the updated tileData back to localStorage
+    localStorage.setItem('dungeonTileData', JSON.stringify(tileData));
   } else {
     generateAndSaveDungeon();
   }
@@ -260,6 +482,7 @@ function initialize() {
 
 // The button click function to regenerate the dungeon
 function dungeonClick() {
+  if (!confirm('Regenerate the dungeon? This will reset progression to the initial state.')) return;
   generateAndSaveDungeon();
   renderGrid();
 }
@@ -268,9 +491,109 @@ function dungeonClick() {
 window.onload = initialize;
 }
 
+// --- Dungeon Progression Functions (global - accessible on all pages) ---
+function loadDungeonProgression() {
+  try {
+    const saved = localStorage.getItem('dungeonProgression');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch (e) {
+    console.error('Failed to load dungeon progression', e);
+  }
+  // Default: only level 1 unlocked
+  return { clearedLevels: [], unlockedUpToLevel: 1 };
+}
+
+function saveDungeonProgression(progression) {
+  try {
+    localStorage.setItem('dungeonProgression', JSON.stringify(progression));
+  } catch (e) {
+    console.error('Failed to save dungeon progression', e);
+  }
+}
+
+// Mark a level as cleared and unlock the next one
+function clearLevelAndUnlock(level) {
+  console.log('clearLevelAndUnlock called for level:', level);
+  const progression = loadDungeonProgression();
+  console.log('Current progression before update:', progression);
+  
+  // Mark this level as cleared if not already
+  if (!progression.clearedLevels.includes(level)) {
+    progression.clearedLevels.push(level);
+  }
+  
+  // Unlock the next level if this is a new highest cleared
+  if (level >= progression.unlockedUpToLevel) {
+    progression.unlockedUpToLevel = level + 1;
+  }
+  
+  console.log('Updated progression:', progression);
+  saveDungeonProgression(progression);
+  
+  // Update tileData if it exists (it will on map.html)
+  if (typeof tileData !== 'undefined' && Object.keys(tileData).length > 0) {
+    for (const key in tileData) {
+      if (tileData[key].level === level) {
+        tileData[key].cleared = true;
+      }
+      // Enable access to all levels up to unlocked level
+      if (tileData[key].level <= progression.unlockedUpToLevel) {
+        tileData[key].status = true;
+      }
+    }
+    localStorage.setItem('dungeonTileData', JSON.stringify(tileData));
+    console.log('Updated tileData in localStorage');
+  } else {
+    console.log('tileData not available, progression saved for map reload');
+  }
+  
+  console.log(`Level ${level} cleared! Unlocked up to level ${progression.unlockedUpToLevel}`);
+}
+
+// Make clearLevelAndUnlock globally accessible for battle.html
+window.clearLevelAndUnlock = clearLevelAndUnlock;
+
+function getHighestClearedLevel() {
+  let highest = 0;
+  if (typeof tileData !== 'undefined') {
+    for (const key in tileData) {
+      if (tileData[key].cleared && tileData[key].level > highest) {
+        highest = tileData[key].level;
+      }
+    }
+  }
+  return highest;
+}
+
+function getHighestUnlockedLevel() {
+  const progression = loadDungeonProgression();
+  return progression.unlockedUpToLevel;
+}
+
+// Make these globally accessible too
+window.getHighestClearedLevel = getHighestClearedLevel;
+window.getHighestUnlockedLevel = getHighestUnlockedLevel;
+
 // --- Global game data accessible on all pages ---
-// These are declared here (after if(map) block) so they're globally accessible
 const INVENTORY = []; // Holds all inventory items globally
+
+// Rarity color mapping
+function getRarityColor(rarity) {
+  const colors = {
+    'Base': '#9d9d9d',
+    'Common': '#ffffff',
+    'Uncommon': '#1eff00',
+    'Rare': '#0070dd',
+    'Epic': '#a335ee',
+    'Legendary': '#ff8000',
+    'Mythical': '#ff5353ff',
+    'Artifact': '#e0b83fff'
+  };
+  return colors[rarity] || '#ffffff';
+}
+window.getRarityColor = getRarityColor;
 
 const ITEM_TABLE = {
   "Wooden Sword": {
@@ -684,10 +1007,10 @@ const ITEM_TABLE = {
   "Spell Blade": {
     slot: "Weapon",
     rarity: "Mythical",
-    strength: 50,
+    strength: 500,
     speed: 1,
     magic: 5,
-    defense: 9,
+    defense: 900,
     health: 0,
     attack: "spell infused",
     ability: 18,
@@ -835,6 +1158,8 @@ const ENEMY_BASE_STATS = {
     speed:3.5,
     defense:0,
     hBars:1,
+    image:"Enemies/skull.png",
+    tier:1,
   },
   'slime': {
     health:45,
@@ -843,6 +1168,8 @@ const ENEMY_BASE_STATS = {
     speed:2,
     defense:0.15,
     hBars:1,
+    image:"Enemies/slime.png",
+    tier:2,
   },
   'alien': {
     health:20,
@@ -851,6 +1178,8 @@ const ENEMY_BASE_STATS = {
     speed:4,
     defense:0,
     hBars:1,
+    image:"Enemies/alien.png",
+    tier:3,
   },
   'Cursed_Knight': {
     health:65,
@@ -859,6 +1188,8 @@ const ENEMY_BASE_STATS = {
     speed:6.5,
     defense:30,
     hBars:1,
+    image:"Enemies/cursedKnight.png",
+    tier:4,
   },
   'Shadow': {
     health:110,
@@ -867,6 +1198,8 @@ const ENEMY_BASE_STATS = {
     speed:20,
     defense:0,
     hBars:1,
+    image:"Enemies/shadow.png",
+    tier:5,
   },
   //Forest Type Enemy Stats
   'Sapling': {
@@ -876,6 +1209,8 @@ const ENEMY_BASE_STATS = {
     speed:1,
     defense:0,
     hBars:1,
+    image:"Enemies/sapling.png",
+    tier:1,
   },
   'Vine_Lasher': {
     health:30,
@@ -884,6 +1219,8 @@ const ENEMY_BASE_STATS = {
     speed:3,
     defense:0,
     hBars:1,
+    image:"Enemies/vineLasher.png",
+    tier:2,
   },
   'Treant': {
     health:50,
@@ -892,22 +1229,107 @@ const ENEMY_BASE_STATS = {
     speed:2,
     defense:15,
     hBars:1,
+    image:"Enemies/treant.png",
+    tier:3,
+    specialEffect: "Rooted Defender: High defense, slow but steady"
   },
   'Elder_Ent': {
     health:30,
     strength:0,
     magic:14,
     speed:4,
-    defense:70,
+    defense:30,
     hBars:1,
+    image:"Enemies/elderEnt.png",
+    tier:4,
+    specialEffect: "Ancient Magic: Extremely high defense and magic damage"
   },
   'Worldroot': {
     health:150,
     strength:3,
     magic:15,
     speed:6,
+    defense:5,
+    hBars:1,
+    image:"Enemies/worldroot.png",
+    tier:5,
+    specialEffect: "BOSS: Nature's Wrath - massive HP pool"
+  },
+  //Army Enemy Stats
+  'Knight': {
+    health:35,
+    strength:8,
+    magic:0,
+    speed:2,
+    defense:2,
+    hBars:1,
+    image:"Enemies/knight.png",
+    tier:1,
+  },
+  'Archer': {
+    health:20,
+    strength:6,
+    magic:0,
+    speed:4,
+    defense:1,
+    hBars:1,
+    image:"Enemies/archer.png",
+    tier:2,
+  },
+  'Mage': {
+    health:20,
+    strength:0,
+    magic:8,
+    speed:5,
     defense:0,
     hBars:1,
+    image:"Enemies/mage.png",
+    tier:3,
+  },
+  'Kings-Guard': {
+    health:50,
+    strength:12,
+    magic:0,
+    speed:4,
+    defense:15,
+    hBars:1,
+    image:"Enemies/kingsGuard.png",
+    tier:4,
+    specialEffect: "Royal Protector: Balanced high-tier warrior"
+  },
+  'King': {
+    health:200,
+    strength:10,
+    magic:10,
+    speed:2,
+    defense:20,
+    hBars:1,
+    image:"Enemies/king.png",
+    tier:5,
+    specialEffect: "BOSS: Royal Authority - hybrid offense with heavy defense"
+  },
+  //Final Boss Enemy Stats
+  'divineKing': {
+    health:300,
+    strength:15,
+    magic:15,
+    speed:3,
+    defense:20,
+    hBars:1,
+    image:"Enemies/divineKing.png",
+    tier:6,
+    specialEffect: "FINAL BOSS Phase 1: Divine power incarnate"
+  },
+  'demonKing': {
+    health:500,
+    strength:20,
+    magic:20,
+    speed:4,
+    defense:25,
+    hBars:1,
+    image:"Enemies/demonKing.png",
+    tier:6,
+    specialEffect: "FINAL BOSS Phase 2: Demonic transformation - ultimate power"
   }
 };
 
@@ -1083,44 +1505,119 @@ function updateHealth(amount, member) {
  * @param {number} level - The level to scale the item to.
  * @returns {object} The generated item object.
  */
-function generateRandomItem(level) {
-  // Get all item names from ITEM_TABLE
-  const itemNames = Object.keys(ITEM_TABLE);
-  // Pick a random item
-  const randomName = itemNames[Math.floor(Math.random() * itemNames.length)];
-  const baseItem = ITEM_TABLE[randomName];
+function generateRandomItem(level, forceRarity = null) {
+  // Determine allowed rarities and weights based on level
+  const lvl = Math.max(1, Number(level) || 1);
+  const R = {
+    Base: 'Base',
+    Common: 'Common',
+    Uncommon: 'Uncommon',
+    Rare: 'Rare',
+    Epic: 'Epic',
+    Legendary: 'Legendary',
+    Mythical: 'Mythical',
+    Artifact: 'Artifact', // treat as Divine-equivalent in this project
+  };
 
-  // Deep copy base stats
-  const item = JSON.parse(JSON.stringify(baseItem));
-  item.name = randomName;
-
-  // Scaling factor
-  const scale = Math.sqrt(level);
-
-  // Helper to scale stat (positive: scale, negative: percent)
-  function scaleStat(stat, baseValue) {
-    if (baseValue === 0) return 0;
-    if (baseValue > 0) {
-      return Math.round(baseValue * scale);
-    } else {
-      // Negative values are percent-based, e.g. -10 means -10% after scaling
-      return Math.round(baseValue); // Keep as percent for later use
+  // If forceRarity is specified (e.g., 'mythic' or 'Mythical'), use it directly
+  let chosenRarity = null;
+  if (forceRarity) {
+    // Normalize the input (handle 'mythic' -> 'Mythical')
+    const normalized = forceRarity.charAt(0).toUpperCase() + forceRarity.slice(1).toLowerCase();
+    if (normalized === 'Mythic') {
+      chosenRarity = R.Mythical;
+    } else if (R[normalized]) {
+      chosenRarity = R[normalized];
     }
   }
 
-  // Scale stats
+  // If no forced rarity, use normal weighted random selection
+  if (!chosenRarity) {
+    // Build a weight map per bucket; higher levels increase higher-rarity odds but cap at Legendary
+    let weights = {};
+    if (lvl <= 10) {
+      // Uncommon and lower only
+      weights = { [R.Base]: 50, [R.Common]: 40, [R.Uncommon]: 10 };
+    } else if (lvl <= 20) {
+      // Rare and lower
+      weights = { [R.Base]: 30, [R.Common]: 40, [R.Uncommon]: 20, [R.Rare]: 10 };
+    } else if (lvl <= 30) {
+      // Epic and lower
+      weights = { [R.Base]: 20, [R.Common]: 35, [R.Uncommon]: 25, [R.Rare]: 15, [R.Epic]: 5 };
+    } else if (lvl <= 40) {
+      // Legendary and lower
+      weights = { [R.Base]: 5, [R.Common]: 20, [R.Uncommon]: 25, [R.Rare]: 25, [R.Epic]: 15, [R.Legendary]: 10 };
+    } else {
+      // 40+: increase chances for higher rarities but cap at Legendary; exclude Mythical/Artifact
+      weights = { [R.Common]: 10, [R.Uncommon]: 20, [R.Rare]: 25, [R.Epic]: 25, [R.Legendary]: 20 };
+    }
+
+    // Exclude Mythical and Artifact from random drops at all levels
+    delete weights[R.Mythical];
+    delete weights[R.Artifact];
+
+    // Pick a rarity by weighted random among available items
+    function pickWeighted(weightsMap) {
+      // Filter out rarities that have zero available items
+      const entries = Object.entries(weightsMap).filter(([rar, w]) => {
+        if (!w) return false;
+        // Confirm at least one item of this rarity exists
+        for (const name in ITEM_TABLE) if (ITEM_TABLE[name] && ITEM_TABLE[name].rarity === rar) return true;
+        return false;
+      });
+      if (entries.length === 0) return null;
+      const total = entries.reduce((s, [, w]) => s + w, 0);
+      let r = Math.random() * total;
+      for (const [rar, w] of entries) { r -= w; if (r <= 0) return rar; }
+      return entries[entries.length - 1][0];
+    }
+
+    chosenRarity = pickWeighted(weights);
+    if (!chosenRarity) {
+      // Fallback: allow any rarity up to Legendary
+      chosenRarity = R.Common;
+    }
+  }
+
+  // Collect items of chosen rarity (fallback to lower rarities if none)
+  function itemsOfRarity(rar) {
+    return Object.keys(ITEM_TABLE).filter(n => ITEM_TABLE[n] && ITEM_TABLE[n].rarity === rar);
+  }
+
+  let candidates = itemsOfRarity(chosenRarity);
+  if (candidates.length === 0) {
+    // Fallback ladder from higher to lower within cap
+    const ladder = [R.Legendary, R.Epic, R.Rare, R.Uncommon, R.Common, R.Base];
+    for (const rar of ladder) {
+      if (rar === R.Mythical || rar === R.Artifact) continue;
+      const arr = itemsOfRarity(rar);
+      if (arr.length) { candidates = arr; chosenRarity = rar; break; }
+    }
+  }
+
+  // If still empty, pick any item as absolute fallback
+  if (candidates.length === 0) candidates = Object.keys(ITEM_TABLE);
+
+  const randomName = candidates[Math.floor(Math.random() * candidates.length)];
+  const baseItem = ITEM_TABLE[randomName];
+  const item = JSON.parse(JSON.stringify(baseItem));
+  item.name = randomName;
+
+  // Scale stats based on level (keep negative as percent flags)
+  const scale = Math.sqrt(lvl);
+  function scaleStat(stat, baseValue) {
+    if (!baseValue) return 0;
+    if (baseValue > 0) return Math.round(baseValue * scale);
+    return Math.round(baseValue);
+  }
   item.strength = scaleStat('strength', item.strength);
   item.speed = scaleStat('speed', item.speed);
   item.magic = scaleStat('magic', item.magic);
   item.defense = scaleStat('defense', item.defense);
   item.health = scaleStat('health', item.health);
+  item.level = lvl;
 
-  // Add level info
-  item.level = level;
-
-  // Add to inventory
   INVENTORY.push(item);
-
   return item;
 }
 

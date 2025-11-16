@@ -1,6 +1,7 @@
 
 /*animations*/
 
+
 @keyframes title-grow {
     0% {
         transform: scale(0.9) rotate(9deg);
@@ -115,6 +116,7 @@
     }
   }
 
+ 
 /*titles and headings*/
 
 #esc{

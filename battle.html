@@ -25,26 +25,30 @@
             #battle-container {
                 display: grid;
                 grid-template-columns: 15% 1fr 15%;
-                grid-template-rows: auto 1fr auto;
-                gap: 1rem;
+                grid-template-rows: auto auto 1fr auto;
+                gap: 0.5rem;
                 flex: 1;
-                padding: 1rem;
+                padding: 0.5rem;
                 box-sizing: border-box;
+                max-height: 100vh;
+                overflow: hidden;
             }
             
             /* Central arena area with dark semi-transparent overlay to highlight battle space */
             .arena {
                 grid-column: 1 / -1;
-                grid-row: 2;
+                grid-row: 3;
                 background: rgba(0, 0, 0, 0.3);
                 border: 3px solid rgba(255, 215, 0, 0.5);
                 border-radius: 10px;
-                padding: 2rem;
+                padding: 1rem;
                 display: grid;
-                grid-template-columns: 1fr 2fr 1fr;
-                gap: 2rem;
-                align-items: center;
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 1rem;
+                align-items: stretch;
                 box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 215, 0, 0.3);
+                min-height: 0;
+                overflow: hidden;
             }
             
             /* Party sidebar - positioned above arena */
@@ -53,13 +57,46 @@
                 grid-row: 1;
                 display: flex;
                 flex-direction: column;
-                gap: 0.5rem;
-                max-height: 150px;
+                gap: 0.3rem;
+                max-height: 120px;
                 overflow-y: auto;
                 background: rgba(0, 0, 0, 0.5);
                 border: 2px solid rgba(255, 255, 255, 0.3);
                 border-radius: 5px;
-                padding: 0.5rem;
+                padding: 0.4rem;
+            }
+            
+            /* Player stats display */
+            #player-stats-display {
+                grid-column: 1 / -1;
+                grid-row: 2;
+                background: rgba(0, 0, 0, 0.7);
+                border: 2px solid rgba(255, 215, 0, 0.6);
+                border-radius: 5px;
+                padding: 0.5rem 1rem;
+                display: flex;
+                justify-content: space-around;
+                align-items: center;
+                color: white;
+                font-size: 0.9rem;
+            }
+            
+            #player-stats-display .stat-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 0.2rem;
+            }
+            
+            #player-stats-display .stat-label {
+                color: rgba(255, 215, 0, 0.8);
+                font-size: 0.75rem;
+                font-weight: bold;
+            }
+            
+            #player-stats-display .stat-value {
+                font-size: 1rem;
+                font-weight: bold;
             }
             
             /* Leave Battle Button */
@@ -67,7 +104,7 @@
                 grid-column: 3;
                 grid-row: 1;
                 align-self: start;
-                padding: 0.75rem 1.5rem;
+                padding: 0.5rem 1rem;
                 background: rgba(220, 53, 69, 0.8);
                 color: white;
                 border: 2px solid rgba(220, 53, 69, 1);
@@ -126,9 +163,14 @@
             #enemy-area {
                 display: flex;
                 flex-direction: column;
-                justify-content: center;
+                justify-content: flex-start;
                 align-items: center;
                 position: relative;
+                width: 100%;
+                height: 100%;
+                overflow-y: auto;
+                padding: 0.5rem;
+                box-sizing: border-box;
             }
             
             #enemy-area h2 {
@@ -145,10 +187,12 @@
             #enemies {
                 position: relative;
                 width: 100%;
-                height: 300px;
+                min-height: 150px;
+                max-height: 200px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
+                flex-shrink: 0;
             }
             
             #enemies img {
@@ -178,18 +222,158 @@
                 filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.6));
             }
             
+            /* Status effect display */
+            .status-effects-display {
+                position: absolute;
+                bottom: -25px;
+                left: 50%;
+                transform: translateX(-50%);
+                display: none;
+                font-size: 18px;
+                background: rgba(0, 0, 0, 0.8);
+                padding: 2px 8px;
+                border-radius: 8px;
+                border: 1px solid rgba(255, 215, 0, 0.5);
+                white-space: nowrap;
+                z-index: 100;
+            }
+            
+            .status-effects-display span {
+                margin: 0 2px;
+            }
+            
+            #player-status-effects {
+                text-align: center;
+                color: #ffaa00;
+                font-weight: bold;
+            }
+            
+            /* Turn order display */
+            .turn-box {
+                width: 50px;
+                height: 50px;
+                border-radius: 8px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                position: relative;
+                transition: all 0.3s ease;
+                border: 2px solid transparent;
+            }
+            
+            .turn-box img {
+                width: 35px;
+                height: 35px;
+                object-fit: contain;
+            }
+            
+            .turn-box.player-turn {
+                background: rgba(40, 167, 69, 0.3);
+                border-color: rgba(40, 167, 69, 1);
+                box-shadow: 0 0 15px rgba(40, 167, 69, 0.6);
+            }
+            
+            .turn-box.enemy-turn {
+                background: rgba(220, 53, 69, 0.3);
+                border-color: rgba(220, 53, 69, 1);
+                box-shadow: 0 0 15px rgba(220, 53, 69, 0.6);
+            }
+            
+            .turn-box.active {
+                transform: scale(1.15);
+                border-width: 3px;
+            }
+            
+            .turn-box.player-turn.active {
+                box-shadow: 0 0 25px rgba(40, 167, 69, 1);
+            }
+            
+            .turn-box.enemy-turn.active {
+                box-shadow: 0 0 25px rgba(220, 53, 69, 1);
+            }
+            
+            .turn-box .enemy-number {
+                position: absolute;
+                bottom: -2px;
+                right: -2px;
+                background: rgba(0, 0, 0, 0.9);
+                color: white;
+                font-size: 10px;
+                font-weight: bold;
+                padding: 2px 4px;
+                border-radius: 3px;
+                min-width: 14px;
+                text-align: center;
+            }
+            
+            /* Enemy tooltip */
+            .enemy-tooltip {
+                position: fixed;
+                background: rgba(0, 0, 0, 0.95);
+                border: 2px solid rgba(255, 215, 0, 0.8);
+                border-radius: 8px;
+                padding: 12px 16px;
+                color: white;
+                font-size: 14px;
+                z-index: 10000;
+                pointer-events: none;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+                max-width: 300px;
+                display: none;
+            }
+            
+            .enemy-tooltip.active {
+                display: block;
+            }
+            
+            .enemy-tooltip h4 {
+                margin: 0 0 8px 0;
+                color: #ffd700;
+                font-size: 16px;
+                border-bottom: 1px solid rgba(255, 215, 0, 0.5);
+                padding-bottom: 4px;
+            }
+            
+            .enemy-tooltip .stat-row {
+                margin: 4px 0;
+                display: flex;
+                justify-content: space-between;
+            }
+            
+            .enemy-tooltip .special-effect {
+                margin-top: 8px;
+                padding-top: 8px;
+                border-top: 1px solid rgba(255, 215, 0, 0.3);
+                color: #ffaa00;
+                font-style: italic;
+            }
+            
+            @media (max-width: 768px) {
+                .enemy-tooltip {
+                    max-width: 250px;
+                    font-size: 12px;
+                }
+            }
+            
             /* Player area - left side of arena */
             #player-area {
                 display: flex;
                 flex-direction: column;
-                justify-content: center;
+                justify-content: flex-start;
                 align-items: center;
                 position: relative;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+                padding: 0.5rem;
+                box-sizing: border-box;
             }
             
             .player-bars {
                 width: 100%;
-                margin-bottom: 1rem;
+                margin-bottom: 0.5rem;
+                flex-shrink: 0;
             }
             
             .health-bar, .mana-bar {
@@ -207,10 +391,13 @@
             
             #player {
                 max-width: 100%;
-                max-height: 280px;
+                max-height: 150px;
+                width: auto;
+                height: auto;
                 object-fit: contain;
                 filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.5));
                 transition: transform 0.3s ease;
+                flex-shrink: 1;
             }
             
             #player:hover {
@@ -220,16 +407,18 @@
             /* Attacks area - bottom center */
             #Attacks {
                 grid-column: 1 / -1;
-                grid-row: 3;
+                grid-row: 4;
                 display: flex;
                 flex-direction: row;
-                gap: 0.5rem;
-                max-height: 120px;
+                gap: 0.4rem;
+                min-height: 80px;
+                max-height: 100px;
                 overflow-x: auto;
+                overflow-y: hidden;
                 background: rgba(0, 0, 0, 0.5);
                 border: 2px solid rgba(255, 255, 255, 0.3);
                 border-radius: 5px;
-                padding: 0.5rem;
+                padding: 0.4rem;
                 justify-content: flex-end;
             }
             
@@ -237,15 +426,15 @@
                 display: flex;
                 flex-direction: column;
                 align-items: center;
-                gap: 0.3rem;
-                padding: 0.5rem;
+                gap: 0.2rem;
+                padding: 0.3rem;
                 cursor: pointer;
                 transition: all 0.2s;
                 background: rgba(255, 255, 255, 0.05);
                 border-radius: 3px;
                 border: 1px solid transparent;
                 flex-shrink: 0;
-                min-width: 80px;
+                min-width: 70px;
             }
             
             .attack-slot:hover {
@@ -255,8 +444,8 @@
             }
             
             .attack-slot img {
-                width: 40px;
-                height: 40px;
+                width: 35px;
+                height: 35px;
             }
             
             .attack-slot span {
@@ -273,12 +462,14 @@
             @media (max-width: 1200px) {
                 #battle-container {
                     grid-template-columns: 1fr;
+                    grid-template-rows: auto auto auto 1fr auto;
                     gap: 0.5rem;
                     padding: 0.5rem;
                 }
                 
                 .arena {
                     grid-template-columns: 1fr;
+                    grid-row: 3;
                     padding: 1rem;
                     gap: 1rem;
                 }
@@ -291,13 +482,18 @@
                     max-width: 100%;
                 }
                 
+                #player-stats-display {
+                    grid-row: 2;
+                }
+                
                 #Attacks {
                     grid-column: 1;
-                    grid-row: 3;
+                    grid-row: 4;
                 }
                 
                 #enemies {
-                    height: 250px;
+                    min-height: 200px;
+                    max-height: 250px;
                 }
                 
                 #player {
@@ -308,16 +504,23 @@
             @media (max-width: 768px) {
                 body#battle {
                     padding: 0;
+                    height: auto;
+                    min-height: 100vh;
                 }
                 
                 #battle-container {
                     gap: 0.3rem;
                     padding: 0.3rem;
+                    grid-template-rows: auto auto auto 1fr auto;
+                    max-height: none;
+                    height: auto;
+                    min-height: 100vh;
                 }
                 
                 .arena {
                     grid-template-columns: 1fr;
-                    padding: 1rem 0.5rem;
+                    grid-row: 3;
+                    padding: 0.5rem;
                     gap: 0.5rem;
                 }
                 
@@ -325,20 +528,42 @@
                     flex-direction: row;
                     gap: 0.3rem;
                     max-width: 100%;
+                    grid-row: 1;
                 }
                 
                 .party-slot span {
                     display: none;
                 }
                 
+                #player-stats-display {
+                    grid-row: 2;
+                    flex-wrap: wrap;
+                    padding: 0.3rem 0.5rem;
+                    font-size: 0.8rem;
+                }
+                
+                #player-stats-display .stat-item {
+                    min-width: 60px;
+                }
+                
                 #Attacks {
-                    gap: 0.3rem;
-                    padding: 0.3rem;
+                    gap: 0.4rem;
+                    padding: 0.5rem;
+                    grid-row: 4;
+                    position: relative;
+                    z-index: 1;
+                    min-height: 90px;
+                    max-height: 120px;
                 }
                 
                 .attack-slot {
-                    min-width: 60px;
-                    padding: 0.3rem;
+                    min-width: 65px;
+                    padding: 0.4rem;
+                }
+                
+                .attack-slot img {
+                    width: 40px;
+                    height: 40px;
                 }
                 
                 .attack-slot span {
@@ -346,11 +571,16 @@
                 }
                 
                 #enemies {
-                    height: 200px;
+                    min-height: 150px;
+                    max-height: 200px;
                 }
                 
                 #player {
-                    max-height: 150px;
+                    max-height: 120px;
+                }
+                
+                #player-area {
+                    padding: 0.3rem;
                 }
             }
         </style>
@@ -388,7 +618,39 @@
         <!--Leave Battle Button - top right-->
         <div style="display:flex;gap:8px;justify-content:flex-end;align-items:center;">
             <button id="leave-battle-btn" onclick="leaveBattle()">Leave Battle</button>
-            <button id="start-combat-btn" style="background:rgba(40,167,69,0.85);color:white;border:2px solid rgba(40,167,69,1);padding:0.5rem 1rem;border-radius:5px;cursor:pointer;">Start Combat</button>
+            <button id="start-combat-btn" onclick="startCombat()" style="background:rgba(40,167,69,0.85);color:white;border:2px solid rgba(40,167,69,1);padding:0.5rem 1rem;border-radius:5px;cursor:pointer;">Start Combat</button>
+        </div>
+        
+        <!--Turn Order Queue Display-->
+        <div id="turn-order-display" style="margin-top:1rem;padding:0.5rem;background:rgba(0,0,0,0.3);border-radius:8px;border:1px solid rgba(255,255,255,0.1);max-width:600px;">
+            <h3 style="margin:0 0 0.5rem 0;font-size:14px;text-align:center;color:#ffaa00;">Turn Order</h3>
+            <div id="turn-order-queue" style="display:flex;gap:8px;justify-content:flex-start;align-items:center;overflow-x:auto;padding:4px;">
+                <!-- Turn order boxes will be inserted here -->
+            </div>
+        </div>
+        
+        <!--Player Stats Display-->
+        <div id="player-stats-display">
+            <div class="stat-item">
+                <span class="stat-label">HP</span>
+                <span class="stat-value" id="stat-hp">100/100</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Strength</span>
+                <span class="stat-value" id="stat-strength">10</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Magic</span>
+                <span class="stat-value" id="stat-magic">10</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Speed</span>
+                <span class="stat-value" id="stat-speed">10</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Defense</span>
+                <span class="stat-value" id="stat-defense">5</span>
+            </div>
         </div>
         
         <!--Central Arena-->
@@ -462,6 +724,10 @@
         <!-- Core game script to access PARTY_STATS, INVENTORY, ENEMY_BASE_STATS, etc. -->
         <script src="script.js"></script>
         <script>
+        // Debug: Check what's available from script.js
+        console.log('window.clearLevelAndUnlock:', typeof window.clearLevelAndUnlock);
+        console.log('window object keys sample:', Object.keys(window).filter(k => k.includes('clear') || k.includes('Level')));
+        
         // Battle page initialization: read session battleData, update UI
         (function(){
             // Read battleData from sessionStorage
@@ -470,9 +736,78 @@
             const level = battleData.level || 1;
             const enemyImages = battleData.enemies && battleData.enemies.length ? battleData.enemies : ['Enemies/skull.png'];
 
+            // Track active battle member and battle state
+            let activeBattleMember = 'ONE';
+            let battleEnemyStates = {}; // Store enemy HP across member switches
+            const battleParticipants = new Set(); // Track members who participated this battle
+            
+            // Status effect tracking: each enemy/player has arrays of effects
+            // Effect format: { type: 'burn'|'leech'|'bleed'|'grim', turnsLeft: N, stacks: N, sourceData: {} }
+            let enemyStatusEffects = {}; // key = enemy index, value = array of effects
+            let playerStatusEffects = {}; // key = member key, value = array of effects
+
+            // Helper: get the current active member key
+            function getActiveBattleMember() {
+                return activeBattleMember;
+            }
+
+            // Helper: switch to a different party member during battle
+            function switchBattleMember(memberKey) {
+                if (!PARTY_STATS || !PARTY_STATS[memberKey]) return false;
+                const member = PARTY_STATS[memberKey];
+                
+                // Skip if member is dead
+                if (Number(member.HEALTH) <= 0) {
+                    logCombat(`${member.NAME} is still KO'd and cannot be switched to.`);
+                    return false;
+                }
+
+                activeBattleMember = memberKey;
+                // Mark this member as participant
+                try { battleParticipants.add(memberKey); } catch(e) {}
+                logCombat(`Switched to ${member.NAME}!`);
+                updatePlayerArea();
+                renderAttacksForPlayer();
+                enableAttackSelection();
+                // Recalculate attack ratio based on new member's speed
+                recalculateActionQueue();
+                // Highlight the selected party slot
+                updatePartySlotHighlight();
+                return true;
+            }
+
+            // Helper: highlight the active party member slot
+            function updatePartySlotHighlight() {
+                const slotIds = ['one', 'two', 'three', 'four', 'five'];
+                slotIds.forEach((id, idx) => {
+                    const slot = document.getElementById(`slot-${id}`);
+                    if (slot) {
+                        const key = ['ONE','TWO','THREE','FOUR','FIVE'][idx];
+                        if (key === activeBattleMember) {
+                            slot.style.background = 'rgba(255, 215, 0, 0.3)';
+                            slot.style.border = '2px solid rgba(255, 215, 0, 1)';
+                        } else {
+                            slot.style.background = 'rgba(255, 255, 255, 0.05)';
+                            slot.style.border = '1px solid transparent';
+                        }
+                    }
+                });
+            }
+
             // Ensure game data loaded and stats are up-to-date
             if (typeof loadGameData === 'function') loadGameData();
             if (typeof updateStats === 'function') updateStats();
+            // Initialize all party members for battle: ensure stats and full HP
+            for (const key of ['ONE','TWO','THREE','FOUR','FIVE']) {
+                const member = PARTY_STATS[key];
+                if (!member) continue;
+                // Ensure MAX_HEALTH is reasonable (avoid tiny base HP like 3 causing instant death)
+                if (typeof member.MAX_HEALTH === 'undefined' || Number(member.MAX_HEALTH) < 20) {
+                    member.MAX_HEALTH = Math.max(20, Number(member.MAX_HEALTH) || 20);
+                }
+                // Set full health for all party members at battle start
+                member.HEALTH = Number(member.MAX_HEALTH);
+            }
 
             // Update party sidebar and player stats
             function updatePartyDisplay(){
@@ -488,23 +823,45 @@
                         span.textContent = `P${i} lv#`;
                     }
                 }
+                updatePlayerStatsDisplay();
+            }
+            
+            // Update player stats display at top
+            function updatePlayerStatsDisplay(){
+                const member = (typeof PARTY_STATS !== 'undefined' && PARTY_STATS[getActiveBattleMember()]) ? PARTY_STATS[getActiveBattleMember()] : null;
+                if (!member) return;
+                
+                // Update stat values
+                const hpEl = document.getElementById('stat-hp');
+                const strEl = document.getElementById('stat-strength');
+                const magEl = document.getElementById('stat-magic');
+                const spdEl = document.getElementById('stat-speed');
+                const defEl = document.getElementById('stat-defense');
+                
+                if (hpEl) {
+                    const cur = Number(member.HEALTH || 0);
+                    const max = Number(member.MAX_HEALTH || 1);
+                    hpEl.textContent = `${cur}/${max}`;
+                }
+                if (strEl) strEl.textContent = Number(member.STRENGTH || 0);
+                if (magEl) magEl.textContent = Number(member.MAGIC || 0);
+                if (spdEl) spdEl.textContent = Number(member.SPEED || 0);
+                if (defEl) defEl.textContent = Number(member.DEFENSE || 0);
             }
 
-            // Main player area uses member ONE
+            // Main player area uses active battle member
             function updatePlayerArea(){
-                const member = (typeof PARTY_STATS !== 'undefined' && PARTY_STATS['ONE']) ? PARTY_STATS['ONE'] : null;
+                const member = (typeof PARTY_STATS !== 'undefined' && PARTY_STATS[getActiveBattleMember()]) ? PARTY_STATS[getActiveBattleMember()] : null;
                 if (!member) return;
                 // Ensure mana fields
                 if (typeof member.MAX_MANA === 'undefined') member.MAX_MANA = 100;
                 if (typeof member.MANA === 'undefined') member.MANA = 75;
 
-                // Ensure health/stats up-to-date
+                // Ensure health/stats up-to-date (but don't auto-heal)
                 if (typeof updateStats === 'function') updateStats();
-                // Ensure HEALTH is set (avoid immediate death if undefined/0)
+                // Ensure numeric health values exist, but don't modify them
                 if (typeof member.MAX_HEALTH === 'undefined') member.MAX_HEALTH = 10;
-                if (typeof member.HEALTH === 'undefined' || Number(member.HEALTH) <= 0) {
-                    member.HEALTH = Number(member.MAX_HEALTH);
-                }
+                if (typeof member.HEALTH === 'undefined') member.HEALTH = Number(member.MAX_HEALTH);
 
                         const healthBar = document.querySelector('.health-bar div');
                         const manaBar = document.querySelector('.mana-bar div');
@@ -532,6 +889,12 @@
                             manaBar.style.width = mpct + '%';
                             manaBar.textContent = `MP ${curM}/${safeMaxM}`;
                         }
+                        
+                        // Update stats display at top
+                        updatePlayerStatsDisplay();
+                        
+                        // Update status effect display
+                        updateStatusEffectDisplay();
             }
 
             // Helper to map image filename to enemy key
@@ -556,11 +919,28 @@
                     const key = enemyKeyFromImage(imgPath) || imgPath;
                     const base = ENEMY_BASE_STATS[key] || { health:20, strength:3, magic:0, speed:2, defense:0, hBars:1 };
                     const scaled = Object.assign({}, base);
-                    // Scale health and stats by level
-                    scaled.health = Math.max(1, Math.round(base.health * level));
-                    scaled.strength = Math.round(base.strength * level);
-                    scaled.magic = Math.round(base.magic * level);
-                    scaled.speed = Math.round(base.speed * level);
+                    
+                    // Determine if this is a boss-tier enemy (tier 5 or 6)
+                    const isBossEnemy = base.tier >= 5;
+                    const isBossTile = battleData.isBossTile || false;
+                    
+                    // Apply different scaling based on boss tile vs regular tile
+                    let scaleMultiplier = level;
+                    if (isBossEnemy) {
+                        if (isBossTile) {
+                            // Boss on boss tile: buffed (extra 30% stats)
+                            scaleMultiplier = level * 1.3;
+                        } else {
+                            // Boss on regular tile: weaker (70% stats)
+                            scaleMultiplier = level * 0.7;
+                        }
+                    }
+                    
+                    // Scale health and stats
+                    scaled.health = Math.max(1, Math.round(base.health * scaleMultiplier));
+                    scaled.strength = Math.round(base.strength * scaleMultiplier);
+                    scaled.magic = Math.round(base.magic * scaleMultiplier);
+                    scaled.speed = Math.round(base.speed * scaleMultiplier);
 
                     // Create enemy visual
                     const wrap = document.createElement('div');
@@ -604,6 +984,65 @@
                     wrap.dataset.str = scaled.strength;
                     wrap.dataset.speed = scaled.speed;
                     wrap.dataset.mag = scaled.magic;
+                    wrap.dataset.def = scaled.defense || base.defense || 0;
+                    wrap.dataset.key = key;
+                    wrap.dataset.transformed = 'false'; // Track transformation state for Divine King
+
+                    // Add hover tooltip functionality
+                    let tooltip = document.getElementById('enemy-tooltip');
+                    if (!tooltip) {
+                        tooltip = document.createElement('div');
+                        tooltip.id = 'enemy-tooltip';
+                        tooltip.className = 'enemy-tooltip';
+                        document.body.appendChild(tooltip);
+                    }
+                    
+                    const showTooltip = (e) => {
+                        const isMobile = window.innerWidth <= 768;
+                        const rect = wrap.getBoundingClientRect();
+                        
+                        // Get current stats from dataset (handles transformations)
+                        const currentKey = wrap.dataset.key || key;
+                        const currentBase = ENEMY_BASE_STATS[currentKey] || base;
+                        const currentHp = Number(wrap.dataset.hp) || 0;
+                        const currentMaxHp = Number(wrap.dataset.maxHp) || 1;
+                        const currentStr = Number(wrap.dataset.str) || 0;
+                        const currentMag = Number(wrap.dataset.mag) || 0;
+                        const currentSpeed = Number(wrap.dataset.speed) || 0;
+                        const currentDef = Number(wrap.dataset.def) || 0;
+                        const specialEffect = currentBase.specialEffect || 'No special effect';
+                        
+                        tooltip.innerHTML = `
+                            <h4>${currentKey} (Level ${level})</h4>
+                            <div class="stat-row"><span>Health:</span><span>${currentHp}/${currentMaxHp}</span></div>
+                            <div class="stat-row"><span>Strength:</span><span>${currentStr}</span></div>
+                            <div class="stat-row"><span>Magic:</span><span>${currentMag}</span></div>
+                            <div class="stat-row"><span>Speed:</span><span>${currentSpeed}</span></div>
+                            <div class="stat-row"><span>Defense:</span><span>${currentDef}</span></div>
+                            ${specialEffect !== 'No special effect' ? `<div class="special-effect">${specialEffect}</div>` : ''}
+                        `;
+                        
+                        tooltip.classList.add('active');
+                        
+                        // Position tooltip
+                        if (isMobile) {
+                            // Below enemy on mobile
+                            tooltip.style.left = Math.max(10, rect.left) + 'px';
+                            tooltip.style.top = (rect.bottom + 10) + 'px';
+                        } else {
+                            // To the right on desktop
+                            tooltip.style.left = (rect.right + 15) + 'px';
+                            tooltip.style.top = rect.top + 'px';
+                        }
+                    };
+                    
+                    const hideTooltip = () => {
+                        tooltip.classList.remove('active');
+                    };
+                    
+                    wrap.addEventListener('mouseenter', showTooltip);
+                    wrap.addEventListener('mouseleave', hideTooltip);
+                    wrap.addEventListener('mousemove', showTooltip);
 
                     // Make enemy clickable for target selection
                     wrap.style.cursor = 'pointer';
@@ -632,12 +1071,12 @@
                 });
             }
 
-            // Populate attacks area for member ONE
+            // Populate attacks area for active battle member
             function renderAttacksForPlayer(){
                 const atkArea = document.getElementById('Attacks');
                 if (!atkArea) return;
                 atkArea.innerHTML = '';
-                const memberKey = 'ONE';
+                const memberKey = getActiveBattleMember();
                 const attacks = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_INVENTORY : [];
                 const equipped = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_EQUIPPED : new Set();
                 // Show up to 5 attack slots, mark equipped ones first
@@ -654,9 +1093,28 @@
 
             // Run updates
             updatePartyDisplay();
+            updatePartySlotHighlight();
             updatePlayerArea();
             renderEnemies();
             renderAttacksForPlayer();
+            // Initial participant is the starting active member
+            try { battleParticipants.add(activeBattleMember); } catch(e) {}
+
+            // Make party slots clickable to switch members during battle
+            function enablePartySlotSwitching(){
+                const slotIds = ['one', 'two', 'three', 'four', 'five'];
+                slotIds.forEach((id, idx) => {
+                    const slot = document.getElementById(`slot-${id}`);
+                    if (slot) {
+                        slot.style.cursor = 'pointer';
+                        slot.onclick = () => {
+                            const key = ['ONE','TWO','THREE','FOUR','FIVE'][idx];
+                            switchBattleMember(key);
+                        };
+                    }
+                });
+            }
+            enablePartySlotSwitching();
 
                             // -------------------- Combat engine --------------------
                             const DEBUG_COMBAT = true;
@@ -690,7 +1148,7 @@
                                 // find index of slot among children
                                 const idx = Array.prototype.indexOf.call(atkArea.children, slot);
                                 // selectedAttackId will map to the attack objects displayed order
-                                const memberKey = 'ONE';
+                                const memberKey = getActiveBattleMember();
                                 const attacks = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_INVENTORY : [];
                                 const equipped = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_EQUIPPED : new Set();
                                 const equippedList = attacks.filter(a=>equipped.has(a.id));
@@ -715,6 +1173,76 @@
                         const pct = Math.max(0, Math.min(100, Math.round((cur/max)*100)));
                         bar.style.width = pct + '%';
                         bar.textContent = `HP ${Math.max(0,cur)}/${max}`;
+                        
+                        // Update status effect display after health update
+                        updateStatusEffectDisplay();
+                    }
+                    
+                    // Display active status effects on enemies and players
+                    function updateStatusEffectDisplay(){
+                        // Safety check - only run if status effects are initialized
+                        if (typeof enemyStatusEffects === 'undefined' || typeof playerStatusEffects === 'undefined') return;
+                        
+                        // Show status effects on enemies
+                        const enemyWraps = getEnemyWrappers();
+                        enemyWraps.forEach((wrap, idx) => {
+                            const effects = enemyStatusEffects[idx];
+                            // Remove any existing status display first to prevent duplicates
+                            const oldDisplay = wrap.querySelector('.status-effects-display');
+                            if (oldDisplay) oldDisplay.remove();
+                            
+                            let existing = document.createElement('div');
+                            existing.className = 'status-effects-display';
+                            wrap.appendChild(existing);
+                            
+                            if (effects && effects.length > 0) {
+                                const icons = effects.map(e => {
+                                    const icon = e.type === 'burn' ? '🔥' : 
+                                                 e.type === 'leech' ? '🩸' : 
+                                                 e.type === 'bleed' ? '💉' : 
+                                                 e.type === 'grim' ? '💀' : 
+                                                 e.type === 'chill' ? '❄️' : '?';
+                                    const stackDisplay = (e.stacks && e.stacks > 1) ? `×${e.stacks}` : '';
+                                    return `<span title="${e.type.toUpperCase()}${stackDisplay}">${icon}${stackDisplay}</span>`;
+                                }).join(' ');
+                                existing.innerHTML = icons;
+                                existing.style.display = 'block';
+                            } else {
+                                existing.style.display = 'none';
+                            }
+                        });
+                        
+                        // Show status effects on player (in player stats display)
+                        const memberKey = getActiveBattleMember();
+                        const effects = playerStatusEffects[memberKey];
+                        let playerEffectDisplay = document.getElementById('player-status-effects');
+                        if (!playerEffectDisplay) {
+                            const statsDisplay = document.getElementById('player-stats-display');
+                            if (statsDisplay) {
+                                playerEffectDisplay = document.createElement('div');
+                                playerEffectDisplay.id = 'player-status-effects';
+                                playerEffectDisplay.style.marginTop = '5px';
+                                playerEffectDisplay.style.fontSize = '18px';
+                                statsDisplay.appendChild(playerEffectDisplay);
+                            }
+                        }
+                        if (playerEffectDisplay) {
+                            if (effects && effects.length > 0) {
+                                const icons = effects.map(e => {
+                                    const icon = e.type === 'burn' ? '🔥' : 
+                                                 e.type === 'leech' ? '🩸' : 
+                                                 e.type === 'bleed' ? '💉' : 
+                                                 e.type === 'grim' ? '💀' : 
+                                                 e.type === 'chill' ? '❄️' : '?';
+                                    const stackDisplay = (e.stacks && e.stacks > 1) ? `×${e.stacks}` : '';
+                                    return `<span title="${e.type.toUpperCase()}${stackDisplay}">${icon}${stackDisplay}</span>`;
+                                }).join(' ');
+                                playerEffectDisplay.innerHTML = `Status: ${icons}`;
+                                playerEffectDisplay.style.display = 'block';
+                            } else {
+                                playerEffectDisplay.style.display = 'none';
+                            }
+                        }
                     }
 
                             // Track whether player is allowed to act this turn (set by scheduler)
@@ -722,10 +1250,140 @@
                             let playerWaiting = false; // avoids re-prompting repeatedly
                             let selectedTarget = null;
 
-                    // Combat scheduler using time-to-next-action = 1/speed
+                    // Combat scheduler using speed-based attack ratios (GCD method)
+                    // Helper: compute GCD for ratio simplification
+                    function gcd(a, b) {
+                        while (b) { const t = b; b = a % b; a = t; }
+                        return a;
+                    }
+                    
+                    // Get effective speed accounting for chill
+                    function getEffectiveSpeed(targetType, targetKey, baseSpeed) {
+                        const effectsArray = targetType === 'enemy' ? enemyStatusEffects[targetKey] : playerStatusEffects[targetKey];
+                        if (!effectsArray) return baseSpeed;
+                        const chill = effectsArray.find(e => e.type === 'chill');
+                        if (chill) {
+                            return Math.max(1, Math.round(baseSpeed * 0.75)); // 25% speed reduction
+                        }
+                        return baseSpeed;
+                    }
+
                     let combatRunning = true;
+                    let actionQueue = [];
+                    let queueIndex = 0;
+                    let playerAttacksPerCycle = 0;
+                    
+                    // Update turn order display UI
+                    function updateTurnOrderDisplay() {
+                        const container = document.getElementById('turn-order-queue');
+                        if (!container) return;
+                        
+                        container.innerHTML = '';
+                        
+                        // Show next 8 turns in the queue
+                        const displayCount = Math.min(8, actionQueue.length);
+                        for (let i = 0; i < displayCount; i++) {
+                            const idx = (queueIndex + i) % actionQueue.length;
+                            const action = actionQueue[idx];
+                            
+                            const box = document.createElement('div');
+                            box.className = 'turn-box';
+                            
+                            if (action === 'p') {
+                                // Player turn
+                                box.classList.add('player-turn');
+                                const img = document.createElement('img');
+                                img.src = 'Assests/player.png';
+                                img.alt = 'Player';
+                                box.appendChild(img);
+                            } else if (action.type === 'e') {
+                                // Enemy turn
+                                box.classList.add('enemy-turn');
+                                const enemies = getEnemyWrappers();
+                                const enemyWrap = enemies[action.index];
+                                if (enemyWrap) {
+                                    const enemyImg = enemyWrap.querySelector('img');
+                                    const img = document.createElement('img');
+                                    img.src = enemyImg ? enemyImg.src : 'Enemies/skull.png';
+                                    img.alt = 'Enemy';
+                                    box.appendChild(img);
+                                    
+                                    // Add enemy number
+                                    const numLabel = document.createElement('div');
+                                    numLabel.className = 'enemy-number';
+                                    numLabel.textContent = `#${action.index + 1}`;
+                                    box.appendChild(numLabel);
+                                }
+                            }
+                            
+                            // Highlight the current/next turn
+                            if (i === 0) {
+                                box.classList.add('active');
+                            }
+                            
+                            container.appendChild(box);
+                        }
+                    }
+
+                    // Recalculate action queue based on current active member speed and ALL enemy speeds
+                    function recalculateActionQueue() {
+                        const member = PARTY_STATS[getActiveBattleMember()];
+                        if (!member) return;
+                        const enemies = getEnemyWrappers();
+                        if (enemies.length === 0) return;
+
+                        // Get player speed with chill effect
+                        const memberKey = getActiveBattleMember();
+                        const basePlayerSpeed = Math.max(1, Number(member.SPEED) || 1);
+                        const pSpeed = getEffectiveSpeed('player', memberKey, basePlayerSpeed);
+
+                        // Collect all enemy speeds with chill effects
+                        const enemySpeeds = enemies.map((wrap, idx) => {
+                            const baseSpeed = Math.max(1, Number(wrap.dataset.speed) || Number(wrap.dataset.str) || 1);
+                            const effectiveSpeed = getEffectiveSpeed('enemy', idx, baseSpeed);
+                            return { wrap, index: idx, speed: effectiveSpeed };
+                        }).filter(e => Number(e.wrap.dataset.hp) > 0); // Only alive enemies
+
+                        if (enemySpeeds.length === 0) return;
+
+                        // Find GCD of all speeds (player + all enemies)
+                        let allSpeeds = [Math.round(pSpeed), ...enemySpeeds.map(e => Math.round(e.speed))];
+                        let g = allSpeeds[0];
+                        for (let i = 1; i < allSpeeds.length; i++) {
+                            g = gcd(g, allSpeeds[i]);
+                        }
+
+                        // Calculate attacks per cycle for player
+                        playerAttacksPerCycle = Math.round(pSpeed) / g;
+
+                        // Create action queue: 'p' for player, {type:'e', index:N} for each enemy
+                        actionQueue = [];
+                        for (let i = 0; i < playerAttacksPerCycle; i++) actionQueue.push('p');
+                        
+                        // Add actions for each enemy based on their individual speed
+                        enemySpeeds.forEach(enemyData => {
+                            const enemyAttacks = Math.round(enemyData.speed) / g;
+                            for (let i = 0; i < enemyAttacks; i++) {
+                                actionQueue.push({ type: 'e', index: enemyData.index });
+                            }
+                        });
+                        
+                        // Shuffle to interleave fairly
+                        for (let i = actionQueue.length - 1; i > 0; i--) {
+                            const j = Math.floor(Math.random() * (i + 1));
+                            [actionQueue[i], actionQueue[j]] = [actionQueue[j], actionQueue[i]];
+                        }
+                        queueIndex = 0;
+                        
+                        const totalEnemyAttacks = actionQueue.filter(a => typeof a === 'object' && a.type === 'e').length;
+                        logCombat(`Action queue recalculated: Player ${playerAttacksPerCycle}/cycle, Total Enemy attacks ${totalEnemyAttacks}/cycle (${enemySpeeds.length} enemies)`);
+                        
+                        // Update turn order display
+                        updateTurnOrderDisplay();
+                    }
+
                     function startCombatLoop(){
-                        const member = PARTY_STATS['ONE'];
+                        const member = PARTY_STATS[getActiveBattleMember()];
                         if (!member) return;
                         // Gather active enemy wrappers and their stats
                         const enemies = getEnemyWrappers().map(w=>({wrap:w, hp: Number(w.dataset.hp), maxHp: Number(w.dataset.maxHp), str: Number(w.dataset.str)||0}));
@@ -733,31 +1391,30 @@
                         // If no enemies, nothing to do
                         if (enemies.length === 0) return;
 
-                        // Initialize next action times
-                        const pSpeed = Number(member.SPEED) || 1;
-                        const playerInterval = 1 / (pSpeed > 0 ? pSpeed : 1);
-                        let nextPlayer = playerInterval;
-
-                        // For simplicity, create a single enemy controller by using the first alive enemy as attacker
-                        // Enemy speed uses first enemy's speed value from dataset (we didn't store speed numerically, assume dataset.str as proxy for aggression if no speed)
-                        // We'll attempt to read data-speed if present, else fallback to 1
-                        const firstWrap = enemies[0].wrap;
-                        const enemySpeedVal = Number(firstWrap.dataset.speed) || Number(firstWrap.dataset.str) || 1;
-                        const enemyInterval = 1 / (enemySpeedVal > 0 ? enemySpeedVal : 1);
-                        let nextEnemy = enemyInterval;
-
-                        // If both intervals equal at start, we set both to their interval values (they will be compared)
+                        // Initialize action queue
+                        recalculateActionQueue();
 
                         function pickNextActor(){
-                            // return 'player' or 'enemy' (tie resolved: slower speed goes first)
-                            if (Math.abs(nextPlayer - nextEnemy) < 1e-9) {
-                                // tie -> slower speed goes first (smaller speed value = slower)
-                                if (pSpeed < enemySpeedVal) return 'enemy';
-                                if (enemySpeedVal < pSpeed) return 'player';
-                                // equal speeds - coin flip
-                                return (Math.random()<0.5)?'player':'enemy';
+                            // Pick from queue; when depleted, regenerate
+                            if (queueIndex >= actionQueue.length) {
+                                queueIndex = 0;
+                                // Recalculate queue in case enemies died or speeds changed
+                                recalculateActionQueue();
+                                // Re-shuffle for variety
+                                for (let i = actionQueue.length - 1; i > 0; i--) {
+                                    const j = Math.floor(Math.random() * (i + 1));
+                                    [actionQueue[i], actionQueue[j]] = [actionQueue[j], actionQueue[i]];
+                                }
                             }
-                            return (nextPlayer < nextEnemy) ? 'player' : 'enemy';
+                            const action = actionQueue[queueIndex++];
+                            
+                            // Update turn order display to show new queue position
+                            updateTurnOrderDisplay();
+                            
+                            // action is either 'p' or {type:'e', index:N}
+                            if (action === 'p') return { type: 'player' };
+                            if (action.type === 'e') return { type: 'enemy', enemyIndex: action.index };
+                            return { type: 'enemy', enemyIndex: 0 }; // fallback
                         }
 
                                 function getFirstAliveEnemy(){
@@ -771,8 +1428,10 @@
                                 // Perform a player attack on a specific enemy wrapper (called when player clicks an enemy)
                                 function playerPerformAttackOn(enemyWrap){
                                     if (!enemyWrap) return false;
+                                                                            // Ensure current member is counted as participant
+                                                                            try { battleParticipants.add(getActiveBattleMember()); } catch(e) {}
                                       const atkArea = document.getElementById('Attacks');
-                                      const memberKey = 'ONE';
+                                      const memberKey = getActiveBattleMember();
                                       const attacks = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_INVENTORY : [];
                                       const equipped = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_EQUIPPED : new Set();
                                     const equippedList = attacks.filter(a=>equipped.has(a.id));
@@ -785,15 +1444,31 @@
                                     if (!attackObj) attackObj = { name: 'slap', strMultiplier: 1, magicMultiplier: 0, itemName: null };
 
                                     const enemyDefense = Number( (ENEMY_BASE_STATS[enemyWrap.querySelector('img').alt] && ENEMY_BASE_STATS[enemyWrap.querySelector('img').alt].defense) || 0 );
-                                    const attacker = PARTY_STATS['ONE'];
+                                    const attacker = PARTY_STATS[getActiveBattleMember()];
                                     const str = Number(attacker.STRENGTH||0);
                                     const mag = Number(attacker.MAGIC||0);
                                     const strMult = Number(attackObj.strMultiplier||0);
                                     const magMult = Number(attackObj.magicMultiplier||0);
-                                    let dmg = Math.round(mag * magMult + str * strMult - enemyDefense);
+                                    
+                                    // Get enemy index for status tracking
+                                    const enemyIndex = Array.from(getEnemyWrappers()).indexOf(enemyWrap);
+                                    
+                                    // Apply bleed multiplier if present
+                                    const bleedMult = getBleedMultiplier('enemy', enemyIndex);
+                                    
+                                    let dmg = Math.round((mag * magMult + str * strMult - enemyDefense) * bleedMult);
                                     if (isNaN(dmg) || dmg < 1) dmg = 1;
 
-                                    logCombat(`Player uses ${attackObj.name} on ${enemyWrap.querySelector('img').alt} and deals ${dmg} damage`);
+                                    logCombat(`Player uses ${attackObj.name} on ${enemyWrap.querySelector('img').alt} and deals ${dmg} damage${bleedMult > 1 ? ' (BLEED +' + Math.round((bleedMult - 1) * 100) + '%)' : ''}`);
+                                    
+                                    // Apply status effect from attack
+                                    if (attackObj.status && attackObj.status !== 'none') {
+                                        applyStatusEffect(enemyWrap, 'enemy', enemyIndex, attackObj.status, dmg);
+                                    }
+                                    
+                                    // Decrement bleed duration
+                                    decrementBleed('enemy', enemyIndex);
+                                    
                                     const curHp = Number(enemyWrap.dataset.hp) - dmg;
                                     enemyWrap.dataset.hp = Math.max(0, curHp);
                                     updateEnemyBar(enemyWrap);
@@ -812,21 +1487,83 @@
 
                                                   // After attacking, clear selectedAttackId so player must re-select an attack next time
                                                   selectedAttackId = null;
-                                                  // After attacking, consume selection and advance scheduler
+                                                  // After attacking, consume selection and reset waiting flag to resume queue
                                                   playerCanAct = false;
                                                   playerWaiting = false;
-                                                  // Ensure a minimum spacing between player actions so the player doesn't instantly attack many times
-                                                  nextPlayer += Math.max(playerInterval, MIN_ACTION_INTERVAL);
+                                                  waitingForPlayerAction = false;
 
                                     // Check if this enemy dies
                                     if (Number(enemyWrap.dataset.hp) <= 0) {
+                                        // Check if this is Divine King (phase 1) - transform to phase 2
+                                        const enemyName = enemyWrap.querySelector('img') ? enemyWrap.querySelector('img').alt : '';
+                                        const isDivineKing = enemyName.toLowerCase().includes('divineking') || 
+                                                           (enemyWrap.dataset.key && enemyWrap.dataset.key.toLowerCase() === 'divineking');
+                                        
+                                        // Only transform if not already transformed (check for phase flag)
+                                        const alreadyTransformed = enemyWrap.dataset.transformed === 'true';
+                                        
+                                        if (isDivineKing && !alreadyTransformed) {
+                                            logCombat('⚡ Divine King transforms into Demon King! ⚡');
+                                            
+                                            // Transform to Demon King (phase 2)
+                                            const demonKingStats = ENEMY_BASE_STATS['demonKing'] || { health:500, strength:20, magic:20, speed:4, defense:25 };
+                                            const level = battleData.level || 100;
+                                            const scaleMultiplier = level * 1.3; // Boss on boss tile
+                                            
+                                            // Update enemy to demon king
+                                            enemyWrap.dataset.hp = Math.max(1, Math.round(demonKingStats.health * scaleMultiplier));
+                                            enemyWrap.dataset.maxHp = enemyWrap.dataset.hp;
+                                            enemyWrap.dataset.str = Math.round(demonKingStats.strength * scaleMultiplier);
+                                            enemyWrap.dataset.mag = Math.round(demonKingStats.magic * scaleMultiplier);
+                                            enemyWrap.dataset.speed = Math.round(demonKingStats.speed * scaleMultiplier);
+                                            enemyWrap.dataset.def = Math.round((demonKingStats.defense || 0) * scaleMultiplier);
+                                            enemyWrap.dataset.key = 'demonKing';
+                                            enemyWrap.dataset.transformed = 'true'; // Mark as transformed to prevent re-triggering
+                                            
+                                            // Update image
+                                            const img = enemyWrap.querySelector('img');
+                                            if (img) {
+                                                img.src = 'Enemies/demonKing.png';
+                                                img.alt = 'demonKing';
+                                            }
+                                            
+                                            // Update name display
+                                            const nameH = enemyWrap.querySelector('h3');
+                                            if (nameH) {
+                                                nameH.textContent = `Demon King (Lv ${level})`;
+                                            }
+                                            
+                                            // Update health bar
+                                            updateEnemyBar(enemyWrap);
+                                            
+                                            // Clear status effects for transformation
+                                            delete enemyStatusEffects[enemyIndex];
+                                            
+                                            // Recalculate action queue with new speed
+                                            recalculateActionQueue();
+                                            
+                                            logCombat('Phase 2 begins! The Demon King rises!');
+                                            return true;
+                                        }
+                                        
                                         logCombat('Enemy defeated!');
+                                        // Clear status effects for defeated enemy
+                                        delete enemyStatusEffects[enemyIndex];
                                         const allEnemies = getEnemyWrappers();
                                         const anyAlive = allEnemies.some(w => Number(w.dataset.hp) > 0);
                                         if (!anyAlive) {
                                             logCombat('All enemies defeated! Redirecting to home...');
                                             combatRunning = false;
-                                            setTimeout(()=> window.location.href = 'home.html', 1500);
+                                            // Handle victory: award EXP, generate loot, show victory modal, and then unlock/redirect
+                                            try {
+                                                const level = battleData.level || 1;
+                                                showVictoryRewards(level);
+                                            } catch (e) {
+                                                console.error('Error showing victory rewards:', e);
+                                                // Fallback: just unlock and go home
+                                                try { if (typeof window.clearLevelAndUnlock === 'function') window.clearLevelAndUnlock(battleData.level||1); } catch(_){}
+                                                setTimeout(()=> window.location.href = 'home.html', 1500);
+                                            }
                                             return true;
                                         }
                                     }
@@ -836,22 +1573,229 @@
                                     // Expose attack performer so click handlers outside can call it when appropriate
                                     try{ window.playerPerformAttackOn = playerPerformAttackOn; } catch(e){}
 
+                        // Apply status effect to a target (enemy or player)
+                        function applyStatusEffect(target, targetType, targetKey, effectType, baseDamage) {
+                            // targetType: 'enemy' or 'player'
+                            // targetKey: enemy index or member key
+                            // effectType: from attack.status
+                            // baseDamage: the original damage dealt for calculating effect strength
+                            
+                            if (!effectType || effectType === 'none' || effectType === 'player buff') return;
+                            
+                            let effectsArray = targetType === 'enemy' ? enemyStatusEffects[targetKey] : playerStatusEffects[targetKey];
+                            if (!effectsArray) {
+                                effectsArray = [];
+                                if (targetType === 'enemy') enemyStatusEffects[targetKey] = effectsArray;
+                                else playerStatusEffects[targetKey] = effectsArray;
+                            }
+                            
+                            // Handle different effect types
+                            if (effectType === 'burn') {
+                                // Burn: 20% of damage dealt, 3 turns, stacks
+                                effectsArray.push({ type: 'burn', turnsLeft: 3, damagePerTurn: Math.round(baseDamage * 0.2) });
+                                logCombat(`Applied BURN (${Math.round(baseDamage * 0.2)} dmg/turn for 3 turns)`);
+                            } else if (effectType === 'leech') {
+                                // Leech: 10% of damage dealt to enemy, heals player, 3 turns, stacks
+                                effectsArray.push({ type: 'leech', turnsLeft: 3, damagePerTurn: Math.round(baseDamage * 0.1) });
+                                logCombat(`Applied LEECH (${Math.round(baseDamage * 0.1)} dmg+heal/turn for 3 turns)`);
+                            } else if (effectType === 'bleed') {
+                                // Bleed: 5% stacking damage multiplier, 3 turns
+                                // Find existing bleed on this target to stack
+                                const existingBleed = effectsArray.find(e => e.type === 'bleed');
+                                if (existingBleed) {
+                                    existingBleed.stacks = (existingBleed.stacks || 1) + 1;
+                                    existingBleed.turnsLeft = 3; // refresh duration
+                                    logCombat(`BLEED stacked to ${existingBleed.stacks}x (${existingBleed.stacks * 5}% bonus damage)`);
+                                } else {
+                                    effectsArray.push({ type: 'bleed', turnsLeft: 3, stacks: 1 });
+                                    logCombat(`Applied BLEED (5% bonus damage, stacks)`);
+                                }
+                            } else if (effectType === 'grim') {
+                                // Grim: 2% max HP per turn, bypasses defense, lasts until death, stacks
+                                const maxHp = targetType === 'enemy' ? Number(target.dataset.maxHp || 100) : Number(target.MAX_HEALTH || 100);
+                                effectsArray.push({ type: 'grim', turnsLeft: 999, damagePerTurn: Math.max(1, Math.round(maxHp * 0.02)) });
+                                logCombat(`Applied GRIM (${Math.round(maxHp * 0.02)} dmg/turn until death, stacks)`);
+                            } else if (effectType === 'chill') {
+                                // Chill: Slows enemy speed by 25% for 3 turns
+                                effectsArray.push({ type: 'chill', turnsLeft: 3 });
+                                logCombat(`Applied CHILL (25% speed reduction for 3 turns)`);
+                                // Recalculate action queue with new speed
+                                if (targetType === 'enemy') recalculateActionQueue();
+                            } else if (effectType === 'random') {
+                                // Random effect: pick one of burn, leech, bleed
+                                const randomEffects = ['burn', 'leech', 'bleed'];
+                                const chosen = randomEffects[Math.floor(Math.random() * randomEffects.length)];
+                                applyStatusEffect(target, targetType, targetKey, chosen, baseDamage);
+                            }
+                        }
+                        
+                        // Process status effects for a target at start of their turn
+                        function processStatusEffects(target, targetType, targetKey) {
+                            const effectsArray = targetType === 'enemy' ? enemyStatusEffects[targetKey] : playerStatusEffects[targetKey];
+                            if (!effectsArray || effectsArray.length === 0) return;
+                            
+                            const toRemove = [];
+                            
+                            effectsArray.forEach((effect, idx) => {
+                                if (effect.type === 'burn') {
+                                    // Deal fire damage
+                                    const dmg = effect.damagePerTurn || 0;
+                                    if (targetType === 'enemy') {
+                                        const curHp = Number(target.dataset.hp) - dmg;
+                                        target.dataset.hp = Math.max(0, curHp);
+                                        updateEnemyBar(target);
+                                        logCombat(`BURN deals ${dmg} damage to enemy`);
+                                    } else {
+                                        target.HEALTH = Math.max(0, Number(target.HEALTH) - dmg);
+                                        updatePlayerArea();
+                                        logCombat(`BURN deals ${dmg} damage to ${target.NAME}`);
+                                    }
+                                    effect.turnsLeft--;
+                                    if (effect.turnsLeft <= 0) toRemove.push(idx);
+                                } else if (effect.type === 'leech') {
+                                    // Deal damage to enemy and heal player
+                                    const dmg = effect.damagePerTurn || 0;
+                                    if (targetType === 'enemy') {
+                                        const curHp = Number(target.dataset.hp) - dmg;
+                                        target.dataset.hp = Math.max(0, curHp);
+                                        updateEnemyBar(target);
+                                        // Heal the active player member
+                                        const activeMember = PARTY_STATS[getActiveBattleMember()];
+                                        if (activeMember) {
+                                            activeMember.HEALTH = Math.min(Number(activeMember.MAX_HEALTH), Number(activeMember.HEALTH) + dmg);
+                                            updatePlayerArea();
+                                        }
+                                        logCombat(`LEECH deals ${dmg} damage and heals player ${dmg} HP`);
+                                    }
+                                    effect.turnsLeft--;
+                                    if (effect.turnsLeft <= 0) toRemove.push(idx);
+                                } else if (effect.type === 'grim') {
+                                    // Deal max HP damage bypassing defense
+                                    const dmg = effect.damagePerTurn || 0;
+                                    if (targetType === 'enemy') {
+                                        const curHp = Number(target.dataset.hp) - dmg;
+                                        target.dataset.hp = Math.max(0, curHp);
+                                        updateEnemyBar(target);
+                                        logCombat(`GRIM deals ${dmg} true damage to enemy`);
+                                    } else {
+                                        target.HEALTH = Math.max(0, Number(target.HEALTH) - dmg);
+                                        updatePlayerArea();
+                                        logCombat(`GRIM deals ${dmg} true damage to ${target.NAME}`);
+                                    }
+                                    // Grim doesn't decrement turns (lasts until death)
+                                } else if (effect.type === 'chill') {
+                                    // Chill just slows speed, decrement duration
+                                    effect.turnsLeft--;
+                                    if (effect.turnsLeft <= 0) {
+                                        toRemove.push(idx);
+                                        logCombat('CHILL expired');
+                                        // Recalculate speed when chill expires
+                                        if (targetType === 'enemy') recalculateActionQueue();
+                                    }
+                                }
+                                // Bleed is applied as damage multiplier during attack, not as DoT
+                            });
+                            
+                            // Remove expired effects (in reverse to preserve indices)
+                            toRemove.sort((a, b) => b - a).forEach(idx => effectsArray.splice(idx, 1));
+                        }
+                        
+                        // Get bleed multiplier for a target
+                        function getBleedMultiplier(targetType, targetKey) {
+                            const effectsArray = targetType === 'enemy' ? enemyStatusEffects[targetKey] : playerStatusEffects[targetKey];
+                            if (!effectsArray) return 1.0;
+                            const bleed = effectsArray.find(e => e.type === 'bleed');
+                            if (!bleed) return 1.0;
+                            // 5% per stack
+                            return 1.0 + (bleed.stacks || 1) * 0.05;
+                        }
+                        
+                        // Decrement bleed duration
+                        function decrementBleed(targetType, targetKey) {
+                            const effectsArray = targetType === 'enemy' ? enemyStatusEffects[targetKey] : playerStatusEffects[targetKey];
+                            if (!effectsArray) return;
+                            const bleed = effectsArray.find(e => e.type === 'bleed');
+                            if (bleed) {
+                                bleed.turnsLeft--;
+                                if (bleed.turnsLeft <= 0) {
+                                    const idx = effectsArray.indexOf(bleed);
+                                    if (idx > -1) effectsArray.splice(idx, 1);
+                                    logCombat('BLEED expired');
+                                }
+                            }
+                        }
+
                         function performPlayerAction(){
                             // Called by the scheduler when it's the player's turn. We set flags so the UI can accept a target click.
                             if (playerWaiting) return; // already waiting for the player's click
+                            
+                            // Process status effects on player at start of their turn
+                            const memberKey = getActiveBattleMember();
+                            const target = PARTY_STATS[memberKey];
+                            processStatusEffects(target, 'player', memberKey);
+                            
+                            // Check if player died from status effects
+                            if (Number(target.HEALTH) <= 0) {
+                                logCombat(`${target.NAME} was defeated by status effects!`);
+                                handlePlayerDefeat();
+                                return;
+                            }
+                            
                             playerCanAct = true;
                             playerWaiting = true;
                             logCombat('Player turn: select an attack then click an enemy to perform the action.');
                         }
 
-                        function performEnemyAction(){
-                            const enemyWrap = getFirstAliveEnemy();
-                            if (!enemyWrap) { combatRunning = false; return; }
-                            // Enemy uses simple attack: strMultiplier=1 magicMultiplier=0
-                            const atk = { strMultiplier: 1, magicMultiplier: 0 };
+                        function performEnemyAction(enemyIndex){
+                            const allEnemies = getEnemyWrappers();
+                            const enemyWrap = allEnemies[enemyIndex];
+                            
+                            // Skip if this enemy is dead
+                            if (!enemyWrap || Number(enemyWrap.dataset.hp) <= 0) return;
+                            
+                            // Process status effects on this enemy at start of its turn
+                            processStatusEffects(enemyWrap, 'enemy', enemyIndex);
+                            
+                            // Check if enemy died from status effects
+                            if (Number(enemyWrap.dataset.hp) <= 0) {
+                                logCombat('Enemy defeated by status effects!');
+                                const allEnemies = getEnemyWrappers();
+                                const anyAlive = allEnemies.some(w => Number(w.dataset.hp) > 0);
+                                if (!anyAlive) {
+                                    logCombat('All enemies defeated! Redirecting to home...');
+                                    combatRunning = false;
+                                    try {
+                                        const level = battleData.level || 1;
+                                        showVictoryRewards(level);
+                                    } catch (e) {
+                                        console.error('Error showing victory rewards:', e);
+                                        try { if (typeof window.clearLevelAndUnlock === 'function') window.clearLevelAndUnlock(battleData.level||1); } catch(_){}
+                                        setTimeout(()=> window.location.href = 'home.html', 1500);
+                                    }
+                                }
+                                return;
+                            }
+                            
+                            // Enemy attack: use whichever stat is higher (strength or magic)
                             const enemyStr = Number(enemyWrap.dataset.str) || 1;
                             const enemyMag = Number(enemyWrap.dataset.mag) || 0;
-                            const target = PARTY_STATS['ONE'];
+                            
+                            // Determine which stat is stronger and build attack accordingly
+                            const atk = enemyStr >= enemyMag 
+                                ? { strMultiplier: 1, magicMultiplier: 0 } 
+                                : { strMultiplier: 0, magicMultiplier: 1 };
+                            
+                            const target = PARTY_STATS[getActiveBattleMember()];
+                            // Count the current active member as participant when they get attacked
+                            try { battleParticipants.add(getActiveBattleMember()); } catch(e) {}
+                            // Debug: log queue position, speed info, and enemy name before enemy attacks
+                            try {
+                                const enemyName = enemyWrap.querySelector('img') ? enemyWrap.querySelector('img').alt : 'Unknown Enemy';
+                                const enemySpeed = getEffectiveSpeed('enemy', enemyIndex, Number(enemyWrap.dataset.speed) || 1);
+                                const attackType = enemyStr >= enemyMag ? 'STR' : 'MAG';
+                                const attackStat = enemyStr >= enemyMag ? enemyStr : enemyMag;
+                                logCombat(`${enemyName} #${enemyIndex + 1} (${attackType}:${attackStat}, SPD:${enemySpeed}) attacking — queue pos: ${queueIndex}/${actionQueue.length}`);
+                            } catch(e){}
                             const defense = Number(target.DEFENSE || 0);
                             let dmg = Math.round(enemyMag * atk.magicMultiplier + enemyStr * atk.strMultiplier - defense);
                             if (isNaN(dmg) || dmg < 1) dmg = 1;
@@ -869,61 +1813,326 @@
                                             }
                                         } catch(e){}
                                         if (Number(target.HEALTH) <= 0) {
-                                                logCombat('Player died. Redirecting to home...');
-                                                combatRunning = false;
-                                                setTimeout(()=> window.location.href = 'home.html', 700);
+                                                const activeMember = PARTY_STATS[getActiveBattleMember()];
+                                                logCombat(`${activeMember.NAME} has been defeated! Choose another member...`);
+                                                handleMemberDeath();
                                                 return;
                                         }
                         }
 
+                        // Handle when active member dies - prompt for member switch
+                        function handleMemberDeath(){
+                            combatRunning = false;
+                            const aliveMembers = ['ONE','TWO','THREE','FOUR','FIVE'].filter(key => {
+                                const m = PARTY_STATS[key];
+                                return m && Number(m.HEALTH) > 0;
+                            });
+
+                            if (aliveMembers.length === 0) {
+                                logCombat('All party members defeated! Game Over!');
+                                setTimeout(()=> window.location.href = 'home.html', 2000);
+                                return;
+                            }
+
+                            // Create overlay to force member selection
+                            const overlay = document.createElement('div');
+                            overlay.style.position = 'fixed';
+                            overlay.style.top = '0';
+                            overlay.style.left = '0';
+                            overlay.style.width = '100%';
+                            overlay.style.height = '100%';
+                            overlay.style.background = 'rgba(0,0,0,0.8)';
+                            overlay.style.display = 'flex';
+                            overlay.style.flexDirection = 'column';
+                            overlay.style.justifyContent = 'center';
+                            overlay.style.alignItems = 'center';
+                            overlay.style.zIndex = '99999';
+
+                            const dialog = document.createElement('div');
+                            dialog.style.background = 'rgba(50,50,50,0.95)';
+                            dialog.style.border = '3px solid rgb(255,215,0)';
+                            dialog.style.borderRadius = '10px';
+                            dialog.style.padding = '30px';
+                            dialog.style.textAlign = 'center';
+                            dialog.style.color = 'white';
+
+                            const title = document.createElement('h2');
+                            title.textContent = 'Choose a Party Member to Continue';
+                            title.style.marginBottom = '20px';
+                            title.style.color = 'rgb(255,215,0)';
+                            dialog.appendChild(title);
+
+                            const buttonContainer = document.createElement('div');
+                            buttonContainer.style.display = 'flex';
+                            buttonContainer.style.gap = '10px';
+                            buttonContainer.style.flexWrap = 'wrap';
+                            buttonContainer.style.justifyContent = 'center';
+
+                            aliveMembers.forEach((key, idx) => {
+                                const member = PARTY_STATS[key];
+                                const btn = document.createElement('button');
+                                btn.textContent = `${member.NAME} (Lv${member.LEVEL})`;
+                                btn.style.padding = '12px 20px';
+                                btn.style.fontSize = '16px';
+                                btn.style.background = 'rgba(100,200,100,0.8)';
+                                btn.style.color = 'white';
+                                btn.style.border = '2px solid rgba(100,200,100,1)';
+                                btn.style.borderRadius = '5px';
+                                btn.style.cursor = 'pointer';
+                                btn.style.transition = 'all 0.3s';
+                                btn.onmouseover = () => {
+                                    btn.style.background = 'rgba(100,200,100,1)';
+                                    btn.style.transform = 'scale(1.05)';
+                                };
+                                btn.onmouseout = () => {
+                                    btn.style.background = 'rgba(100,200,100,0.8)';
+                                    btn.style.transform = 'scale(1)';
+                                };
+                                btn.onclick = () => {
+                                    switchBattleMember(key);
+                                    overlay.remove();
+                                    combatRunning = true;
+                                    // Resume combat after short delay
+                                    setTimeout(combatTick, COMBAT_TICK_MS);
+                                };
+                                buttonContainer.appendChild(btn);
+                            });
+
+                            dialog.appendChild(buttonContainer);
+                            overlay.appendChild(dialog);
+                            document.body.appendChild(overlay);
+                        }
+
                         const COMBAT_TICK_MS = 900; // slower tick so actions are visible
-                        const MIN_ACTION_INTERVAL = 0.6; // minimum interval (in scheduler units) between repeated actions
+                        let waitingForPlayerAction = false; // Flag to pause queue until player acts
 
                         // Loop tick
                         function combatTick(){
                             if (!combatRunning) return;
-                            // if no alive enemies or player dead -> end
+                            // if no alive enemies or active player dead -> end
                             const aliveEnemy = getFirstAliveEnemy();
                             if (!aliveEnemy) { combatRunning = false; return; }
-                            const playerAlive = Number(PARTY_STATS['ONE'].HEALTH) > 0;
-                            if (!playerAlive) { logCombat('Player died. Redirecting...'); window.location.href='home.html'; combatRunning = false; return; }
+                            const activeMember = PARTY_STATS[getActiveBattleMember()];
+                            const playerAlive = activeMember && Number(activeMember.HEALTH) > 0;
+                            if (!playerAlive) { logCombat('Current member is KO\'d!'); handleMemberDeath(); return; }
 
-                            const actor = pickNextActor();
-                            if (actor === 'player'){
-                                // Prompt player to act; actual advancement of nextPlayer happens when player clicks a target
-                                performPlayerAction();
-                            } else {
-                                performEnemyAction();
-                                nextEnemy += enemyInterval;
+                            // If waiting for player to complete their action, skip this tick
+                            if (waitingForPlayerAction) {
+                                setTimeout(combatTick, COMBAT_TICK_MS);
+                                return;
                             }
 
-                            // schedule next tick
-                            setTimeout(combatTick, COMBAT_TICK_MS);
+                            const actor = pickNextActor();
+                            if (actor.type === 'player'){
+                                // Prompt player to act and set flag to pause queue
+                                waitingForPlayerAction = true;
+                                performPlayerAction();
+                            } else {
+                                performEnemyAction(actor.enemyIndex);
+                            }
+
+                            // schedule next tick only if not waiting for player
+                            if (!waitingForPlayerAction) {
+                                setTimeout(combatTick, COMBAT_TICK_MS);
+                            } else {
+                                // If waiting for player, still schedule a tick but it will return early
+                                setTimeout(combatTick, COMBAT_TICK_MS);
+                            }
                         }
 
                         // Start the ticking loop
                         setTimeout(combatTick, 500);
                     }
 
-                            // Combat will start when the player clicks Start Combat (so they can choose an attack first)
+                    // Function to start combat (called by button or auto-start)
+                    function startCombat() {
+                        try {
+                            logCombat('Combat started');
+                            // Log initial stats
+                            const member = PARTY_STATS && PARTY_STATS['ONE'];
+                            if (member) {
+                                logCombat(`Player HP: ${member.HEALTH}/${member.MAX_HEALTH} STR:${member.STRENGTH} MAG:${member.MAGIC} SPD:${member.SPEED}`);
+                            }
+                            const first = getEnemyWrappers()[0];
+                            if (first) {
+                                logCombat(`Enemy HP: ${first.dataset.hp}/${first.dataset.maxHp} STR:${first.dataset.str} SPD:${first.dataset.speed||first.dataset.str}`);
+                            }
+                            startCombatLoop();
+                            // Hide start button after combat starts
                             const startBtn = document.getElementById('start-combat-btn');
                             if (startBtn) {
-                                startBtn.addEventListener('click', ()=>{
-                                    logCombat('Player initiated combat');
-                                    // Log initial stats
-                                    try {
-                                        const member = PARTY_STATS && PARTY_STATS['ONE'];
-                                        logCombat(`Player HP: ${member.HEALTH}/${member.MAX_HEALTH} STR:${member.STRENGTH} MAG:${member.MAGIC} SPD:${member.SPEED}`);
-                                        const first = getEnemyWrappers()[0];
-                                        if (first) logCombat(`Enemy HP: ${first.dataset.hp}/${first.dataset.maxHp} STR:${first.dataset.str} SPD:${first.dataset.speed||first.dataset.str}`);
-                                    } catch(e){}
-                                    startCombatLoop();
-                                    // disable start button after click
-                                    startBtn.disabled = true;
-                                    startBtn.style.opacity = 0.6;
-                                });
+                                startBtn.style.display = 'none';
                             }
+                        } catch(e) {
+                            console.error('Error starting combat:', e);
+                            logCombat('Error starting combat. Please refresh the page.');
+                        }
+                    }
+                    
+                    // Make startCombat globally accessible for button onclick
+                    window.startCombat = startCombat;
+                    
+                    // Auto-start combat on battle entry
+                    try {
+                        startCombat();
+                    } catch(e) {
+                        console.error('Auto-start failed:', e);
+                        // If auto-start fails, keep button visible for manual start
+                    }
                     // -------------------- End combat engine --------------------
+
+        // -------------------- Victory Rewards (loot + EXP) --------------------
+        function xpToNext(level){
+            // Per spec: level * 100 * sqrt(level) to reach next level
+            const lvl = Math.max(1, Number(level)||1);
+            return Math.max(1, Math.round(lvl * 100 * Math.sqrt(lvl)));
+        }
+
+        function awardExpToParticipants(level){
+            // Base total EXP proportional to level
+            const totalExp = Math.max(10, Math.round(100 * (Number(level)||1)));
+            const participants = Array.from(battleParticipants);
+            const count = participants.length || 1;
+            const per = Math.floor(totalExp / count);
+            const breakdown = [];
+
+            participants.forEach(key => {
+                const m = PARTY_STATS[key];
+                if (!m) return;
+                if (typeof m.XP !== 'number') m.XP = 0;
+                if (typeof m.LEVEL !== 'number' || m.LEVEL < 1) m.LEVEL = 1;
+                let gain = per;
+                let leveled = 0;
+                m.XP += gain;
+                let need = xpToNext(m.LEVEL);
+                while (m.XP >= need) {
+                    m.XP -= need;
+                    m.LEVEL += 1;
+                    leveled += 1;
+                    need = xpToNext(m.LEVEL);
+                }
+                breakdown.push({ key, name: m.NAME||key, gained: gain, newXP: m.XP, level: m.LEVEL, levelsGained: leveled, nextReq: need });
+            });
+
+            // Recalculate stats after possible level ups
+            try { if (typeof updateStats === 'function') updateStats(); } catch(e){}
+            try { if (typeof saveGameData === 'function') saveGameData(); } catch(e){}
+
+            return { totalExp, perExp: per, participants: breakdown };
+        }
+
+        function generateVictoryLoot(level){
+            try {
+                if (typeof window.generateRandomItem === 'function') {
+                    // Check if this is a boss tile - if so, guarantee mythic rarity
+                    const isBossTile = battleData.isBossTile || false;
+                    let item;
+                    
+                    if (isBossTile) {
+                        // Boss tile: force mythic rarity
+                        item = window.generateRandomItem(level, 'mythic');
+                        logCombat('🎁 BOSS REWARD: Mythic item guaranteed!');
+                    } else {
+                        // Regular tile: random item
+                        item = window.generateRandomItem(level);
+                    }
+                    
+                    try { if (typeof saveGameData === 'function') saveGameData(); } catch(e){}
+                    return item;
+                }
+            } catch(e) { console.error('generateRandomItem failed', e); }
+            return null;
+        }
+
+        function showVictoryRewards(level){
+            // Compute rewards
+            const expInfo = awardExpToParticipants(level);
+            const loot = generateVictoryLoot(level);
+
+            // Unlock progression immediately
+            try { if (typeof window.clearLevelAndUnlock === 'function') window.clearLevelAndUnlock(level); } catch(e) { console.error('clearLevelAndUnlock failed', e); }
+
+            // Build modal overlay
+            const overlay = document.createElement('div');
+            overlay.style.position = 'fixed';
+            overlay.style.inset = '0';
+            overlay.style.background = 'rgba(0,0,0,0.8)';
+            overlay.style.display = 'flex';
+            overlay.style.alignItems = 'center';
+            overlay.style.justifyContent = 'center';
+            overlay.style.zIndex = '100000';
+
+            const panel = document.createElement('div');
+            panel.style.background = 'rgba(30,30,30,0.95)';
+            panel.style.border = '3px solid gold';
+            panel.style.borderRadius = '10px';
+            panel.style.padding = '20px 24px';
+            panel.style.color = 'white';
+            panel.style.minWidth = '320px';
+            panel.style.maxWidth = '520px';
+
+            const title = document.createElement('h2');
+            title.textContent = 'Victory!';
+            title.style.marginTop = '0';
+            title.style.color = 'gold';
+            panel.appendChild(title);
+
+            // Loot section
+            const lootDiv = document.createElement('div');
+            lootDiv.style.margin = '10px 0 6px';
+            const rarityColor = (loot && loot.rarity && typeof window.getRarityColor === 'function') ? window.getRarityColor(loot.rarity) : 'gold';
+            lootDiv.innerHTML = '<strong>Loot:</strong> ' + (loot ? `<span style="color: ${rarityColor}">${loot.name} (Lv ${loot.level||level})</span>` : '—');
+            if (loot && loot.image) {
+                const img = document.createElement('img');
+                img.src = loot.image;
+                img.alt = loot.name;
+                img.style.width = '64px';
+                img.style.height = '64px';
+                img.style.objectFit = 'contain';
+                img.style.display = 'block';
+                img.style.marginTop = '6px';
+                img.style.border = `3px solid ${rarityColor}`;
+                img.style.boxShadow = `0 0 10px ${rarityColor}`;
+                lootDiv.appendChild(img);
+            }
+            panel.appendChild(lootDiv);
+
+            // EXP section
+            const expDiv = document.createElement('div');
+            expDiv.style.margin = '6px 0 10px';
+            expDiv.innerHTML = `<strong>EXP:</strong> ${expInfo.totalExp} total — ${expInfo.perExp} each (${expInfo.participants.length} participant${expInfo.participants.length!==1?'s':''})`;
+            const list = document.createElement('ul');
+            list.style.margin = '8px 0 0';
+            list.style.paddingLeft = '18px';
+            expInfo.participants.forEach(p => {
+                const li = document.createElement('li');
+                li.textContent = `${p.name}: +${p.gained} EXP • Lv ${p.level}` + (p.levelsGained>0?` (↑ +${p.levelsGained})`:'' ) + ` • Next: ${p.nextReq}`;
+                list.appendChild(li);
+            });
+            panel.appendChild(expDiv);
+            panel.appendChild(list);
+
+            const btnRow = document.createElement('div');
+            btnRow.style.display = 'flex';
+            btnRow.style.gap = '10px';
+            btnRow.style.marginTop = '16px';
+            btnRow.style.justifyContent = 'flex-end';
+
+            const ok = document.createElement('button');
+            ok.textContent = 'Continue';
+            ok.style.padding = '10px 14px';
+            ok.style.background = 'rgba(100,200,100,0.9)';
+            ok.style.border = '2px solid rgba(100,200,100,1)';
+            ok.style.borderRadius = '6px';
+            ok.style.color = 'white';
+            ok.style.cursor = 'pointer';
+            ok.onclick = ()=>{ overlay.remove(); window.location.href = 'map.html'; };
+
+            btnRow.appendChild(ok);
+            panel.appendChild(btnRow);
+            overlay.appendChild(panel);
+            document.body.appendChild(overlay);
+        }
 
         })();
         </script>
