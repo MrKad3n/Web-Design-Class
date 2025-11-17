@@ -115,12 +115,17 @@ function displayItemInfo(item) {
     ? `<p style="color: #ffcc00; font-weight: bold;">⚡ ${abilityDescriptions[item.ability]}</p>` 
     : '';
   
+  const enchantText = item.enchantment 
+    ? `<p style="color: #ff8c00; font-weight: bold;">✨ Enchanted: ${item.enchantment}</p>`
+    : '';
+  
   infoItem.innerHTML = `
     <h3 style="color: ${rarityColor}">${item.name} Level ${item.level||1}</h3>
     <img src="${item.image||'Assests/empty-slot.png'}" style="width:30%; border: 3px solid ${rarityColor}; box-shadow: 0 0 8px ${rarityColor}">
     <p>Strength: ${item.strength||0} Magic: ${item.magic||0} Speed: ${item.speed||0}</p>
     <p>Health: ${item.health||0} Defense: ${item.defense||0} Attack: ${item.attack||'none'}</p>
     ${abilityText}
+    ${enchantText}
     <div style="margin-top:8px">
       <button id="equip-btn">Equip</button>
       <button id="unequip-btn">Unequip</button>
@@ -128,6 +133,7 @@ function displayItemInfo(item) {
   `;
   const equipBtn = document.getElementById('equip-btn');
   const unequipBtn = document.getElementById('unequip-btn');
+  
   // Determine equipped state: check item.equipped flag AND verify it's actually in a slot
   let isEquipped = item.equipped;
   if (isEquipped) {
@@ -453,11 +459,11 @@ renderInventory();
   document.body.appendChild(btn);
 }*/
 
-if (document.readyState === 'loading') {
+/*if (document.readyState === 'loading') {
   window.addEventListener('DOMContentLoaded', ensureResetButton);
 } else {
   ensureResetButton();
-}
+}*/
 
 // Party member name management
 function renderMemberNameInput(memberKey = getSelectedMember()) {
@@ -570,6 +576,9 @@ function addEnchantment(enchantName, count = 1) {
   renderEnchantmentInventory();
 }
 
+// Expose addEnchantment to window for use in other pages
+window.addEnchantment = addEnchantment;
+
 // Remove enchantment from inventory (used when applying to item)
 function removeEnchantment(enchantName, count = 1) {
   if (typeof ENCHANTMENT_INVENTORY === 'undefined') {
@@ -592,10 +601,182 @@ function removeEnchantment(enchantName, count = 1) {
   return false;
 }
 
+// Enchantment stat bonuses
+const ENCHANTMENT_BONUSES = {
+  // Basic Enchantments
+  "Sharpness": { strength: 5 },
+  "Lifesteal": { health: 10 },
+  "Burning": { magic: 5 },
+  "Fortification": { defense: 5 },
+  "Swiftness": { speed: 3 },
+  "Vitality": { health: 15 },
+  "Hemorrhage": { strength: 3, speed: 2 },
+  "Precision": { speed: 5 },
+  "Arcane Power": { magic: 8 },
+  "Berserker": { strength: 10, defense: -3 },
+  "Resilience": { defense: 8, health: 5 },
+  "Haste": { speed: 6 },
+  "Frost": { magic: 4, speed: 2 },
+  "Vengeance": { strength: 6, health: 8 },
+  "Warding": { defense: 10 },
+  // Legendary Enchantments
+  "Multistrike": { strength: 15, speed: 10 },
+  "Soulrend": { magic: 20, health: -10 },
+  "Phoenix Rebirth": { health: 25, defense: 5 },
+  "Temporal Flux": { speed: 15, magic: 10 },
+  "Chaos Storm": { strength: 12, magic: 12, speed: 8 }
+};
+
+// Show enchantment selection modal
+function showEnchantmentModal(item) {
+  // Create modal overlay
+  const modal = document.createElement('div');
+  modal.id = 'enchant-modal';
+  modal.style.position = 'fixed';
+  modal.style.top = '0';
+  modal.style.left = '0';
+  modal.style.width = '100%';
+  modal.style.height = '100%';
+  modal.style.background = 'rgba(0, 0, 0, 0.85)';
+  modal.style.display = 'flex';
+  modal.style.justifyContent = 'center';
+  modal.style.alignItems = 'center';
+  modal.style.zIndex = '10000';
+  
+  const modalContent = document.createElement('div');
+  modalContent.style.background = '#1a1a1a';
+  modalContent.style.padding = '30px';
+  modalContent.style.borderRadius = '12px';
+  modalContent.style.maxWidth = '600px';
+  modalContent.style.maxHeight = '80vh';
+  modalContent.style.overflowY = 'auto';
+  modalContent.style.border = '3px solid #ff8c00';
+  modalContent.style.boxShadow = '0 0 20px rgba(255, 140, 0, 0.5)';
+  
+  const currentEnchant = item.enchantment ? `<p style="color: #ff8c00;">Current: ${item.enchantment}</p>` : '';
+  
+  let enchantListHTML = '<h2 style="color: #ff8c00;">Select Enchantment</h2>';
+  enchantListHTML += `<p style="color: #fff;">Item: ${item.name}</p>`;
+  enchantListHTML += currentEnchant;
+  enchantListHTML += '<p style="color: #aaa; font-size: 0.9em;">Once applied, the enchantment is permanent until replaced.</p>';
+  enchantListHTML += '<div style="margin-top: 20px;">';
+  
+  if (typeof ENCHANTMENT_INVENTORY === 'undefined') {
+    window.ENCHANTMENT_INVENTORY = {};
+  }
+  
+  // Show available enchantments
+  let hasEnchants = false;
+  for (const enchantName in ENCHANTMENT_INVENTORY) {
+    const count = ENCHANTMENT_INVENTORY[enchantName] || 0;
+    if (count > 0) {
+      hasEnchants = true;
+      const isLegendary = ['Multistrike', 'Soulrend', 'Phoenix Rebirth', 'Temporal Flux', 'Chaos Storm'].includes(enchantName);
+      const color = isLegendary ? '#ff8000' : '#ffcc00';
+      const bonuses = ENCHANTMENT_BONUSES[enchantName] || {};
+      const bonusText = Object.keys(bonuses).map(stat => {
+        const val = bonuses[stat];
+        return `${stat}: ${val > 0 ? '+' : ''}${val}`;
+      }).join(', ');
+      
+      enchantListHTML += `
+        <div style="background: rgba(0,0,0,0.5); padding: 15px; margin: 10px 0; border-radius: 8px; border: 2px solid ${color};">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <h3 style="color: ${color}; margin: 0;">${isLegendary ? '🌟' : '✨'} ${enchantName}</h3>
+              <p style="color: #aaa; margin: 5px 0; font-size: 0.9em;">${bonusText}</p>
+              <p style="color: #888; margin: 5px 0; font-size: 0.85em;">Owned: ${count}</p>
+            </div>
+            <button 
+              onclick="applyEnchantmentToItem('${enchantName}', '${item.name}')"
+              style="background: ${color}; color: #000; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;"
+            >Apply</button>
+          </div>
+        </div>
+      `;
+    }
+  }
+  
+  if (!hasEnchants) {
+    enchantListHTML += '<p style="color: #888;">No enchantments available. Complete challenge stages to earn enchantments!</p>';
+  }
+  
+  enchantListHTML += '</div>';
+  enchantListHTML += '<button id="close-modal-btn" style="margin-top: 20px; background: #c0392b; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer;">Close</button>';
+  
+  modalContent.innerHTML = enchantListHTML;
+  modal.appendChild(modalContent);
+  document.body.appendChild(modal);
+  
+  document.getElementById('close-modal-btn').onclick = () => {
+    modal.remove();
+  };
+  
+  modal.onclick = (e) => {
+    if (e.target === modal) {
+      modal.remove();
+    }
+  };
+}
+
+// Apply enchantment to item
+function applyEnchantmentToItem(enchantName, itemName) {
+  const item = INVENTORY.find(i => i.name === itemName);
+  if (!item) {
+    alert('Item not found!');
+    return;
+  }
+  
+  const count = ENCHANTMENT_INVENTORY[enchantName] || 0;
+  if (count <= 0) {
+    alert('You don\'t have this enchantment!');
+    return;
+  }
+  
+  // Confirm replacement if item already has enchantment
+  if (item.enchantment) {
+    if (!confirm(`Replace ${item.enchantment} with ${enchantName}? The old enchantment will be lost forever.`)) {
+      return;
+    }
+  }
+  
+  // Apply enchantment bonuses
+  const bonuses = ENCHANTMENT_BONUSES[enchantName] || {};
+  
+  // Remove old enchantment bonuses if exists
+  if (item.enchantment && item.enchantmentBonuses) {
+    for (const stat in item.enchantmentBonuses) {
+      item[stat] = (item[stat] || 0) - item.enchantmentBonuses[stat];
+    }
+  }
+  
+  // Apply new enchantment bonuses
+  item.enchantment = enchantName;
+  item.enchantmentBonuses = Object.assign({}, bonuses);
+  for (const stat in bonuses) {
+    item[stat] = (item[stat] || 0) + bonuses[stat];
+  }
+  
+  // Remove enchantment from inventory (it's consumed)
+  removeEnchantment(enchantName, 1);
+  
+  // Update display
+  updateStats();
+  renderInventory();
+  if (typeof saveGameData === 'function') saveGameData();
+  
+  // Close modal
+  const modal = document.getElementById('enchant-modal');
+  if (modal) modal.remove();
+  
+  alert(`${enchantName} applied to ${itemName}!`);
+}
+
 // Make functions globally accessible
 window.addEnchantment = addEnchantment;
 window.removeEnchantment = removeEnchantment;
 window.renderEnchantmentInventory = renderEnchantmentInventory;
+window.applyEnchantmentToItem = applyEnchantmentToItem;
 
 // Initialize enchantment inventory on page load
 document.addEventListener('DOMContentLoaded', () => {

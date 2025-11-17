@@ -731,6 +731,8 @@
         <script src="index.js"></script>
         <!-- Enemy index tracking -->
         <script src="enemy-index.js"></script>
+        <!-- Enchantment inventory management -->
+        <script src="inventory.js"></script>
         <script>
         // Debug: Check what's available from script.js
         console.log('window.clearLevelAndUnlock:', typeof window.clearLevelAndUnlock);
@@ -753,7 +755,7 @@
                     if (challengeDataStr) {
                         const challengeData = JSON.parse(challengeDataStr);
                         
-                        // Calculate level based on highest party member
+                        // Calculate level based on highest party member + 5
                         let maxPartyLevel = 1;
                         if (typeof PARTY_STATS !== 'undefined') {
                             Object.values(PARTY_STATS).forEach(member => {
@@ -762,6 +764,7 @@
                                 }
                             });
                         }
+                        const challengeLevel = maxPartyLevel + 5; // Challenge enemies are 5 levels higher
                         
                         // Convert enemy names to image paths
                         const enemyPaths = (challengeData.enemies || ['skull']).map(enemyName => {
@@ -783,7 +786,7 @@
                         
                         // Set up battle data from challenge
                         battleData = {
-                            level: maxPartyLevel,
+                            level: challengeLevel,
                             enemies: enemyPaths,
                             isBossTile: false,
                             isChallenge: true,
@@ -1176,19 +1179,34 @@
                     scaled.speed = Math.round(base.speed * scaleMultiplier);
                     
                     // Apply challenge modifiers if in challenge mode
-                    if (isChallenge && challengeModifiers) {
-                        if (challengeModifiers.healthBoost) {
-                            scaled.health = Math.round(scaled.health * challengeModifiers.healthBoost);
+                    if (isChallenge) {
+                        // Base 1.2x stat boost for all challenge enemies
+                        scaled.health = Math.round(scaled.health * 1.2);
+                        scaled.strength = Math.round(scaled.strength * 1.2);
+                        scaled.magic = Math.round(scaled.magic * 1.2);
+                        scaled.speed = Math.round(scaled.speed * 1.2);
+                        scaled.defense = Math.round((scaled.defense || 0) * 1.2);
+                        
+                        // Additional challenge-specific modifiers
+                        if (challengeModifiers) {
+                            if (challengeModifiers.healthBoost) {
+                                scaled.health = Math.round(scaled.health * challengeModifiers.healthBoost);
+                            }
+                            if (challengeModifiers.damageBoost) {
+                                scaled.strength = Math.round(scaled.strength * challengeModifiers.damageBoost);
+                                scaled.magic = Math.round(scaled.magic * challengeModifiers.damageBoost);
+                            }
+                            if (challengeModifiers.speedBoost) {
+                                scaled.speed = Math.round(scaled.speed * challengeModifiers.speedBoost);
+                            }
+                            if (challengeModifiers.defenseBoost) {
+                                scaled.defense = Math.round((scaled.defense || 0) * challengeModifiers.defenseBoost);
+                            }
                         }
-                        if (challengeModifiers.damageBoost) {
-                            scaled.strength = Math.round(scaled.strength * challengeModifiers.damageBoost);
-                            scaled.magic = Math.round(scaled.magic * challengeModifiers.damageBoost);
-                        }
-                        if (challengeModifiers.speedBoost) {
-                            scaled.speed = Math.round(scaled.speed * challengeModifiers.speedBoost);
-                        }
-                        if (challengeModifiers.defenseBoost) {
-                            scaled.defense = Math.round((scaled.defense || 0) * challengeModifiers.defenseBoost);
+                        
+                        // Vampiric Onslaught (challenge ID 2): Necromancer has 2x health
+                        if (battleData.challengeId === 2 && key.toLowerCase().includes('necromancer')) {
+                            scaled.health = Math.round(scaled.health * 2);
                         }
                     }
 
@@ -1514,13 +1532,13 @@
                         return a;
                     }
                     
-                    // Get effective speed accounting for chill
+                    // Get effective speed (note: chill no longer affects speed, only damage output)
                     function getEffectiveSpeed(targetType, targetKey, baseSpeed) {
                         const effectsArray = targetType === 'enemy' ? enemyStatusEffects[targetKey] : playerStatusEffects[targetKey];
                         if (!effectsArray) return baseSpeed;
                         const chill = effectsArray.find(e => e.type === 'chill');
                         if (chill) {
-                            return Math.max(1, Math.round(baseSpeed * 0.75)); // 25% speed reduction
+                            return Math.max(1, Math.round(baseSpeed * 0.75)); // Visual indicator only
                         }
                         return baseSpeed;
                     }
@@ -1589,12 +1607,12 @@
                         const enemies = getEnemyWrappers();
                         if (enemies.length === 0) return;
 
-                        // Get player speed with chill effect
+                        // Get player speed (chill shown for display only, doesn't affect actual speed)
                         const memberKey = getActiveBattleMember();
                         const basePlayerSpeed = Math.max(1, Number(member.SPEED) || 1);
                         const pSpeed = getEffectiveSpeed('player', memberKey, basePlayerSpeed);
 
-                        // Collect all enemy speeds with chill effects
+                        // Collect all enemy speeds (chill shown for display only, doesn't affect actual speed)
                         const enemySpeeds = enemies.map((wrap, idx) => {
                             const baseSpeed = Math.max(1, Number(wrap.dataset.speed) || Number(wrap.dataset.str) || 1);
                             const effectiveSpeed = getEffectiveSpeed('enemy', idx, baseSpeed);
@@ -2158,69 +2176,109 @@
                                             // Recalculate action queue with new speed
                                             recalculateActionQueue();
                                             
-                                            logCombat('Phase 2 begins! The Demon King rises!');
-                                            return true;
-                                        }
-                                        
-                                        logCombat('Enemy defeated!');
-                                        
-                                        // Register enemy defeat for index tracking
-                                        const defeatedKey = enemyWrap.dataset.key || (enemyWrap.querySelector('img') ? enemyWrap.querySelector('img').alt : '');
-                                        if (typeof registerEnemyDefeated === 'function' && defeatedKey) {
-                                            registerEnemyDefeated(defeatedKey);
-                                        }
-                                        
-                                        // Necromancer resurrection mechanic
-                                        const allEnemies = getEnemyWrappers();
-                                        const hasNecromancer = allEnemies.some(w => {
-                                            const key = w.dataset.key || (w.querySelector('img') ? w.querySelector('img').alt : '');
-                                            return key.toLowerCase().includes('necromancer') && Number(w.dataset.hp) > 0;
-                                        });
-                                        
-                                        if (hasNecromancer && !enemyWrap.dataset.zombie) {
-                                            // Resurrect as zombie with 50% hp and marked as zombie
-                                            const maxHp = Number(enemyWrap.dataset.maxHp);
-                                            enemyWrap.dataset.hp = Math.max(1, Math.round(maxHp * 0.5));
-                                            enemyWrap.dataset.zombie = 'true';
-                                            
-                                            // Add visual indicator
-                                            const nameH = enemyWrap.querySelector('h3');
-                                            if (nameH && !nameH.textContent.includes('Zombie')) {
-                                                nameH.textContent = 'Zombie ' + nameH.textContent;
-                                            }
-                                            
-                                            updateEnemyBar(enemyWrap);
-                                            logCombat('🧟 Necromancer resurrects fallen ally as a zombie!');
-                                            return true;
-                                        }
-                                        
-                                        // Hide the defeated enemy completely (remove from DOM)
-                                        enemyWrap.remove();
-                                        
-                                        // Clear status effects for defeated enemy
-                                        delete enemyStatusEffects[enemyIndex];
-                                        const anyAlive = getEnemyWrappers().some(w => Number(w.dataset.hp) > 0);
-                                        if (!anyAlive) {
-                                            logCombat('All enemies defeated! Redirecting to home...');
-                                            combatRunning = false;
-                                            // Handle victory: award EXP, generate loot, show victory modal, and then unlock/redirect
-                                            try {
-                                                const level = battleData.level || 1;
-                                                showVictoryRewards(level);
-                                            } catch (e) {
-                                                console.error('Error showing victory rewards:', e);
-                                                // Fallback: just unlock and go home
-                                                try { if (typeof window.clearLevelAndUnlock === 'function') window.clearLevelAndUnlock(battleData.level||1); } catch(_){}
-                                                setTimeout(()=> window.location.href = 'home.html', 1500);
-                                            }
-                                            return true;
-                                        }
+                                        logCombat('Phase 2 begins! The Demon King rises!');
+                                        return true;
                                     }
-                                    return true;
+                                    
+                                    logCombat('Enemy defeated!');
+                                    
+                                    // Use centralized enemy defeat handler for necromancer resurrection and cleanup
+                                    return handleEnemyDefeat(enemyWrap, enemyIndex);
                                 }
-
-                                    // Expose attack performer so click handlers outside can call it when appropriate
+                                return true;
+                            }                                    // Expose attack performer so click handlers outside can call it when appropriate
                                     try{ window.playerPerformAttackOn = playerPerformAttackOn; } catch(e){}
+
+                        // Centralized enemy defeat and necromancer resurrection logic
+                        function handleEnemyDefeat(enemyWrap, enemyIndex) {
+                            // Check if this enemy is a corpse (invulnerable until necromancer dies)
+                            if (enemyWrap.dataset.corpse === 'true') {
+                                // Corpses cannot die, reset HP to minimum
+                                enemyWrap.dataset.hp = 1;
+                                updateEnemyBar(enemyWrap);
+                                logCombat('💀 Corpse cannot die while necromancer lives!');
+                                return true; // Prevent death
+                            }
+                            
+                            // Register enemy defeat for index tracking
+                            const defeatedKey = enemyWrap.dataset.key || (enemyWrap.querySelector('img') ? enemyWrap.querySelector('img').alt : '');
+                            if (typeof registerEnemyDefeated === 'function' && defeatedKey) {
+                                registerEnemyDefeated(defeatedKey);
+                            }
+                            
+                            // Necromancer resurrection mechanic
+                            const allEnemies = getEnemyWrappers();
+                            const necromancerWrap = allEnemies.find(w => {
+                                const key = w.dataset.key || (w.querySelector('img') ? w.querySelector('img').alt : '');
+                                return key.toLowerCase().includes('necromancer') && Number(w.dataset.hp) > 0;
+                            });
+                            
+                            if (necromancerWrap && !enemyWrap.dataset.corpse) {
+                                // Get necromancer level
+                                const necromancerLevel = battleData.level || 1;
+                                
+                                // Get necromancer stats for the corpse
+                                const necromancerStats = ENEMY_BASE_STATS['necromancer'] || { health: 50, strength: 5, magic: 5, speed: 3, defense: 0 };
+                                const scaleMultiplier = Math.pow(necromancerLevel, 0.9);
+                                
+                                // Resurrect as corpse with necromancer-level stats and mark as invulnerable
+                                const corpseHp = Math.max(1, Math.round(necromancerStats.health * scaleMultiplier * 0.5));
+                                enemyWrap.dataset.hp = corpseHp;
+                                enemyWrap.dataset.maxHp = corpseHp;
+                                enemyWrap.dataset.str = Math.round(necromancerStats.strength * scaleMultiplier * 0.5);
+                                enemyWrap.dataset.mag = Math.round(necromancerStats.magic * scaleMultiplier * 0.5);
+                                enemyWrap.dataset.speed = Math.round(necromancerStats.speed * scaleMultiplier);
+                                enemyWrap.dataset.def = 0;
+                                enemyWrap.dataset.corpse = 'true'; // Mark as corpse (invulnerable)
+                                
+                                // Add visual indicator
+                                const nameH = enemyWrap.querySelector('h3');
+                                if (nameH && !nameH.textContent.includes('Corpse')) {
+                                    const originalName = nameH.textContent.replace(/\(Lv \d+\)/, '').trim();
+                                    nameH.textContent = `Corpse ${originalName} (Lv ${necromancerLevel})`;
+                                }
+                                
+                                updateEnemyBar(enemyWrap);
+                                recalculateActionQueue();
+                                logCombat('🧟 Necromancer resurrects fallen ally as an invulnerable corpse!');
+                                return true; // Enemy was resurrected
+                            }
+                            
+                            // If this is a necromancer dying, kill all corpses
+                            const isNecromancer = defeatedKey.toLowerCase().includes('necromancer');
+                            if (isNecromancer) {
+                                logCombat('💀 Necromancer defeated! All corpses crumble to dust...');
+                                allEnemies.forEach(w => {
+                                    if (w.dataset.corpse === 'true') {
+                                        w.dataset.hp = 0;
+                                        w.remove();
+                                    }
+                                });
+                            }
+                            
+                            // Hide the defeated enemy completely (remove from DOM)
+                            enemyWrap.remove();
+                            
+                            // Clear status effects for defeated enemy
+                            delete enemyStatusEffects[enemyIndex];
+                            const anyAlive = getEnemyWrappers().some(w => Number(w.dataset.hp) > 0);
+                            if (!anyAlive) {
+                                logCombat('All enemies defeated! Redirecting to home...');
+                                combatRunning = false;
+                                // Handle victory: award EXP, generate loot, show victory modal, and then unlock/redirect
+                                try {
+                                    const level = battleData.level || 1;
+                                    showVictoryRewards(level);
+                                } catch (e) {
+                                    console.error('Error showing victory rewards:', e);
+                                    // Fallback: just unlock and go home
+                                    try { if (typeof window.clearLevelAndUnlock === 'function') window.clearLevelAndUnlock(battleData.level||1); } catch(_){}
+                                    setTimeout(()=> window.location.href = 'home.html', 1500);
+                                }
+                                return true;
+                            }
+                            return false; // Enemy was removed but battle continues
+                        }
 
                         // Apply status effect to a target (enemy or player)
                         function applyStatusEffect(target, targetType, targetKey, effectType, baseDamage) {
@@ -2265,11 +2323,10 @@
                                 effectsArray.push({ type: 'grim', turnsLeft: 999, damagePerTurn: Math.max(1, Math.round(maxHp * 0.02)) });
                                 logCombat(`Applied GRIM (${Math.round(maxHp * 0.02)} dmg/turn until death, stacks)`);
                             } else if (effectType === 'chill') {
-                                // Chill: Slows enemy speed by 25% for 3 turns
+                                // Chill: Reduces damage output by 25% for 3 turns
                                 effectsArray.push({ type: 'chill', turnsLeft: 3 });
-                                logCombat(`Applied CHILL (25% speed reduction for 3 turns)`);
-                                // Recalculate action queue with new speed
-                                if (targetType === 'enemy') recalculateActionQueue();
+                                logCombat(`Applied CHILL (25% damage reduction for 3 turns)`);
+                                // No queue recalculation - this was causing the bug
                             } else if (effectType === 'random') {
                                 // Random effect: pick one of burn, leech, bleed
                                 const randomEffects = ['burn', 'leech', 'bleed'];
@@ -2333,13 +2390,11 @@
                                     }
                                     // Grim doesn't decrement turns (lasts until death)
                                 } else if (effect.type === 'chill') {
-                                    // Chill just slows speed, decrement duration
+                                    // Chill reduces damage output, decrement duration (no queue recalculation needed)
                                     effect.turnsLeft--;
                                     if (effect.turnsLeft <= 0) {
                                         toRemove.push(idx);
                                         logCombat('CHILL expired');
-                                        // Recalculate speed when chill expires
-                                        if (targetType === 'enemy') recalculateActionQueue();
                                     }
                                 }
                                 // Bleed is applied as damage multiplier during attack, not as DoT
@@ -2427,9 +2482,36 @@
                                         // Success! Increment combo and attack again
                                         pixelComboCount++;
                                         logCombat(`✓ Pixel Combo Success! (${pixelComboCount} streak)`);
-                                        
-                                        // Attack again on the same target if alive, otherwise first alive enemy
-                                        const target = Number(lastTargetWrap.dataset.hp) > 0 ? lastTargetWrap : enemies[0];
+
+                                        // Check if all enemies are dead before attacking again
+                                        const aliveEnemies = getEnemyWrappers().filter(w => Number(w.dataset.hp) > 0);
+                                        if (aliveEnemies.length === 0) {
+                                            logCombat('All enemies defeated! Redirecting to home...');
+                                            combatRunning = false;
+                                            try {
+                                                const level = battleData.level || 1;
+                                                showVictoryRewards(level);
+                                            } catch (e) {
+                                                console.error('Error showing victory rewards:', e);
+                                                try { if (typeof window.clearLevelAndUnlock === 'function') window.clearLevelAndUnlock(battleData.level||1); } catch(_){}
+                                                setTimeout(()=> window.location.href = 'home.html', 1500);
+                                            }
+                                            return;
+                                        }
+
+                                        // If the original target is dead, end the combo sequence (do not attack again)
+                                        if (Number(lastTargetWrap.dataset.hp) <= 0) {
+                                            logCombat('Combo ended: target eliminated.');
+                                            selectedAttackId = null;
+                                            playerCanAct = false;
+                                            playerWaiting = false;
+                                            waitingForPlayerAction = false;
+                                            return;
+                                        }
+                                        // Otherwise, attack again on the same target if alive, otherwise first alive enemy
+                                        // Remove the dead target from possible targets
+                                        const filteredAliveEnemies = aliveEnemies.filter(w => w !== lastTargetWrap);
+                                        const target = Number(lastTargetWrap.dataset.hp) > 0 ? lastTargetWrap : filteredAliveEnemies[0];
                                         if (target) {
                                             setTimeout(() => playerPerformAttackOn(target), 100);
                                         } else {
@@ -2443,7 +2525,23 @@
                                         // Failed! Reset combo
                                         logCombat(`☠ Pixel Combo Failed! Combo reset.`);
                                         pixelComboCount = 0;
-                                        
+
+                                        // Check if all enemies are dead after failed combo
+                                        const aliveEnemies = getEnemyWrappers().filter(w => Number(w.dataset.hp) > 0);
+                                        if (aliveEnemies.length === 0) {
+                                            logCombat('All enemies defeated! Redirecting to home...');
+                                            combatRunning = false;
+                                            try {
+                                                const level = battleData.level || 1;
+                                                showVictoryRewards(level);
+                                            } catch (e) {
+                                                console.error('Error showing victory rewards:', e);
+                                                try { if (typeof window.clearLevelAndUnlock === 'function') window.clearLevelAndUnlock(battleData.level||1); } catch(_){}
+                                                setTimeout(()=> window.location.href = 'home.html', 1500);
+                                            }
+                                            return;
+                                        }
+
                                         // End turn
                                         selectedAttackId = null;
                                         playerCanAct = false;
@@ -2494,20 +2592,9 @@
                             // Check if enemy died from status effects
                             if (Number(enemyWrap.dataset.hp) <= 0) {
                                 logCombat('Enemy defeated by status effects!');
-                                const allEnemies = getEnemyWrappers();
-                                const anyAlive = allEnemies.some(w => Number(w.dataset.hp) > 0);
-                                if (!anyAlive) {
-                                    logCombat('All enemies defeated! Redirecting to home...');
-                                    combatRunning = false;
-                                    try {
-                                        const level = battleData.level || 1;
-                                        showVictoryRewards(level);
-                                    } catch (e) {
-                                        console.error('Error showing victory rewards:', e);
-                                        try { if (typeof window.clearLevelAndUnlock === 'function') window.clearLevelAndUnlock(battleData.level||1); } catch(_){}
-                                        setTimeout(()=> window.location.href = 'home.html', 1500);
-                                    }
-                                }
+                                
+                                // Use centralized enemy defeat handler for necromancer resurrection and cleanup
+                                handleEnemyDefeat(enemyWrap, enemyIndex);
                                 return;
                             }
                             
@@ -2543,6 +2630,13 @@
                             
                             let dmg = Math.max(1, Math.round(Math.max(damageAfterDefense, baseDmg * 0.05)));
                             if (isNaN(dmg)) dmg = 1;
+                            
+                            // Apply chill effect: 25% damage reduction if enemy is chilled
+                            const enemyEffects = enemyStatusEffects[enemyIndex];
+                            if (enemyEffects && enemyEffects.find(e => e.type === 'chill')) {
+                                dmg = Math.max(1, Math.round(dmg * 0.75));
+                                logCombat(`❄️ Chill reduces damage by 25%`);
+                            }
                             
                             // Store original damage and check if this was a magic attack
                             const originalDmg = dmg;
@@ -2588,6 +2682,15 @@
                             
                             target.HEALTH = (Number(target.HEALTH) || Number(target.MAX_HEALTH) || 0) - dmg;
                             
+                            // Vampiric Onslaught (challenge ID 2): Enemies heal for damage they deal to players
+                            if (isChallenge && battleData.challengeId === 2 && dmg > 0) {
+                                const healAmount = dmg;
+                                const newHp = Math.min(Number(enemyWrap.dataset.maxHp), Number(enemyWrap.dataset.hp) + healAmount);
+                                enemyWrap.dataset.hp = newHp;
+                                updateEnemyBar(enemyWrap);
+                                logCombat(`🩸 Vampiric: Enemy heals ${healAmount} HP from attack!`);
+                            }
+                            
             // Get the active member key for status effects
             const memberKey = getActiveBattleMember();
             
@@ -2597,9 +2700,8 @@
             if (enemyBaseStats && enemyBaseStats.attackStatus) {
                 // Frozen corpse applies chill on attack
                 if (enemyBaseStats.attackStatus === 'chill') {
-                    if (!playerStatusEffects[memberKey]) playerStatusEffects[memberKey] = {};
-                    playerStatusEffects[memberKey].chill = { duration: 3 };
-                    logCombat(`❄️ Frozen Touch: ${target.NAME} has been chilled! (-25% speed for 3 turns)`);
+                    applyStatusEffect(target, 'player', memberKey, 'chill', dmg);
+                    logCombat(`❄️ Frozen Touch: ${target.NAME} has been chilled! (25% damage reduction for 3 turns)`);
                 }
             }
             
@@ -3168,6 +3270,26 @@
             const isChallengeVictory = battleData.isChallenge || false;
             const challengeReward = battleData.challengeReward || null;
             const challengeId = battleData.challengeId || null;
+            const isBossTile = battleData.isBossTile || false;
+            
+            // Award gems based on stage type
+            let gemsAwarded = 0;
+            if (isChallengeVictory) {
+                gemsAwarded = Math.floor(10 + level * 2); // Challenge stages give more gems
+            } else if (isBossTile) {
+                gemsAwarded = Math.floor(5 + level * 1.5); // Boss stages give good gems
+            } else {
+                gemsAwarded = Math.floor(2 + level * 0.5); // Regular stages give some gems
+            }
+            
+            if (typeof GEMS !== 'undefined') {
+                GEMS += gemsAwarded;
+            } else {
+                window.GEMS = gemsAwarded;
+            }
+            
+            // Save game data to persist gems
+            if (typeof saveGameData === 'function') saveGameData();
             
             // Handle challenge completion
             if (isChallengeVictory && challengeId && challengeReward) {
@@ -3216,6 +3338,18 @@
             title.style.marginTop = '0';
             title.style.color = isChallengeVictory ? '#a335ee' : 'gold';
             panel.appendChild(title);
+            
+            // Show gems awarded
+            if (gemsAwarded > 0) {
+                const gemDiv = document.createElement('div');
+                gemDiv.style.margin = '10px 0';
+                gemDiv.style.padding = '10px';
+                gemDiv.style.background = 'rgba(0, 200, 255, 0.2)';
+                gemDiv.style.border = '2px solid #00c8ff';
+                gemDiv.style.borderRadius = '8px';
+                gemDiv.innerHTML = `<strong style="color: #00c8ff;">💎 Gems Earned:</strong> <span style="color: #fff; font-weight: bold;">+${gemsAwarded}</span> <span style="color: #aaa;">(Total: ${GEMS || 0})</span>`;
+                panel.appendChild(gemDiv);
+            }
             
             // Show enchantment reward for challenges
             if (isChallengeVictory && challengeReward) {

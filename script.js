@@ -12,6 +12,62 @@ const PARTY_ATTACKS = {
 let SELECTED_MEMBER = 'ONE';
 
 let attackCounter = 1; // A simple counter to generate unique IDs
+let GEMS = 0; // Currency for purchasing special attacks
+
+// Special Purchasable Attacks
+const SPECIAL_ATTACKS = {
+  "Flame Burst": {
+    name: "Flame Burst",
+    description: "Blast all enemies with fire, applying burn status",
+    cost: 50,
+    strMultiplier: 0.8,
+    magicMultiplier: 1.2,
+    aoe: true,
+    statusEffect: "burn",
+    icon: "🔥"
+  },
+  "Frost Nova": {
+    name: "Frost Nova",
+    description: "Freeze all enemies, reducing their damage by 25%",
+    cost: 75,
+    strMultiplier: 0.6,
+    magicMultiplier: 1.0,
+    aoe: true,
+    statusEffect: "chill",
+    icon: "❄️"
+  },
+  "Shadow Strike": {
+    name: "Shadow Strike",
+    description: "Deal massive damage and apply bleed to target",
+    cost: 60,
+    strMultiplier: 2.0,
+    magicMultiplier: 0.5,
+    aoe: false,
+    statusEffect: "bleed",
+    icon: "🗡️"
+  },
+  "Thunder Clap": {
+    name: "Thunder Clap",
+    description: "AOE lightning damage with high magic scaling",
+    cost: 100,
+    strMultiplier: 0.3,
+    magicMultiplier: 1.8,
+    aoe: true,
+    statusEffect: null,
+    icon: "⚡"
+  },
+  "Life Drain": {
+    name: "Life Drain",
+    description: "Drain life from target, applying leech",
+    cost: 80,
+    strMultiplier: 0.5,
+    magicMultiplier: 1.5,
+    aoe: false,
+    statusEffect: "leech",
+    icon: "🩸"
+  }
+};
+
 const map = document.getElementById("map");
 const mapContainer = document.getElementById("map-container");
 const popup = document.getElementById("popup");
@@ -1166,6 +1222,7 @@ function saveGameData() {
       } : null,
       attackCounter: typeof attackCounter !== 'undefined' ? attackCounter : 1,
       enchantmentInventory: typeof ENCHANTMENT_INVENTORY !== 'undefined' ? ENCHANTMENT_INVENTORY : {},
+      gems: typeof GEMS !== 'undefined' ? GEMS : 0,
     };
     localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
     //console.log('Saved game data');
@@ -1229,6 +1286,13 @@ function loadGameData() {
         window.ENCHANTMENT_INVENTORY = payload.enchantmentInventory;
       } else {
         window.ENCHANTMENT_INVENTORY = {};
+      }
+      
+      // Load gems
+      if (typeof payload.gems === 'number') {
+        GEMS = payload.gems;
+      } else {
+        GEMS = 0;
       }
     }
     //console.log('Loaded game data');

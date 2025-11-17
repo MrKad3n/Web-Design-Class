@@ -284,6 +284,26 @@
             <!-- Party member equipment will be rendered here -->
         </div>
     </div>
+    
+    <!-- Attacks Shop Screen -->
+    <div class="upgrade-container" id="attacks-screen">
+        <div class="w3-container w3-left" style="width:50%">
+            <a href="#" onclick="hideAttacksScreen(); return false;"><h2 class="glow">← Back</h2></a>
+        </div>
+
+        <h1 class="glow" style="text-align: center; margin: 20px 0;">Special Attacks Shop</h1>
+        
+        <div style="text-align: center; margin-bottom: 30px;">
+            <div style="display: inline-block; background: rgba(0, 200, 255, 0.2); border: 3px solid #00c8ff; border-radius: 15px; padding: 15px 30px;">
+                <span style="color: #00c8ff; font-size: 1.5em; font-weight: bold;">💎 Gems: </span>
+                <span id="gem-count" style="color: #fff; font-size: 1.8em; font-weight: bold;">0</span>
+            </div>
+        </div>
+
+        <div id="attacks-shop-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 25px; max-width: 1400px; margin: 0 auto; padding: 20px;">
+            <!-- Attack cards will be rendered here -->
+        </div>
+    </div>
 
     <!-- Upgrade Modal -->
     <div class="upgrade-modal" id="upgrade-modal">
@@ -430,7 +450,171 @@
         }
 
         function showAttacksScreen() {
-            alert("Attacks management feature coming soon!");
+            document.getElementById('selection-screen').style.display = 'none';
+            document.getElementById('attacks-screen').classList.add('active');
+            renderAttacksShop();
+        }
+        
+        function hideAttacksScreen() {
+            document.getElementById('selection-screen').style.display = 'block';
+            document.getElementById('attacks-screen').classList.remove('active');
+        }
+        
+        function renderAttacksShop() {
+            const container = document.getElementById('attacks-shop-grid');
+            const gemCount = document.getElementById('gem-count');
+            
+            if (!container) return;
+            
+            // Update gem display
+            const currentGems = typeof GEMS !== 'undefined' ? GEMS : 0;
+            if (gemCount) gemCount.textContent = currentGems;
+            
+            // Get special attacks from script.js
+            const attacks = typeof SPECIAL_ATTACKS !== 'undefined' ? SPECIAL_ATTACKS : {};
+            
+            let html = '';
+            
+            for (const attackKey in attacks) {
+                const attack = attacks[attackKey];
+                const owned = hasAttack(attack.name);
+                const canAfford = currentGems >= attack.cost;
+                
+                const bgGradient = owned 
+                    ? 'linear-gradient(135deg, rgba(46, 125, 50, 0.3) 0%, rgba(27, 94, 32, 0.3) 100%)'
+                    : 'linear-gradient(135deg, rgba(15, 52, 96, 0.3) 0%, rgba(22, 33, 62, 0.3) 100%)';
+                
+                const borderColor = owned ? '#4caf50' : (canAfford ? '#00c8ff' : '#666');
+                
+                html += `
+                    <div style="background: ${bgGradient}; border: 3px solid ${borderColor}; border-radius: 15px; padding: 25px; transition: all 0.3s;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h2 style="color: ${borderColor}; margin: 0; font-size: 1.5em;">${attack.icon} ${attack.name}</h2>
+                            ${owned ? '<div style="background: #4caf50; color: #fff; padding: 5px 15px; border-radius: 20px; font-weight: bold;">OWNED</div>' : ''}
+                        </div>
+                        
+                        <p style="color: #aaa; margin: 15px 0; font-size: 1.05em;">${attack.description}</p>
+                        
+                        <div style="background: rgba(0, 0, 0, 0.3); border-radius: 10px; padding: 15px; margin: 15px 0;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                <div>
+                                    <div style="color: #888; font-size: 0.9em;">Strength Multiplier</div>
+                                    <div style="color: #e94560; font-weight: bold; font-size: 1.2em;">${attack.strMultiplier}x</div>
+                                </div>
+                                <div>
+                                    <div style="color: #888; font-size: 0.9em;">Magic Multiplier</div>
+                                    <div style="color: #5c7cfa; font-weight: bold; font-size: 1.2em;">${attack.magicMultiplier}x</div>
+                                </div>
+                                <div>
+                                    <div style="color: #888; font-size: 0.9em;">Type</div>
+                                    <div style="color: #ffcc00; font-weight: bold;">${attack.aoe ? 'AOE' : 'Single Target'}</div>
+                                </div>
+                                <div>
+                                    <div style="color: #888; font-size: 0.9em;">Status Effect</div>
+                                    <div style="color: #ff6b88; font-weight: bold;">${attack.statusEffect ? attack.statusEffect.toUpperCase() : 'None'}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        ${owned 
+                            ? '<button disabled style="width: 100%; padding: 15px; background: #666; color: #aaa; border: none; border-radius: 10px; font-size: 1.1em; font-weight: bold; cursor: not-allowed;">Already Purchased</button>'
+                            : `<button onclick="purchaseAttack('${attackKey}')" 
+                                style="width: 100%; padding: 15px; background: ${canAfford ? 'linear-gradient(135deg, #00c8ff 0%, #0099cc 100%)' : '#666'}; color: ${canAfford ? '#fff' : '#aaa'}; border: none; border-radius: 10px; font-size: 1.1em; font-weight: bold; cursor: ${canAfford ? 'pointer' : 'not-allowed'}; transition: all 0.3s;"
+                                ${!canAfford ? 'disabled' : ''}
+                                ${canAfford ? 'onmouseover="this.style.transform=\'translateY(-2px)\'; this.style.boxShadow=\'0 5px 15px rgba(0, 200, 255, 0.5)\';" onmouseout="this.style.transform=\'translateY(0)\'; this.style.boxShadow=\'none\';"' : ''}>
+                                💎 Purchase for ${attack.cost} Gems
+                            </button>`
+                        }
+                    </div>
+                `;
+            }
+            
+            if (Object.keys(attacks).length === 0) {
+                html = '<div style="text-align: center; color: #888; padding: 50px;"><h2>No special attacks available yet!</h2></div>';
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        function hasAttack(attackName) {
+            // Check if any party member has this attack
+            if (typeof PARTY_ATTACKS === 'undefined') return false;
+            
+            for (const memberKey of ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE']) {
+                const memberAttacks = PARTY_ATTACKS[memberKey];
+                if (memberAttacks && memberAttacks.ATTACK_INVENTORY) {
+                    const found = memberAttacks.ATTACK_INVENTORY.find(a => a.name === attackName);
+                    if (found) return true;
+                }
+            }
+            return false;
+        }
+        
+        function purchaseAttack(attackKey) {
+            const attacks = typeof SPECIAL_ATTACKS !== 'undefined' ? SPECIAL_ATTACKS : {};
+            const attack = attacks[attackKey];
+            
+            if (!attack) {
+                alert('Attack not found!');
+                return;
+            }
+            
+            const currentGems = typeof GEMS !== 'undefined' ? GEMS : 0;
+            
+            if (currentGems < attack.cost) {
+                alert(`Not enough gems! You need ${attack.cost} gems but only have ${currentGems}.`);
+                return;
+            }
+            
+            if (hasAttack(attack.name)) {
+                alert('You already own this attack!');
+                return;
+            }
+            
+            // Confirm purchase
+            if (!confirm(`Purchase ${attack.name} for ${attack.cost} gems?`)) {
+                return;
+            }
+            
+            // Deduct gems
+            if (typeof GEMS !== 'undefined') {
+                GEMS -= attack.cost;
+            } else {
+                window.GEMS = 0;
+            }
+            
+            // Add attack to ALL party members
+            if (typeof PARTY_ATTACKS !== 'undefined' && typeof attackCounter !== 'undefined') {
+                for (const memberKey of ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE']) {
+                    if (!PARTY_ATTACKS[memberKey]) {
+                        PARTY_ATTACKS[memberKey] = { ATTACK_INVENTORY: [], ATTACK_EQUIPPED: new Set() };
+                    }
+                    
+                    const newAttack = {
+                        id: attackCounter++,
+                        name: attack.name,
+                        strMultiplier: attack.strMultiplier,
+                        magicMultiplier: attack.magicMultiplier,
+                        aoe: attack.aoe || false,
+                        statusEffect: attack.statusEffect || null,
+                        sourceUid: null,
+                        itemName: null,
+                        special: true  // Mark as special purchasable attack
+                    };
+                    
+                    PARTY_ATTACKS[memberKey].ATTACK_INVENTORY.push(newAttack);
+                }
+            }
+            
+            // Save game data
+            if (typeof saveGameData === 'function') {
+                saveGameData();
+            }
+            
+            // Refresh display
+            renderAttacksShop();
+            
+            alert(`${attack.icon} ${attack.name} purchased! All party members now have access to this attack.`);
         }
 
         function renderPartyEquipment() {
@@ -460,7 +644,7 @@
                         if (item) {
                             const rarity = item.rarity || 'Common';
                             const color = getRarityColor(rarity);
-                            const enchant = item.enchant || null;
+                            const enchant = item.enchantment || null;
                             let enchantDisplay = '';
                             if (enchant) {
                                 const isLegendary = ['Multistrike', 'Soulrend', 'Phoenix Rebirth', 'Temporal Flux', 'Chaos Storm'].includes(enchant);
@@ -516,7 +700,7 @@
             const member = PARTY_STATS[memberKey];
             const rarity = item.rarity || 'Common';
             const color = getRarityColor(rarity);
-            const enchant = item.enchant || null;
+            const enchant = item.enchantment || null;
             const enchantData = enchant ? ENCHANTMENTS[enchant] : null;
 
             let html = `
@@ -672,25 +856,71 @@
             if (!item) return;
 
             // Check if item already has an enchantment
-            if (item.enchant && item.enchant !== enchantName) {
-                if (!confirm(`This item already has ${item.enchant} enchantment. Replace it with ${enchantName}? (Previous enchantment will be lost)`)) {
+            if (item.enchantment && item.enchantment !== enchantName) {
+                if (!confirm(`This item already has ${item.enchantment} enchantment. Replace it with ${enchantName}? (Previous enchantment will be lost)`)) {
                     return;
                 }
             }
 
-            // Remove enchantment from inventory
-            if (typeof removeEnchantment === 'function') {
-                if (!removeEnchantment(enchantName, 1)) {
-                    alert("Failed to apply enchantment!");
-                    return;
-                }
-            } else {
-                alert("Enchantment system not loaded properly!");
+            // Check if player has this enchantment
+            const enchantInventory = typeof ENCHANTMENT_INVENTORY !== 'undefined' ? ENCHANTMENT_INVENTORY : {};
+            const count = enchantInventory[enchantName] || 0;
+            if (count <= 0) {
+                alert("You don't have this enchantment!");
                 return;
             }
 
-            // Apply enchantment to item
-            item.enchant = enchantName;
+            // Get enchantment bonuses (use the bonuses from inventory.js if available)
+            const ENCHANTMENT_BONUSES = {
+                "Sharpness": { strength: 5 },
+                "Lifesteal": { health: 10 },
+                "Burning": { magic: 5 },
+                "Fortification": { defense: 5 },
+                "Swiftness": { speed: 3 },
+                "Vitality": { health: 15 },
+                "Hemorrhage": { strength: 3, speed: 2 },
+                "Precision": { speed: 5 },
+                "Arcane Power": { magic: 8 },
+                "Berserker": { strength: 10, defense: -3 },
+                "Resilience": { defense: 8, health: 5 },
+                "Haste": { speed: 6 },
+                "Frost": { magic: 4, speed: 2 },
+                "Vengeance": { strength: 6, health: 8 },
+                "Warding": { defense: 10 },
+                "Multistrike": { strength: 15, speed: 10 },
+                "Soulrend": { magic: 20, health: -10 },
+                "Phoenix Rebirth": { health: 25, defense: 5 },
+                "Temporal Flux": { speed: 15, magic: 10 },
+                "Chaos Storm": { strength: 12, magic: 12, speed: 8 }
+            };
+
+            const bonuses = ENCHANTMENT_BONUSES[enchantName] || {};
+
+            // Remove old enchantment bonuses if exists
+            if (item.enchantment && item.enchantmentBonuses) {
+                for (const stat in item.enchantmentBonuses) {
+                    item[stat] = (item[stat] || 0) - item.enchantmentBonuses[stat];
+                }
+            }
+
+            // Apply new enchantment bonuses
+            item.enchantment = enchantName;
+            item.enchantmentBonuses = Object.assign({}, bonuses);
+            for (const stat in bonuses) {
+                item[stat] = (item[stat] || 0) + bonuses[stat];
+            }
+
+            // Remove enchantment from inventory (consume it)
+            if (typeof window.removeEnchantment === 'function') {
+                window.removeEnchantment(enchantName, 1);
+            } else if (typeof ENCHANTMENT_INVENTORY !== 'undefined') {
+                ENCHANTMENT_INVENTORY[enchantName] = Math.max(0, (ENCHANTMENT_INVENTORY[enchantName] || 0) - 1);
+            }
+
+            // Update party stats if item is equipped
+            if (typeof updateStats === 'function') {
+                updateStats();
+            }
 
             // Save game data
             if (typeof saveGameData === 'function') {
@@ -727,6 +957,11 @@
                 closeUpgradeModal();
             }
         });
+        
+        // Load game data on page load
+        if (typeof loadGameData === 'function') {
+            loadGameData();
+        }
     </script>
 </body>
 </html>
