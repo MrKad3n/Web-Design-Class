@@ -19,13 +19,41 @@ const popupContent = document.getElementById("popup-content");
 
 const rows = 20;
 const cols = 20;
-const pathLength = 100;
+let pathLength = 100; // Default for normal mode
+let currentGameMode = 'normal'; // Track current game mode
 let tileData = {};
+
+// Initialize game mode from URL or localStorage
+function initializeGameMode() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const modeParam = urlParams.get('mode');
+    
+    if (modeParam) {
+        currentGameMode = modeParam;
+        localStorage.setItem('selectedGameMode', modeParam);
+    } else {
+        currentGameMode = localStorage.getItem('selectedGameMode') || 'normal';
+    }
+    
+    // Set pathLength based on mode
+    if (currentGameMode === 'hard') {
+        pathLength = 50; // Hard mode is levels 100-150, so 50 tiles
+    } else {
+        pathLength = 100; // Normal mode is levels 1-100
+    }
+    
+    return currentGameMode;
+}
+
+// Make it globally accessible
+window.initializeGameMode = initializeGameMode;
+window.getCurrentGameMode = function() { return currentGameMode; };
 
 // --- Dungeon Progression Functions (global - accessible on all pages) ---
 function loadDungeonProgression() {
   try {
-    const saved = localStorage.getItem('dungeonProgressionData');
+    const mode = currentGameMode || 'normal';
+    const saved = localStorage.getItem(`dungeonProgressionData_${mode}`);
     return saved ? JSON.parse(saved) : { clearedLevels: [], unlockedUpToLevel: 1 };
   } catch (e) {
     return { clearedLevels: [], unlockedUpToLevel: 1 };
@@ -34,7 +62,8 @@ function loadDungeonProgression() {
 
 function saveDungeonProgression(progression) {
   try {
-    localStorage.setItem('dungeonProgressionData', JSON.stringify(progression));
+    const mode = currentGameMode || 'normal';
+    localStorage.setItem(`dungeonProgressionData_${mode}`, JSON.stringify(progression));
   } catch (e) {
     console.error('Failed to save dungeon progression', e);
   }
@@ -70,8 +99,9 @@ function clearLevelAndUnlock(level) {
         tileData[key].status = true;
       }
     }
-    localStorage.setItem('dungeonTileData', JSON.stringify(tileData));
-    console.log('Updated tileData in localStorage');
+    const mode = currentGameMode || 'normal';
+    localStorage.setItem(`dungeonTileData_${mode}`, JSON.stringify(tileData));
+    console.log('Updated tileData in localStorage for mode:', mode);
   } else {
     console.log('tileData not available, progression saved for map reload');
   }
@@ -144,8 +174,9 @@ function generateAndSaveDungeon() {
   while (!success && attempts < maxAttempts) {
     dungeonPath = [];
     visited = new Set();
-    const startRow = Math.floor(Math.random() * rows);
-    const startCol = Math.floor(Math.random() * cols);
+    // Ensure level 1 starts within the initial visible 10x10 area
+    const startRow = Math.floor(Math.random() * Math.min(10, rows));
+    const startCol = Math.floor(Math.random() * Math.min(10, cols));
     success = findPath(startRow, startCol);
     attempts++;
     if (!success) {
@@ -186,91 +217,158 @@ function generateAndSaveDungeon() {
   // Populate tileData from the generated path
   dungeonPath.forEach((coords, index) => {
     const key = `${coords.row},${coords.col}`;
-    const level = index + 1;
+    
+    // Calculate actual level based on game mode
+    const tileIndex = index + 1;
+    const level = currentGameMode === 'hard' ? (100 + tileIndex) : tileIndex;
     
     const tile = { level };
 
-    if (level === 1) {
-      tile.title = "Start Tile";
-      tile.description = "This is the beginning of the map.";
-      tile.cleared = false; // must be played first
-      tile.status = true; // accessible
-      const pool = getEnemiesByTier(1);
-      tile.enemyOne = pool.length ? pool[Math.floor(Math.random()*pool.length)] : null;
-      tile.enemyTwo = null;
-      tile.enemyThree = null;
-    } else if (level === 100) {
-      // Final boss: Divine King (tier 6)
-      tile.title = "Divine King";
-      tile.description = "The ultimate challenge awaits.";
-      tile.cleared = false;
-      tile.status = false;
-      tile.enemyOne = "Enemies/divineKing.png";
-      tile.enemyTwo = null;
-      tile.enemyThree = null;
-    } else if (level === 75 || level === 50 || level === 25) {
-      // Boss levels: tier 5
-      tile.title = "Boss";
-      tile.description = "A powerful boss blocks your path.";
-      tile.cleared = false;
-      tile.status = false;
-      const pool = getEnemiesByTier(5);
-      tile.enemyOne = pool.length ? pool[Math.floor(Math.random()*pool.length)] : null;
-      tile.enemyTwo = null;
-      tile.enemyThree = null;
-    } else {
-      // Regular tiles: choose tier by level bands; tier 5 excluded until 25
-      tile.title = "Basic";
-      tile.description = `A path leads you deeper into the dungeon.`;
-      tile.cleared = false;
-      tile.status = false;
-      
-      // After level 10, mix enemies from different tiers
-      let pool = [];
-      if (level <= 10) {
-        // Levels 1-10: single tier only
-        const tier = levelToTier(level);
-        pool = getEnemiesByTier(tier);
+    // Hard Mode specific logic
+    if (currentGameMode === 'hard') {
+      if (tileIndex === 1) {
+        // First tile of hard mode (level 101)
+        tile.title = "Hard Mode - Start";
+        tile.description = "The true challenge begins here.";
+        tile.cleared = false;
+        tile.status = true; // accessible
+        const pool = getEnemiesByTier(4);
+        tile.enemyOne = pool.length ? pool[Math.floor(Math.random()*pool.length)] : null;
+        tile.enemyTwo = pool.length ? pool[Math.floor(Math.random()*pool.length)] : null;
+        tile.enemyThree = pool.length ? pool[Math.floor(Math.random()*pool.length)] : null;
+        tile.enemyFour = null;
+        tile.enemyFive = null;
+      } else if (level === 150) {
+        // Final boss of hard mode: Lightning Shark
+        tile.title = "Hard Mode Final Boss";
+        tile.description = "The Lightning Shark awaits your challenge.";
+        tile.cleared = false;
+        tile.status = false;
+        tile.isBossTile = true;
+        tile.enemyOne = "Enemies/lightningShark.png";
+        tile.enemyTwo = null;
+        tile.enemyThree = null;
+        tile.enemyFour = null;
+        tile.enemyFive = null;
+      } else if ((level - 100) % 5 === 0) {
+        // Boss stages every 5 levels (105, 110, 115, etc.)
+        tile.title = "Hard Mode Boss";
+        tile.description = "Double boss encounter with enhanced stats.";
+        tile.cleared = false;
+        tile.status = false;
+        tile.isBossTile = true;
+        const pool = getEnemiesByTier(5);
+        tile.enemyOne = pool.length ? pool[Math.floor(Math.random()*pool.length)] : null;
+        tile.enemyTwo = pool.length ? pool[Math.floor(Math.random()*pool.length)] : null;
+        tile.enemyThree = null;
+        tile.enemyFour = null;
+        tile.enemyFive = null;
       } else {
-        // After level 10: mix enemies from multiple tiers
-        const baseTier = levelToTier(level);
-        // Get enemies from base tier and one tier above/below
-        const tierRange = [];
-        if (baseTier > 1) tierRange.push(baseTier - 1);
-        tierRange.push(baseTier);
-        if (baseTier < 5) tierRange.push(baseTier + 1);
+        // Regular hard mode tiles: up to 5 enemies
+        tile.title = "Hard Mode";
+        tile.description = "Face enhanced enemies in this brutal challenge.";
+        tile.cleared = false;
+        tile.status = false;
         
-        // Combine enemies from all tiers in range
-        tierRange.forEach(t => {
-          pool = pool.concat(getEnemiesByTier(t));
-        });
+        // Mix of tier 4-5 enemies
+        let pool = getEnemiesByTier(4).concat(getEnemiesByTier(5));
+        const count = 3 + Math.floor(Math.random() * 3); // 3-5 enemies
+        const picks = [];
+        for (let i = 0; i < count; i++) {
+          if (!pool.length) break;
+          const img = pool[Math.floor(Math.random() * pool.length)];
+          picks.push(img);
+        }
+        tile.enemyOne = picks[0] || null;
+        tile.enemyTwo = picks[1] || null;
+        tile.enemyThree = picks[2] || null;
+        tile.enemyFour = picks[3] || null;
+        tile.enemyFive = picks[4] || null;
       }
-      
-      const count = (function enemiesCountForLevel(level){
-        const lvl = Number(level)||1;
-        if (lvl === 1) return 1;
-        if (lvl <= 10) return 1 + Math.floor(Math.random()*2); // 1-2
-        if (lvl <= 25) return 2; // steady 2
-        if (lvl <= 50) return 2 + Math.floor(Math.random()*2); // 2-3
-        if (lvl <= 75) return 3; // steady 3
-        if (lvl < 100) return 3 + Math.floor(Math.random()*2); // 3-4
-        return 1; // boss
-      })(level);
-      const picks = [];
-      for (let i=0; i<count; i++) {
-        if (!pool.length) break;
-        const img = pool[Math.floor(Math.random()*pool.length)];
-        picks.push(img);
+    }
+    // Normal Mode logic
+    else {
+      if (level === 1) {
+        tile.title = "Start Tile";
+        tile.description = "This is the beginning of the map.";
+        tile.cleared = false;
+        tile.status = true;
+        const pool = getEnemiesByTier(1);
+        tile.enemyOne = pool.length ? pool[Math.floor(Math.random()*pool.length)] : null;
+        tile.enemyTwo = null;
+        tile.enemyThree = null;
+      } else if (level === 100) {
+        // Final boss: Divine King (tier 6)
+        tile.title = "Divine King";
+        tile.description = "The ultimate challenge awaits.";
+        tile.cleared = false;
+        tile.status = false;
+        tile.isBossTile = true;
+        tile.enemyOne = "Enemies/divineKing.png";
+        tile.enemyTwo = null;
+        tile.enemyThree = null;
+      } else if (level === 75 || level === 50 || level === 25) {
+        // Boss levels: tier 5
+        tile.title = "Boss";
+        tile.description = "A powerful boss blocks your path.";
+        tile.cleared = false;
+        tile.status = false;
+        tile.isBossTile = true;
+        const pool = getEnemiesByTier(5);
+        tile.enemyOne = pool.length ? pool[Math.floor(Math.random()*pool.length)] : null;
+        tile.enemyTwo = null;
+        tile.enemyThree = null;
+      } else {
+        // Regular tiles: choose tier by level bands
+        tile.title = "Basic";
+        tile.description = `A path leads you deeper into the dungeon.`;
+        tile.cleared = false;
+        tile.status = false;
+        
+        // After level 10, mix enemies from different tiers
+        let pool = [];
+        if (level <= 10) {
+          const tier = levelToTier(level);
+          pool = getEnemiesByTier(tier);
+        } else {
+          const baseTier = levelToTier(level);
+          const tierRange = [];
+          if (baseTier > 1) tierRange.push(baseTier - 1);
+          tierRange.push(baseTier);
+          if (baseTier < 5) tierRange.push(baseTier + 1);
+          
+          tierRange.forEach(t => {
+            pool = pool.concat(getEnemiesByTier(t));
+          });
+        }
+        
+        const count = (function enemiesCountForLevel(level){
+          const lvl = Number(level)||1;
+          if (lvl === 1) return 1;
+          if (lvl <= 10) return 1 + Math.floor(Math.random()*2);
+          if (lvl <= 25) return 2;
+          if (lvl <= 50) return 2 + Math.floor(Math.random()*2);
+          if (lvl <= 75) return 3;
+          if (lvl < 100) return 3 + Math.floor(Math.random()*2);
+          return 1;
+        })(level);
+        const picks = [];
+        for (let i=0; i<count; i++) {
+          if (!pool.length) break;
+          const img = pool[Math.floor(Math.random()*pool.length)];
+          picks.push(img);
+        }
+        tile.enemyOne = picks[0] || null;
+        tile.enemyTwo = picks[1] || null;
+        tile.enemyThree = picks[2] || null;
       }
-      tile.enemyOne = picks[0] || null;
-      tile.enemyTwo = picks[1] || null;
-      tile.enemyThree = picks[2] || null;
     }
 
     tileData[key] = tile;
   });
 
-  localStorage.setItem('dungeonTileData', JSON.stringify(tileData));
+  const mode = currentGameMode || 'normal';
+  localStorage.setItem(`dungeonTileData_${mode}`, JSON.stringify(tileData));
 }
 
 // Function to render the grid based on tileData
@@ -455,12 +553,16 @@ document.body.addEventListener("click", (e) => {
 
 // Initial setup on page load
 function initialize() {
-  const savedData = localStorage.getItem('dungeonTileData');
+  // Initialize game mode first
+  initializeGameMode();
+  
+  const mode = currentGameMode || 'normal';
+  const savedData = localStorage.getItem(`dungeonTileData_${mode}`);
   if (savedData) {
     tileData = JSON.parse(savedData);
     // Apply saved progression to tile status
     const progression = loadDungeonProgression();
-    console.log('Loading progression:', progression);
+    console.log('Loading progression for mode', mode, ':', progression);
     for (const key in tileData) {
       const level = tileData[key].level;
       // Mark cleared levels
@@ -473,7 +575,7 @@ function initialize() {
       }
     }
     // Save the updated tileData back to localStorage
-    localStorage.setItem('dungeonTileData', JSON.stringify(tileData));
+    localStorage.setItem(`dungeonTileData_${mode}`, JSON.stringify(tileData));
   } else {
     generateAndSaveDungeon();
   }
@@ -599,11 +701,11 @@ const ITEM_TABLE = {
   "Wooden Sword": {
     slot: "Weapon",
     rarity: "Common",
-    strength: 3,
-    speed: 0.5,
+    strength: 4,
+    speed: 1,
     magic: 0,
     defense: 2,
-    health: 0,
+    health: 5,
     attack: "stap",
     ability: 1,
     image: "Items/woodenSword.png",
@@ -611,23 +713,23 @@ const ITEM_TABLE = {
   "Stick": {
     slot: "Weapon",
     rarity: "Base",
-    strength: 1,
+    strength: 2,
     speed: 1,
-    magic: 1,
+    magic: 2,
     defense: 0,
     health: 0,
-    attack: "slap",
+    attack: "poke",
     ability: 0,
     image: "Items/stick.png",
   },
   "Grass Staff": {
     slot: "Weapon",
     rarity: "Common",
-    strength: 0,
-    speed: 0.5,
-    magic: 3,
+    strength: 1,
+    speed: 1,
+    magic: 4,
     defense: 2,
-    health: 0,
+    health: 5,
     attack: "leaf impale",
     ability: 1,
     image: "Items/grassStaff.png",
@@ -635,11 +737,11 @@ const ITEM_TABLE = {
   "Coral Dagger": {
     slot: "Weapon",
     rarity: "Uncommon",
-    strength: 4,
+    strength: 5,
     speed: 2,
-    magic: 1.5,
-    defense: 0,
-    health: 0,
+    magic: 2,
+    defense: 1,
+    health: 6,
     attack: "coral leech",
     ability: 2,
     image: "Items/coralDagger.png",
@@ -647,11 +749,11 @@ const ITEM_TABLE = {
   "Spell Shield": {
     slot: "Offhand",
     rarity: "Uncommon",
-    strength: 0,
+    strength: 1,
     speed: 0,
-    magic: 1.5,
-    defense: 10,
-    health: 5,
+    magic: 2,
+    defense: 12,
+    health: 7,
     attack: "reflection",
     ability: 3,
     image: "Items/spellShield.png",
@@ -659,11 +761,11 @@ const ITEM_TABLE = {
   "Sea Crystal": {
     slot: "Offhand",
     rarity: "Uncommon",
-    strength: 0,
-    speed: 0.5,
-    magic: 4,
-    defense: 0,
-    health: 5,
+    strength: 1,
+    speed: 1,
+    magic: 5,
+    defense: 3,
+    health: 7,
     attack: "sea shield",
     ability: 2,
     image: "Items/seaCrystal.png",
@@ -671,11 +773,11 @@ const ITEM_TABLE = {
   "Shell": {
     slot: "Offhand",
     rarity: "Uncommon",
-    strength: 2.5,
+    strength: 3,
     speed: 0,
     magic: 0,
-    defense: 15,
-    health: 5,
+    defense: 16,
+    health: 8,
     attack: "none",
     ability: 0,
     image: "Items/shell.png",
@@ -683,11 +785,11 @@ const ITEM_TABLE = {
   "Iron Helmet": {
     slot: "Helmet",
     rarity: "Uncommon",
-    strength: 0,
+    strength: 1,
     speed: 0,
     magic: 0,
-    defense: 5,
-    health: 3,
+    defense: 6,
+    health: 8,
     attack: "none",
     ability: 0,
     image: "Items/ironHelmet.png",
@@ -695,11 +797,11 @@ const ITEM_TABLE = {
   "Iron Chestplate": {
     slot: "Chest",
     rarity: "Uncommon",
-    strength: 0.5,
+    strength: 1,
     speed: 0,
     magic: 0,
-    defense: 10,
-    health: 6,
+    defense: 12,
+    health: 12,
     attack: "none",
     ability: 0,
     image: "Items/ironChest.png",
@@ -707,11 +809,11 @@ const ITEM_TABLE = {
   "Iron Legging": {
     slot: "Leg",
     rarity: "Uncommon",
-    strength: 0,
-    speed: 0.5,
+    strength: 1,
+    speed: 1,
     magic: 0,
-    defense: 7,
-    health: 2,
+    defense: 8,
+    health: 6,
     attack: "none",
     ability: 0,
     image: "Items/ironPants.png",
@@ -719,11 +821,11 @@ const ITEM_TABLE = {
   "Iron Boots": {
     slot: "Boot",
     rarity: "Uncommon",
-    strength: 0,
-    speed: 1,
+    strength: 1,
+    speed: 2,
     magic: 0,
-    defense: 3,
-    health: 1,
+    defense: 4,
+    health: 4,
     attack: "none",
     ability: 0,
     image: "Items/ironBoots.png",
@@ -732,10 +834,10 @@ const ITEM_TABLE = {
     slot: "Weapon",
     rarity: "Rare",
     strength: 7,
-    speed: 0,
-    magic: 0,
-    defense: 15,
-    health: 10,
+    speed: 1,
+    magic: 1,
+    defense: 18,
+    health: 12,
     attack: "Charge",
     ability: 4,
     image: "Items/spikedShield.png",
@@ -743,11 +845,11 @@ const ITEM_TABLE = {
   "Grimore": {
     slot: "Weapon",
     rarity: "Rare",
-    strength: 0,
-    speed: 1.5,
-    magic: 12,
-    defense: 0,
-    health: 0,
+    strength: 2,
+    speed: 2,
+    magic: 7,
+    defense: 2,
+    health: 8,
     attack: "Plasma Blast",
     ability: 5,
     image: "Items/grimoire.png",
@@ -755,10 +857,10 @@ const ITEM_TABLE = {
   "Forest Crown": {
     slot: "Helmet",
     rarity: "Rare",
-    strength: 0,
+    strength: 2,
     speed: 3,
-    magic: 5,
-    defense: 5,
+    magic: 3,
+    defense: 8,
     health: 15,
     attack: "Tree People",
     ability: 6,
@@ -767,11 +869,11 @@ const ITEM_TABLE = {
   "Frosted Helmet": {
     slot: "Helmet",
     rarity: "Rare",
-    strength: 0,
-    speed: 0,
+    strength: 1,
+    speed: 1,
     magic: 2,
-    defense: 5,
-    health: 8,
+    defense: 9,
+    health: 14,
     attack: "none",
     ability: 0,
     image: "Items/frostHelmet.png",
@@ -779,11 +881,11 @@ const ITEM_TABLE = {
   "Frosted Chest": {
     slot: "Chest",
     rarity: "Rare",
-    strength: 0,
+    strength: 2,
     speed: 0,
-    magic: 2,
-    defense: 20,
-    health: 14,
+    magic: 3,
+    defense: 16,
+    health: 18,
     attack: "none",
     ability: 0,
     image: "Items/frostChest.png",
@@ -791,11 +893,11 @@ const ITEM_TABLE = {
   "Frosted Leg": {
     slot: "Leg",
     rarity: "Rare",
-    strength: 0,
-    speed: 0,
-    magic: 1,
-    defense: 10,
-    health: 6,
+    strength: 1,
+    speed: 1,
+    magic: 2,
+    defense: 12,
+    health: 10,
     attack: "none",
     ability: 0,
     image: "Items/frostPants.png",
@@ -803,11 +905,11 @@ const ITEM_TABLE = {
   "Frosted Boots": {
     slot: "Boot",
     rarity: "Rare",
-    strength: 0,
+    strength: 1,
     speed: 3,
-    magic: 1,
-    defense: 3,
-    health: 3,
+    magic: 2,
+    defense: 6,
+    health: 8,
     attack: "none",
     ability: 0,
     image: "Items/frostBoots.png",
@@ -815,11 +917,11 @@ const ITEM_TABLE = {
   "Ice Spear": {
     slot: "Weapon",
     rarity: "Rare",
-    strength: 10,
-    speed: 1.5,
-    magic: 1,
-    defense: 0,
-    health: 0,
+    strength: 8,
+    speed: 2,
+    magic: 2,
+    defense: 2,
+    health: 8,
     attack: "plunge",
     ability: 1,
     image: "Items/iceSpear.png",
@@ -827,11 +929,11 @@ const ITEM_TABLE = {
   "Shadow Staff": {
     slot: "Weapon",
     rarity: "Epic",
-    strength: 2,
-    speed: 1,
-    magic: 22,
-    defense: 0,
-    health: 0,
+    strength: 3,
+    speed: 2,
+    magic: 10,
+    defense: 3,
+    health: 10,
     attack: "shadow vortex",
     ability: 7,
     image: "Items/shadowStaff.png",
@@ -839,11 +941,11 @@ const ITEM_TABLE = {
   "Blaze Blade": {
     slot: "Weapon",
     rarity: "Epic",
-    strength: 16,
-    speed: 5,
-    magic: 7,
-    defense: 3,
-    health: 0,
+    strength: 10,
+    speed: 3,
+    magic: 4,
+    defense: 4,
+    health: 10,
     attack: "Incenerate",
     ability: 8,
     image: "Items/blazeBlade.png",
@@ -852,10 +954,10 @@ const ITEM_TABLE = {
     slot: "Helmet",
     rarity: "Epic",
     strength: 3,
-    speed: 0,
-    magic: 4,
-    defense: 12,
-    health: 13,
+    speed: 1,
+    magic: 3,
+    defense: 14,
+    health: 20,
     attack: "none",
     ability: 3,
     image: "Items/gemHelmet.png",
@@ -864,10 +966,10 @@ const ITEM_TABLE = {
     slot: "Chest",
     rarity: "Epic",
     strength: 4,
-    speed: 0,
-    magic: 5,
-    defense: 26,
-    health: 17,
+    speed: 1,
+    magic: 4,
+    defense: 22,
+    health: 26,
     attack: "none",
     ability: 0,
     image: "Items/gemChest.png",
@@ -877,9 +979,9 @@ const ITEM_TABLE = {
     rarity: "Epic",
     strength: 3,
     speed: 2,
-    magic: 4,
-    defense: 15,
-    health: 12,
+    magic: 3,
+    defense: 16,
+    health: 16,
     attack: "none",
     ability: 0,
     image: "Items/gemLegs.png",
@@ -888,10 +990,10 @@ const ITEM_TABLE = {
     slot: "Boots",
     rarity: "Epic",
     strength: 2,
-    speed: 3,
-    magic: 3,
-    defense: 25,
-    health: 10,
+    speed: 4,
+    magic: 2,
+    defense: 10,
+    health: 12,
     attack: "none",
     ability: 3,
     image: "Items/gemBoots.png",
@@ -899,11 +1001,11 @@ const ITEM_TABLE = {
   "Water Skaters": {
     slot: "Boots",
     rarity: "Epic",
-    strength: 0,
-    speed: 0,
-    magic: 1,
-    defense: 11,
-    health: 15,
+    strength: 2,
+    speed: 4,
+    magic: 2,
+    defense: 12,
+    health: 14,
     attack: "skater slice",
     ability: 9,
     image: "Items/waterSkaters.png",
@@ -911,11 +1013,11 @@ const ITEM_TABLE = {
   "Energy Saber": {
     slot: "Weapon",
     rarity: "Legendary",
-    strength: 30,
-    speed: 1,
-    magic: 4,
-    defense: 20,
-    health: 0,
+    strength: 12,
+    speed: 3,
+    magic: 5,
+    defense: 8,
+    health: 14,
     attack: "force strike",
     ability: 10,
     image: "Items/energySaber.png",
@@ -923,23 +1025,23 @@ const ITEM_TABLE = {
   "Demon Sythe": {
     slot: "Weapon",
     rarity: "Legendary",
-    strength: 50,
-    speed: 1,
-    magic: 4,
-    defense: 0,
-    health: 0,
+    strength: 14,
+    speed: 3,
+    magic: 3,
+    defense: 5,
+    health: 12,
     attack: "Grim slice",
-    ability: 11,
+    ability: 10,
     image: "Items/demonSythe.png",
   },
   "Lightning Spear": {
     slot: "Offhand",
     rarity: "Legendary",
-    strength: 30,
-    speed: 8,
-    magic: 3,
-    defense: 5,
-    health: 0,
+    strength: 10,
+    speed: 5,
+    magic: 5,
+    defense: 8,
+    health: 14,
     attack: "Thunder",
     ability: 12,
     image: "Items/lightningSpear.png",
@@ -947,11 +1049,11 @@ const ITEM_TABLE = {
   "Pixel Sword": {
     slot: "Weapon",
     rarity: "Legendary",
-    strength: 40,
-    speed: 1,
-    magic: 2,
-    defense: 15,
-    health: 10,
+    strength: 13,
+    speed: 4,
+    magic: 3,
+    defense: 6,
+    health: 14,
     attack: "Combo",
     ability: 13,
     image: "Items/pixelSword.png",
@@ -959,11 +1061,11 @@ const ITEM_TABLE = {
   "Ice Cream Gun": {
     slot: "Weapon",
     rarity: "Legendary",
-    strength: 0,
-    speed: 0,
-    magic: 5,
-    defense: 1,
-    health: 0,
+    strength: 4,
+    speed: 3,
+    magic: 12,
+    defense: 5,
+    health: 12,
     attack: "Chilled Cream",
     ability: 14,
     image: "Items/iceCreamGun.png",
@@ -971,11 +1073,11 @@ const ITEM_TABLE = {
   "Running Spikes": {
     slot: "Boots",
     rarity: "Mythical",
-    strength: 5,
+    strength: 4,
     speed: 8,
-    magic: 2,
-    defense: 0,
-    health: 0,
+    magic: 4,
+    defense: 14,
+    health: 18,
     attack: "none",
     ability: 15,
     image: "Items/runningSpikes.png",
@@ -983,11 +1085,11 @@ const ITEM_TABLE = {
   "Rulers Hand": {
     slot: "Weapon",
     rarity: "Mythical",
-    strength: 65,
-    speed: 1,
-    magic: 0,
-    defense: 65,
-    health: 25,
+    strength: 10,
+    speed: 4,
+    magic: 5,
+    defense: 12,
+    health: 20,
     attack: "Arise",
     ability: 16,
     image: "Items/rulersHand.png",
@@ -995,11 +1097,11 @@ const ITEM_TABLE = {
   "Muramasa": {
     slot: "Weapon",
     rarity: "Mythical",
-    strength: 110,
-    speed: 2,
-    magic: 0,
-    defense: 0,
-    health: 10,
+    strength: 16,
+    speed: 5,
+    magic: 4,
+    defense: 6,
+    health: 16,
     attack: "Pure skill",
     ability: 17,
     image: "Items/muramasa.png",
@@ -1007,11 +1109,11 @@ const ITEM_TABLE = {
   "Spell Blade": {
     slot: "Weapon",
     rarity: "Mythical",
-    strength: 500,
-    speed: 1,
-    magic: 5,
-    defense: 900,
-    health: 0,
+    strength: 6,
+    speed: 4,
+    magic: 15,
+    defense: 7,
+    health: 16,
     attack: "spell infused",
     ability: 18,
     image: "Items/spellBlade.png",
@@ -1019,11 +1121,11 @@ const ITEM_TABLE = {
   "Enhanced Stick": {
     slot: "Weapon",
     rarity: "Mythical",
-    strength: 20,
-    speed: 2,
-    magic: 2,
-    defense: 6,
-    health: 0,
+    strength: 8,
+    speed: 3,
+    magic: 7,
+    defense: 7,
+    health: 14,
     attack: "enhance",
     ability: 19,
     image: "Items/enhancedStick.png",
@@ -1031,11 +1133,11 @@ const ITEM_TABLE = {
   "Divine Crown": {
     slot: "Helmet",
     rarity: "Artifact",
-    strength: 0,
-    speed: 0,
-    magic: 0,
-    defense: 100,
-    health: 40,
+    strength: 6,
+    speed: 5,
+    magic: 6,
+    defense: 18,
+    health: 30,
     attack: "Rulers Authority",
     ability: 20,
     image: "Items/divineCrown.png",
@@ -1063,6 +1165,7 @@ function saveGameData() {
         FIVE: { ATTACK_INVENTORY: PARTY_ATTACKS.FIVE.ATTACK_INVENTORY || [], ATTACK_EQUIPPED: Array.from(PARTY_ATTACKS.FIVE.ATTACK_EQUIPPED || []) },
       } : null,
       attackCounter: typeof attackCounter !== 'undefined' ? attackCounter : 1,
+      enchantmentInventory: typeof ENCHANTMENT_INVENTORY !== 'undefined' ? ENCHANTMENT_INVENTORY : {},
     };
     localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
     //console.log('Saved game data');
@@ -1080,7 +1183,17 @@ function loadGameData() {
       if (Array.isArray(payload.inventory)) {
         // Replace contents of INVENTORY in-place so references remain valid
         INVENTORY.length = 0;
-        payload.inventory.forEach(it => INVENTORY.push(it));
+        payload.inventory.forEach(it => {
+          // Sync item stats with ITEM_TABLE to get updated ability values
+          if (it.name && ITEM_TABLE[it.name]) {
+            const template = ITEM_TABLE[it.name];
+            // Update ability field if it changed in ITEM_TABLE
+            if (template.ability !== undefined) {
+              it.ability = template.ability;
+            }
+          }
+          INVENTORY.push(it);
+        });
       }
       if (payload.partyStats && typeof PARTY_STATS !== 'undefined') {
         // Overwrite PARTY_STATS keys but preserve object reference
@@ -1110,6 +1223,13 @@ function loadGameData() {
           attackCounter = maxId + 1;
         } catch (e) { attackCounter = attackCounter || 1; }
       }
+      
+      // Load enchantment inventory
+      if (payload.enchantmentInventory) {
+        window.ENCHANTMENT_INVENTORY = payload.enchantmentInventory;
+      } else {
+        window.ENCHANTMENT_INVENTORY = {};
+      }
     }
     //console.log('Loaded game data');
   } catch (e) {
@@ -1128,6 +1248,8 @@ function resetInventory() {
         if (!PARTY_STATS[k]) continue;
         PARTY_STATS[k].HELMET = null; PARTY_STATS[k].CHEST = null; PARTY_STATS[k].LEGS = null; PARTY_STATS[k].BOOTS = null;
         PARTY_STATS[k].MAINHAND = null; PARTY_STATS[k].OFFHAND = null;
+        PARTY_STATS[k].LEVEL = 1; // Reset to level 1
+        PARTY_STATS[k].HEALTH = null; // Will be recalculated by updateStats
       }
     }
     if (typeof PARTY_ATTACKS !== 'undefined') {
@@ -1135,12 +1257,51 @@ function resetInventory() {
         if (!PARTY_ATTACKS[k]) continue;
         PARTY_ATTACKS[k].ATTACK_INVENTORY = [];
         PARTY_ATTACKS[k].ATTACK_EQUIPPED = new Set();
+        
+        // Give everyone the base "punch" attack
+        const punchAttack = {
+          id: attackCounter++,
+          sourceUid: null, // No item source - it's a base attack
+          name: 'punch',
+          itemName: null,
+          strMultiplier: 0.5,
+          magicMultiplier: 0,
+          status: 'none',
+        };
+        PARTY_ATTACKS[k].ATTACK_INVENTORY.push(punchAttack);
+        PARTY_ATTACKS[k].ATTACK_EQUIPPED.add(punchAttack.id);
       }
     }
-    // Persist cleared state
+    
+    // Give a level 3 stick as starter item
+    const starterStick = generateRandomItem(3, 'Base'); // This will create a stick at level 3
+    // Force it to be a Stick specifically
+    const stickTemplate = ITEM_TABLE['Stick'];
+    if (stickTemplate) {
+      const level3Scale = Math.pow(3, 0.8);
+      starterStick.name = 'Stick';
+      starterStick.slot = stickTemplate.slot;
+      starterStick.rarity = stickTemplate.rarity;
+      starterStick.strength = Math.round(stickTemplate.strength * level3Scale);
+      starterStick.speed = Math.round(stickTemplate.speed * level3Scale);
+      starterStick.magic = Math.round(stickTemplate.magic * level3Scale);
+      starterStick.defense = Math.round(stickTemplate.defense * level3Scale);
+      starterStick.health = Math.round(stickTemplate.health * level3Scale);
+      starterStick.attack = stickTemplate.attack; // "poke"
+      starterStick.ability = stickTemplate.ability;
+      starterStick.image = stickTemplate.image;
+      starterStick.level = 3;
+    }
+    
+    // Update stats for all party members
+    if (typeof updateStats === 'function') updateStats();
+    
+    // Persist cleared state with starter stick
     saveGameData();
     // Re-render inventory if the page has it
     if (typeof renderInventory === 'function') renderInventory();
+    
+    alert('Inventory reset! You have been given a Level 3 Stick to start your journey.');
   } catch (e) {
     console.error('Failed to reset inventory', e);
   }
@@ -1152,190 +1313,260 @@ function resetInventory() {
 const ENEMY_BASE_STATS = {
   //Unknown Type Enemy Stats
   'skull': {
-    health:15,
-    strength:3.5,
+    health:8,
+    strength:2,
     magic:0,
-    speed:3.5,
+    speed:2,
     defense:0,
     hBars:1,
     image:"Enemies/skull.png",
     tier:1,
   },
   'slime': {
-    health:45,
-    strength:4,
+    health:12,
+    strength:2.5,
     magic:0,
-    speed:2,
-    defense:0.15,
+    speed:1.5,
+    defense:1,
     hBars:1,
     image:"Enemies/slime.png",
     tier:2,
   },
   'alien': {
-    health:20,
+    health:10,
     strength:0,
-    magic:8.5,
-    speed:4,
+    magic:4,
+    speed:2.5,
     defense:0,
     hBars:1,
     image:"Enemies/alien.png",
     tier:3,
+    specialEffect: "Alien Fire: Applies burn status on attack"
   },
-  'Cursed_Knight': {
-    health:65,
-    strength:12,
+  'cursedKnight': {
+    health:15,
+    strength:4,
     magic:0,
-    speed:6.5,
-    defense:30,
+    speed:3,
+    defense:5,
     hBars:1,
     image:"Enemies/cursedKnight.png",
     tier:4,
+    specialEffect: "Cursed Blade: Applies grim status on attack (2% max HP damage per turn)"
   },
   'Shadow': {
-    health:110,
-    strength:7,
-    magic:5,
-    speed:20,
+    health:18,
+    strength:3,
+    magic:2,
+    speed:6,
     defense:0,
     hBars:1,
     image:"Enemies/shadow.png",
     tier:5,
   },
+  //Zombie Type Enemy Stats
+  'corspe': {
+    health:9,
+    strength:2.5,
+    magic:0,
+    speed:1.5,
+    defense:0,
+    hBars:1,
+    image:"Enemies/corspe.png",
+    tier:1,
+    specialEffect: "Undead: Slow shambling corpse"
+  },
+  'crawler': {
+    health:13,
+    strength:3.5,
+    magic:0,
+    speed:1,
+    defense:2,
+    hBars:2,
+    image:"Enemies/crawler.png",
+    tier:2,
+    specialEffect: "Venomous Bite: Applies bleed status on attack + Two Lives (slow/tanky then fast/fragile)",
+    secondForm: {
+      health:4,
+      strength:3.5,
+      magic:0,
+      speed:5,
+      defense:0
+    }
+  },
+  'frozenCorspe': {
+    health:11,
+    strength:2,
+    magic:3,
+    speed:1.5,
+    defense:1,
+    hBars:1,
+    image:"Enemies/frozenCorspe.png",
+    tier:3,
+    specialEffect: "Frozen Touch: Applies chill status on attack",
+    attackStatus: "chill"
+  },
+  'necromancer': {
+    health:14,
+    strength:0,
+    magic:5.5,
+    speed:2,
+    defense:3,
+    hBars:1,
+    image:"Enemies/necromancer.png",
+    tier:4,
+    specialEffect: "Resurrection: While alive, dead allies resurrect as zombies"
+  },
   //Forest Type Enemy Stats
   'Sapling': {
-    health:20,
+    health:10,
     strength:0,
-    magic:4,
+    magic:2.5,
     speed:1,
     defense:0,
     hBars:1,
     image:"Enemies/sapling.png",
     tier:1,
   },
-  'Vine_Lasher': {
-    health:30,
-    strength:5.5,
+  'vineLasher': {
+    health:12,
+    strength:3,
     magic:0,
-    speed:3,
-    defense:0,
+    speed:2,
+    defense:1,
     hBars:1,
     image:"Enemies/vineLasher.png",
     tier:2,
+    specialEffect: "Draining Vines: Applies leech status on attack (drains HP over time)"
   },
   'Treant': {
-    health:50,
-    strength:9,
+    health:14,
+    strength:3.5,
     magic:0,
-    speed:2,
-    defense:15,
+    speed:1.5,
+    defense:4,
     hBars:1,
     image:"Enemies/treant.png",
     tier:3,
     specialEffect: "Rooted Defender: High defense, slow but steady"
   },
-  'Elder_Ent': {
-    health:30,
+  'elderEnt': {
+    health:16,
     strength:0,
-    magic:14,
-    speed:4,
-    defense:30,
+    magic:5,
+    speed:2,
+    defense:6,
     hBars:1,
     image:"Enemies/elderEnt.png",
     tier:4,
-    specialEffect: "Ancient Magic: Extremely high defense and magic damage"
+    specialEffect: "Ancient Growth: Gains 10% bonus magic each turn (compounds) + high defense"
   },
   'Worldroot': {
-    health:150,
-    strength:3,
-    magic:15,
-    speed:6,
-    defense:5,
+    health:25,
+    strength:2,
+    magic:6,
+    speed:3,
+    defense:4,
     hBars:1,
     image:"Enemies/worldroot.png",
     tier:5,
-    specialEffect: "BOSS: Nature's Wrath - massive HP pool"
+    specialEffect: "BOSS: Nature's Call - Summons Vine Lasher (15 lvls lower) every attack"
   },
   //Army Enemy Stats
   'Knight': {
-    health:35,
-    strength:8,
+    health:11,
+    strength:3,
     magic:0,
-    speed:2,
+    speed:1.5,
     defense:2,
     hBars:1,
     image:"Enemies/knight.png",
     tier:1,
   },
   'Archer': {
-    health:20,
-    strength:6,
+    health:9,
+    strength:3,
     magic:0,
-    speed:4,
-    defense:1,
+    speed:2.5,
+    defense:0.5,
     hBars:1,
     image:"Enemies/archer.png",
     tier:2,
   },
   'Mage': {
-    health:20,
+    health:10,
     strength:0,
-    magic:8,
-    speed:5,
+    magic:4,
+    speed:2.5,
     defense:0,
     hBars:1,
     image:"Enemies/mage.png",
     tier:3,
+    specialEffect: "Arcane Curse: Applies random status effect (burn/bleed/chill) on attack"
   },
-  'Kings-Guard': {
-    health:50,
-    strength:12,
+  'kingsGuard': {
+    health:16,
+    strength:4.5,
     magic:0,
-    speed:4,
-    defense:15,
+    speed:2.5,
+    defense:5,
     hBars:1,
     image:"Enemies/kingsGuard.png",
     tier:4,
     specialEffect: "Royal Protector: Balanced high-tier warrior"
   },
   'King': {
-    health:200,
-    strength:10,
-    magic:10,
+    health:25,
+    strength:4,
+    magic:4,
     speed:2,
-    defense:20,
+    defense:5.5,
     hBars:1,
     image:"Enemies/king.png",
     tier:5,
-    specialEffect: "BOSS: Royal Authority - hybrid offense with heavy defense"
+    specialEffect: "BOSS: Royal Command - Summons King's Guard (15 lvls lower) + gains 10% stats per guard alive"
   },
   //Final Boss Enemy Stats
   'divineKing': {
-    health:300,
-    strength:15,
-    magic:15,
-    speed:3,
-    defense:20,
+    health:350,
+    strength:18,
+    magic:18,
+    speed:4,
+    defense:25,
     hBars:1,
     image:"Enemies/divineKing.png",
     tier:6,
     specialEffect: "FINAL BOSS Phase 1: Divine power incarnate"
   },
   'demonKing': {
-    health:500,
-    strength:20,
-    magic:20,
-    speed:4,
-    defense:25,
+    health:600,
+    strength:25,
+    magic:25,
+    speed:5,
+    defense:30,
     hBars:1,
     image:"Enemies/demonKing.png",
     tier:6,
     specialEffect: "FINAL BOSS Phase 2: Demonic transformation - ultimate power"
+  },
+  'lightning_shark': {
+    health:400,
+    strength:20,
+    magic:20,
+    speed:6,
+    defense:15,
+    hBars:1,
+    image:"Enemies/lightningShark.png",
+    tier:6,
+    specialEffect: "LEGENDARY BOSS: Lightning Shock - Gives player lightning status (ignores next attack, 2 turn cooldown)"
   }
 };
 
 // attack stats multipliers and status effects
 
 const ATTACK_STATS = {
+  "punch":           { strMultiplier: 0.5,  magicMultiplier: 0,    status: "none" },
+  "poke":            { strMultiplier: 0.5,  magicMultiplier: 0.5,  status: "none" },
   "stap":            { strMultiplier: 1,    magicMultiplier: 0,    status: "none" },
   "slap":            { strMultiplier: 0.45, magicMultiplier: 0.45, status: "none" },
   "leaf impale":     { strMultiplier: 0,    magicMultiplier: 1,    status: "none" },
@@ -1433,12 +1664,13 @@ function updateStats(){
     }
 
     const level = member.LEVEL;
-    const sqrtLevel = Math.sqrt(level);
+    // Use level^1.2 for base stat scaling
+    const levelScale = Math.pow(level, 1.2);
 
-    const baseHealth = Math.round(level * sqrtLevel * 3);
-    const baseStrength = Math.round(level * sqrtLevel);
-    const baseMagic = Math.round(level * sqrtLevel);
-    const baseSpeed = Math.round(sqrtLevel + level);
+    const baseHealth = Math.round(levelScale * 3);
+    const baseStrength = Math.round(levelScale);
+    const baseMagic = Math.round(levelScale);
+    const baseSpeed = Math.round(levelScale * 0.5);
     
     const baseDefense = 0;
 
@@ -1533,26 +1765,34 @@ function generateRandomItem(level, forceRarity = null) {
 
   // If no forced rarity, use normal weighted random selection
   if (!chosenRarity) {
-    // Build a weight map per bucket; higher levels increase higher-rarity odds but cap at Legendary
+    // Build a weight map per bucket; gradually shift from common to legendary as level increases
+    // Legendaries are possible from level 1 but rare, becoming common by level 90
     let weights = {};
-    if (lvl <= 10) {
-      // Uncommon and lower only
-      weights = { [R.Base]: 50, [R.Common]: 40, [R.Uncommon]: 10 };
-    } else if (lvl <= 20) {
-      // Rare and lower
-      weights = { [R.Base]: 30, [R.Common]: 40, [R.Uncommon]: 20, [R.Rare]: 10 };
-    } else if (lvl <= 30) {
-      // Epic and lower
-      weights = { [R.Base]: 20, [R.Common]: 35, [R.Uncommon]: 25, [R.Rare]: 15, [R.Epic]: 5 };
-    } else if (lvl <= 40) {
-      // Legendary and lower
-      weights = { [R.Base]: 5, [R.Common]: 20, [R.Uncommon]: 25, [R.Rare]: 25, [R.Epic]: 15, [R.Legendary]: 10 };
-    } else {
-      // 40+: increase chances for higher rarities but cap at Legendary; exclude Mythical/Artifact
-      weights = { [R.Common]: 10, [R.Uncommon]: 20, [R.Rare]: 25, [R.Epic]: 25, [R.Legendary]: 20 };
-    }
-
+    
+    // Calculate progression factor (0 at level 1, 1 at level 90)
+    const progressionFactor = Math.min(1, Math.max(0, (lvl - 1) / 89));
+    
+    // Dynamic weights that shift based on level
+    // At level 1: Common 50%, Uncommon 25%, Rare 15%, Epic 7%, Legendary 3%
+    // At level 90: Common 5%, Uncommon 10%, Rare 15%, Epic 30%, Legendary 40%
+    
+    const commonWeight = Math.max(5, 50 - (45 * progressionFactor));
+    const uncommonWeight = Math.max(10, 25 - (15 * progressionFactor));
+    const rareWeight = 15; // Stays constant
+    const epicWeight = 7 + (23 * progressionFactor);
+    const legendaryWeight = 3 + (37 * progressionFactor);
+    
+    weights = {
+      [R.Common]: commonWeight,
+      [R.Uncommon]: uncommonWeight,
+      [R.Rare]: rareWeight,
+      [R.Epic]: epicWeight,
+      [R.Legendary]: legendaryWeight
+    };
+    
+    // Exclude Base items to improve early game gear quality
     // Exclude Mythical and Artifact from random drops at all levels
+    delete weights[R.Base];
     delete weights[R.Mythical];
     delete weights[R.Artifact];
 
@@ -1604,7 +1844,8 @@ function generateRandomItem(level, forceRarity = null) {
   item.name = randomName;
 
   // Scale stats based on level (keep negative as percent flags)
-  const scale = Math.sqrt(lvl);
+  // Using level^0.8 for stronger scaling than sqrt (level^0.5)
+  const scale = Math.pow(lvl, 0.8);
   function scaleStat(stat, baseValue) {
     if (!baseValue) return 0;
     if (baseValue > 0) return Math.round(baseValue * scale);
@@ -1618,6 +1859,12 @@ function generateRandomItem(level, forceRarity = null) {
   item.level = lvl;
 
   INVENTORY.push(item);
+  
+  // Register item in collection index
+  if (typeof registerItemCollected === 'function') {
+    registerItemCollected(randomName);
+  }
+  
   return item;
 }
 
@@ -1669,6 +1916,23 @@ function removeAttackBySourceUid(uid, memberKey = SELECTED_MEMBER) {
   if (typeof saveGameData === 'function') saveGameData();
 }
 
+/**
+ * Removes all attacks associated with a specific item name for the selected member.
+ * @param {string} itemName - The name of the item that granted the attack.
+ * @param {string} memberKey - The party member key (e.g., 'ONE').
+ */
+function removeAttackByItemName(itemName, memberKey = SELECTED_MEMBER) {
+  const attacks = PARTY_ATTACKS[memberKey].ATTACK_INVENTORY;
+  const equipped = PARTY_ATTACKS[memberKey].ATTACK_EQUIPPED;
+  const attacksToRemove = attacks.filter(a => a.itemName === itemName);
+  attacksToRemove.forEach(a => equipped.delete(a.id));
+  const remaining = attacks.filter(a => a.itemName !== itemName);
+  attacks.length = 0;
+  attacks.push(...remaining);
+  if (typeof saveGameData === 'function') saveGameData();
+}
+window.removeAttackByItemName = removeAttackByItemName;
+
 // --- Functions for managing equipped attacks (called from renderAttacks in inventory.js) ---
 
 /**
@@ -1698,3 +1962,35 @@ function unequipAttackById(id, memberKey = SELECTED_MEMBER) {
 
 // Now that core structures (PARTY_STATS, PARTY_ATTACKS, INVENTORY) are defined, load persisted data
 if (typeof loadGameData === 'function') loadGameData();
+
+// Ensure all party members have the base "punch" attack
+function ensureBaseAttacks() {
+  if (typeof PARTY_ATTACKS === 'undefined') return;
+  
+  for (const k of ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE']) {
+    if (!PARTY_ATTACKS[k]) continue;
+    
+    // Check if this member already has punch
+    const hasPunch = PARTY_ATTACKS[k].ATTACK_INVENTORY.some(a => a && a.name === 'punch');
+    
+    if (!hasPunch) {
+      const punchAttack = {
+        id: attackCounter++,
+        sourceUid: null, // No item source - it's a base attack
+        name: 'punch',
+        itemName: null,
+        strMultiplier: 0.5,
+        magicMultiplier: 0,
+        status: 'none',
+      };
+      PARTY_ATTACKS[k].ATTACK_INVENTORY.push(punchAttack);
+      PARTY_ATTACKS[k].ATTACK_EQUIPPED.add(punchAttack.id);
+    }
+  }
+  
+  // Save the updated data
+  if (typeof saveGameData === 'function') saveGameData();
+}
+
+// Call this after loading to ensure everyone has punch
+ensureBaseAttacks();

@@ -6,14 +6,128 @@
         <link rel="stylesheet" type="text/css" href="style.css">
         <link rel="stylesheet" href="https://www.w3schools.com/w3css/5/w3.css">
         <link rel="stylesheet" href="https://www.w3schools.com/lib/w3-theme-blue.css">
+        <style>
+            .settings-button {
+                position: absolute;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
+                color: #fff;
+                padding: 12px 24px;
+                border: 2px solid #e94560;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 1.1em;
+                font-weight: bold;
+                transition: all 0.3s;
+            }
+
+            .settings-button:hover {
+                background: linear-gradient(135deg, #e94560 0%, #ff6b88 100%);
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(233, 69, 96, 0.4);
+            }
+
+            .settings-modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.85);
+                display: none;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+            }
+
+            .settings-modal.active {
+                display: flex;
+            }
+
+            .settings-content {
+                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+                border: 3px solid #e94560;
+                border-radius: 15px;
+                padding: 40px;
+                max-width: 500px;
+                width: 90%;
+                position: relative;
+            }
+
+            .settings-close {
+                position: absolute;
+                top: 15px;
+                right: 15px;
+                background: #e94560;
+                color: #fff;
+                border: none;
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                font-size: 1.5em;
+                cursor: pointer;
+                font-weight: bold;
+            }
+
+            .settings-close:hover {
+                background: #ff6b88;
+            }
+
+            .settings-title {
+                font-size: 2.5em;
+                color: #e94560;
+                text-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
+                text-align: center;
+                margin-bottom: 30px;
+            }
+
+            .settings-option {
+                background: rgba(15, 52, 96, 0.3);
+                border: 2px solid #0f3460;
+                border-radius: 10px;
+                padding: 20px;
+                margin-bottom: 15px;
+                cursor: pointer;
+                transition: all 0.3s;
+            }
+
+            .settings-option:hover {
+                border-color: #e94560;
+                transform: translateX(5px);
+                box-shadow: 0 5px 15px rgba(233, 69, 96, 0.3);
+            }
+
+            .option-title {
+                font-size: 1.4em;
+                font-weight: bold;
+                color: #fff;
+                margin-bottom: 8px;
+            }
+
+            .option-description {
+                color: #aaa;
+                font-size: 0.95em;
+            }
+
+            .danger-option {
+                border-color: #ff0000;
+            }
+
+            .danger-option:hover {
+                border-color: #ff4444;
+                box-shadow: 0 5px 15px rgba(255, 0, 0, 0.3);
+            }
+
+            .danger-option .option-title {
+                color: #ff4444;
+            }
+        </style>
     </head>
 <body id="home">
+    <button class="settings-button" onclick="openSettings()">⚙️ Settings</button>
+
     <div class="w3-container">
-        <!--<div class="w3-bar w3-blue-grey w3-right" style="width:50%">
-            <a href="home.html" class="w3-bar-item w3-button">Home</a>
-            <a href="inventory.html" class="w3-bar-item w3-button">Inventory</a>
-            <a href="upgrade.html" class="w3-bar-item w3-button">Upgrade</a>
-          </div>-->
           
           <div class="w3-container w3-left" style="width:50%">
 
@@ -31,17 +145,78 @@
 
             <div class="w3-col m4 w3-block w3-center">
                 <br><br>
-                <a href="map.html"><button class="w3-lime w3-text-green select-button w3-centered">Play</button></a>
+                <a href="select.html"><button class="w3-lime w3-text-green select-button w3-centered">Play</button></a>
                 <br><br><br>
                 <a href="upgrade.html"><button class="w3-red w3-text-orange select-button w3-centered">Upgrade</button></a>
                 <br><br><br>
                 <a href="inventory.html"><button class="w3-blue-grey w3-text-red select-button w3-centered">Inventory</button></a>
+                <br><br><br>
+                <a href="index.html"><button class="w3-purple w3-text-white select-button w3-centered">Collection</button></a>
             </div>
 
         </div>
     </div>
+
+    <!-- Settings Modal -->
+    <div class="settings-modal" id="settings-modal">
+        <div class="settings-content">
+            <button class="settings-close" onclick="closeSettings()">×</button>
+            <h2 class="settings-title">⚙️ Settings</h2>
+
+            <div class="settings-option danger-option" onclick="completelyRestart()">
+                <div class="option-title">🔄 Complete Restart</div>
+                <div class="option-description">
+                    Reset ALL progress including inventory, enchantments, map progression, and collection index. This action cannot be undone.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="index.js"></script>
+    <script>
+        function openSettings() {
+            document.getElementById('settings-modal').classList.add('active');
+        }
+
+        function closeSettings() {
+            document.getElementById('settings-modal').classList.remove('active');
+        }
+
+        function completelyRestart() {
+            const confirmation = confirm('⚠️ WARNING ⚠️\n\nThis will completely reset ALL your progress including:\n\n• All inventory items\n• All enchantments\n• Map progression (both Normal and Hard mode)\n• Collection index (items and enemies)\n• Party stats and equipment\n• Attack inventory\n\nThis action CANNOT be undone!\n\nAre you absolutely sure you want to continue?');
+            
+            if (!confirmation) return;
+
+            const doubleConfirm = confirm('This is your LAST chance to cancel.\n\nType YES in your mind and click OK to proceed with complete reset.');
+            
+            if (!doubleConfirm) return;
+
+            try {
+                // Clear all localStorage data
+                localStorage.clear(); // Clear everything to ensure complete reset
+                
+                alert('✅ All progress has been completely reset!\n\nThe page will now reload.');
+                
+                // Force reload from server (not cache) to get fresh state
+                window.location.href = window.location.href.split('?')[0];
+            } catch (e) {
+                console.error('Error during reset:', e);
+                alert('An error occurred during reset. Please try clearing your browser cache manually.');
+            }
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('click', (e) => {
+            const modal = document.getElementById('settings-modal');
+            if (e.target === modal) {
+                closeSettings();
+            }
+        });
+    </script>
 </body>
     <footer>
         Kaden Cruts - 2025
     </footer>
+</html>
 </html>

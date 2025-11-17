@@ -2,81 +2,197 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <title>Kaden's Dungeon Game</title>
+        <title>Select Mode - Kaden's Dungeon Game</title>
         <link rel="stylesheet" type="text/css" href="style.css">
         <link rel="stylesheet" href="https://www.w3schools.com/w3css/5/w3.css">
         <link rel="stylesheet" href="https://www.w3schools.com/lib/w3-theme-blue.css">
+        <style>
+            body {
+                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+                min-height: 100vh;
+            }
+
+            .mode-container {
+                max-width: 1400px;
+                margin: 50px auto;
+                padding: 20px;
+            }
+
+            .mode-title {
+                text-align: center;
+                font-size: 3em;
+                color: #e94560;
+                text-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
+                margin-bottom: 50px;
+            }
+
+            .mode-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 30px;
+                margin-bottom: 30px;
+            }
+
+            .mode-card {
+                background: rgba(15, 52, 96, 0.3);
+                border: 3px solid #0f3460;
+                border-radius: 15px;
+                padding: 30px;
+                cursor: pointer;
+                transition: all 0.3s;
+                text-align: center;
+            }
+
+            .mode-card:hover {
+                transform: translateY(-10px);
+                box-shadow: 0 10px 30px rgba(233, 69, 96, 0.4);
+                border-color: #e94560;
+            }
+
+            .mode-card.normal:hover { border-color: #1eff00; box-shadow: 0 10px 30px rgba(30, 255, 0, 0.4); }
+            .mode-card.hard:hover { border-color: #ff8000; box-shadow: 0 10px 30px rgba(255, 128, 0, 0.4); }
+            .mode-card.challenge:hover { border-color: #a335ee; box-shadow: 0 10px 30px rgba(163, 53, 238, 0.4); }
+
+            .mode-icon {
+                font-size: 5em;
+                margin-bottom: 20px;
+            }
+
+            .mode-name {
+                font-size: 2em;
+                font-weight: bold;
+                margin-bottom: 15px;
+                color: #fff;
+            }
+
+            .mode-card.normal .mode-name { color: #1eff00; }
+            .mode-card.hard .mode-name { color: #ff8000; }
+            .mode-card.challenge .mode-name { color: #a335ee; }
+
+            .mode-description {
+                color: #aaa;
+                font-size: 1.1em;
+                line-height: 1.6;
+                margin-bottom: 15px;
+            }
+
+            .mode-features {
+                text-align: left;
+                margin-top: 20px;
+                padding: 15px;
+                background: rgba(0, 0, 0, 0.3);
+                border-radius: 8px;
+            }
+
+            .mode-features li {
+                color: #fff;
+                margin: 8px 0;
+                font-size: 0.95em;
+            }
+
+            .back-button {
+                display: block;
+                width: 200px;
+                margin: 20px auto;
+                padding: 15px 30px;
+                background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
+                color: #fff;
+                border: 2px solid #e94560;
+                border-radius: 8px;
+                text-align: center;
+                text-decoration: none;
+                font-size: 1.2em;
+                font-weight: bold;
+                transition: all 0.3s;
+            }
+
+            .back-button:hover {
+                background: linear-gradient(135deg, #e94560 0%, #ff6b88 100%);
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(233, 69, 96, 0.4);
+            }
+        </style>
     </head>
-<body style="background-color: black;">
-    <a href="map.html"><span class="glow">Back</span></a>
-    <div class="w3-container w3-auto">
-          
-        <div id="dungeon_type" class="w3-row">
-            <div id="linear" class="w3-col m4 w3-container w3-border-white w3-bottombar w3-topbar w3-leftbar w3-rightbar">
-                <br>
-                <h2 class="glow">Linear Dungeon</h2>
-                <h3>6 battles</h3>
-                One way
-                
-            </div>
-            <div id="d2" class="w3-col m4 w3-container w3-border-white w3-bottombar w3-topbar w3-leftbar w3-rightbar">
-                <br>
-                <h2 class="glow">2d Dungeon</h2>
-                <h3># on battles range</h3>
-                More exploration/puzzles
-                
-            </div>
-            <div id="tree" class="w3-col m4 w3-container w3-border-white w3-bottombar w3-topbar w3-leftbar w3-rightbar">
-                <br>
-                <h2 class="glow">Tree Dungeon</h2>
-                <h3># of battles ranges</h3>
-                Deeper in the roots, the stronger enemies get and gain speacials buffs based off what you choose. Has its own spefic type of enemy, called Forest.
-            </div>
-        
+<body>
+    <div class="mode-container">
+        <h1 class="mode-title">Select Game Mode</h1>
 
-            
+        <div class="mode-grid">
+            <!-- Normal Mode -->
+            <div class="mode-card normal" onclick="selectMode('normal')">
+                <div class="mode-icon">⚔️</div>
+                <div class="mode-name">Normal Mode</div>
+                <div class="mode-description">
+                    Classic dungeon crawling experience
+                </div>
+                <div class="mode-features">
+                    <ul>
+                        <li>Levels 1-100</li>
+                        <li>Up to 3 enemies per stage</li>
+                        <li>Boss stages at 25, 50, 75, 100</li>
+                        <li>Standard difficulty scaling</li>
+                        <li>Unlock new levels progressively</li>
+                    </ul>
+                </div>
+            </div>
 
+            <!-- Hard Mode -->
+            <div class="mode-card hard" onclick="selectMode('hard')">
+                <div class="mode-icon">🔥</div>
+                <div class="mode-name">Hard Mode</div>
+                <div class="mode-description">
+                    Extreme challenge for experienced players
+                </div>
+                <div class="mode-features">
+                    <ul>
+                        <li>Levels 100-150</li>
+                        <li>Up to 5 enemies per stage</li>
+                        <li>Boss stages every 5 levels</li>
+                        <li>Enemies have 1.1x stats (except speed)</li>
+                        <li>Bosses have 1.5x stats</li>
+                        <li>Final boss: Lightning Shark (Lv 150)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Challenge Mode -->
+            <div class="mode-card challenge" onclick="selectMode('challenge')">
+                <div class="mode-icon">✨</div>
+                <div class="mode-name">Challenge Mode</div>
+                <div class="mode-description">
+                    Specialized encounters with unique rewards
+                </div>
+                <div class="mode-features">
+                    <ul>
+                        <li>Enemy level scales to your party</li>
+                        <li>Curated enemy compositions</li>
+                        <li>Special modifiers per stage</li>
+                        <li>No enemy count limits</li>
+                        <li>Rewards: Enchantments</li>
+                        <li>Each stage grants specific enchant</li>
+                    </ul>
+                </div>
+            </div>
         </div>
 
-        <div id="enemy_type" class="w3-row">
-            <div id="unknown" class="w3-col m4 w3-container w3-border-white w3-bottombar w3-topbar w3-leftbar w3-rightbar">
-                <br>
-                <h2 class="glow">Unknown</h2>
-                <img src="Enemies/skull.png" alt="Skull">
-                <img src="Enemies/slime.png" alt="Slime">
-                <img src="Enemies/Alien.png" alt="Alien">
-                <img src="Enemies/cursedKnight.png" alt="cursedKnight">
-                <img class="boss" src="Enemies/shadow.png" alt="Shadow">
-                
-            </div>
-            <div id="creature" class="w3-col m4 w3-container w3-border-white w3-bottombar w3-topbar w3-leftbar w3-rightbar">
-                <br>
-                <h2 class="glow">Creature</h2>
-                <h2>Under Contruction</h2>
-                
-                
-            </div>
-            <div id="flying" class="w3-col m4 w3-container w3-border-white w3-bottombar w3-topbar w3-leftbar w3-rightbar">
-                <br>
-                <h2 class="glow">Flying</h2>
-                <h2>Under Contruction</h2>
-            </div>
-        
-
-            
-
-        </div>
-        <div class="w3-container w3-row m3">
-            <div class="w3-col m3 w3-green" style="font-size:50px;">
-            Confirm
-            </div>
-
-        </div>
-
-
-
-
+        <a href="home.html" class="back-button">← Back to Home</a>
     </div>
+
+    <script src="script.js"></script>
+    <script>
+        function selectMode(mode) {
+            // Save selected mode to localStorage
+            localStorage.setItem('selectedGameMode', mode);
+            
+            if (mode === 'normal') {
+                window.location.href = 'map.html?mode=normal';
+            } else if (mode === 'hard') {
+                window.location.href = 'map.html?mode=hard';
+            } else if (mode === 'challenge') {
+                window.location.href = 'challenge.html';
+            }
+        }
+    </script>
 </body>
     <footer>
         Kaden Cruts - 2025

@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Index - Collection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 2px solid #0f3460;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 3em;
+            color: #e94560;
+            text-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
+            margin-bottom: 10px;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .nav-btn {
+            background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
+            color: #fff;
+            padding: 12px 30px;
+            border: 2px solid #e94560;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: bold;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .nav-btn:hover {
+            background: linear-gradient(135deg, #e94560 0%, #ff6b88 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(233, 69, 96, 0.4);
+        }
+
+        .nav-btn.active {
+            background: linear-gradient(135deg, #e94560 0%, #ff6b88 100%);
+            border-color: #fff;
+        }
+
+        .index-content {
+            background: rgba(15, 52, 96, 0.3);
+            border: 2px solid #0f3460;
+            border-radius: 15px;
+            padding: 30px;
+            min-height: 500px;
+        }
+
+        .rarity-section {
+            margin-bottom: 40px;
+        }
+
+        .rarity-header {
+            font-size: 1.8em;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            text-shadow: 0 0 10px currentColor;
+        }
+
+        .rarity-header.base { background: linear-gradient(135deg, #666666 0%, #444 100%); color: #fff; }
+        .rarity-header.starter { background: linear-gradient(135deg, #808080 0%, #666 100%); color: #fff; }
+        .rarity-header.common { background: linear-gradient(135deg, #a0a0a0 0%, #888 100%); color: #fff; }
+        .rarity-header.uncommon { background: linear-gradient(135deg, #1eff00 0%, #0bc700 100%); color: #000; }
+        .rarity-header.rare { background: linear-gradient(135deg, #0070dd 0%, #0051aa 100%); color: #fff; }
+        .rarity-header.epic { background: linear-gradient(135deg, #a335ee 0%, #7d28bb 100%); color: #fff; }
+        .rarity-header.legendary { background: linear-gradient(135deg, #ff8000 0%, #cc6600 100%); color: #fff; }
+        .rarity-header.mythical { background: linear-gradient(135deg, #e91e63 0%, #b0153f 100%); color: #fff; }
+        .rarity-header.mythic { background: linear-gradient(135deg, #e91e63 0%, #b0153f 100%); color: #fff; }
+        .rarity-header.artifact { background: linear-gradient(135deg, #00ffff 0%, #00cccc 100%); color: #000; }
+        .rarity-header.divine { background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%); color: #000; }
+
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 15px;
+            padding: 20px;
+        }
+
+        .item-card {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 3px solid #555;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .item-card.obtained {
+            border-color: #0f3460;
+        }
+
+        .item-card.obtained:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px currentColor;
+            z-index: 10;
+        }
+
+        .item-card.locked {
+            background: rgba(60, 60, 60, 0.8);
+            border-color: #333;
+        }
+
+        .item-card.locked img {
+            filter: brightness(0);
+        }
+
+        .item-card img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+
+        .tooltip {
+            position: fixed;
+            background: rgba(0, 0, 0, 0.95);
+            border: 2px solid;
+            border-radius: 8px;
+            padding: 10px 15px;
+            pointer-events: none;
+            z-index: 1000;
+            display: none;
+            max-width: 250px;
+        }
+
+        .tooltip.visible {
+            display: block;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 3px solid;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #e94560;
+            color: #fff;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.5em;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .modal-close:hover {
+            background: #ff6b88;
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .modal-header h2 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px currentColor;
+        }
+
+        .modal-header .item-slot {
+            font-size: 1.2em;
+            opacity: 0.8;
+        }
+
+        .modal-image {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .modal-image img {
+            max-width: 200px;
+            max-height: 200px;
+            border: 3px solid;
+            border-radius: 10px;
+            box-shadow: 0 0 20px currentColor;
+        }
+
+        .stat-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+        }
+
+        .stat-table th,
+        .stat-table td {
+            padding: 12px;
+            text-align: center;
+            border: 1px solid #0f3460;
+        }
+
+        .stat-table th {
+            background: rgba(15, 52, 96, 0.5);
+            font-weight: bold;
+        }
+
+        .stat-table tr:nth-child(even) {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .ability-section,
+        .attack-section,
+        .obtain-section {
+            background: rgba(15, 52, 96, 0.3);
+            border: 2px solid #0f3460;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            color: #e94560;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .locked-content {
+            text-align: center;
+            padding: 50px;
+        }
+
+        .locked-content h3 {
+            font-size: 3em;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .locked-content p {
+            font-size: 1.3em;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📚 Collection Index</h1>
+            <div class="nav-buttons">
+                <a href="home.html" class="nav-btn">← Back to Home</a>
+                <button class="nav-btn active">Items</button>
+                <a href="enemy-index.html" class="nav-btn">Enemies</a>
+            </div>
+        </header>
+
+        <div class="index-content" id="items-index">
+            <!-- Items will be populated here -->
+        </div>
+    </div>
+
+    <!-- Tooltip -->
+    <div class="tooltip" id="tooltip"></div>
+
+    <!-- Modal -->
+    <div class="modal" id="modal">
+        <div class="modal-content" id="modal-content">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="index.js"></script>
+</body>
+</html>

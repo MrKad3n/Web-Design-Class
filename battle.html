@@ -190,9 +190,13 @@
                 min-height: 150px;
                 max-height: 200px;
                 display: flex;
+                flex-direction: column;
                 align-items: center;
-                justify-content: center;
+                justify-content: flex-start;
                 flex-shrink: 0;
+                overflow-y: auto;
+                gap: 8px;
+                padding: 8px 0;
             }
             
             #enemies img {
@@ -723,6 +727,10 @@
     </script>
         <!-- Core game script to access PARTY_STATS, INVENTORY, ENEMY_BASE_STATS, etc. -->
         <script src="script.js"></script>
+        <!-- Item index tracking -->
+        <script src="index.js"></script>
+        <!-- Enemy index tracking -->
+        <script src="enemy-index.js"></script>
         <script>
         // Debug: Check what's available from script.js
         console.log('window.clearLevelAndUnlock:', typeof window.clearLevelAndUnlock);
@@ -730,11 +738,75 @@
         
         // Battle page initialization: read session battleData, update UI
         (function(){
+            // Check for challenge mode from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const mode = urlParams.get('mode');
+            const challengeId = urlParams.get('id');
+            
             // Read battleData from sessionStorage
             let battleData = {};
-            try { battleData = JSON.parse(sessionStorage.getItem('battleData')||'{}'); } catch(e) { battleData = {}; }
+            
+            // If challenge mode, load challenge data and set up battle
+            if (mode === 'challenge' && challengeId) {
+                try {
+                    const challengeDataStr = localStorage.getItem('activeChallengeData');
+                    if (challengeDataStr) {
+                        const challengeData = JSON.parse(challengeDataStr);
+                        
+                        // Calculate level based on highest party member
+                        let maxPartyLevel = 1;
+                        if (typeof PARTY_STATS !== 'undefined') {
+                            Object.values(PARTY_STATS).forEach(member => {
+                                if (member && member.LEVEL) {
+                                    maxPartyLevel = Math.max(maxPartyLevel, member.LEVEL);
+                                }
+                            });
+                        }
+                        
+                        // Convert enemy names to image paths
+                        const enemyPaths = (challengeData.enemies || ['skull']).map(enemyName => {
+                            // If already a path, use it; otherwise convert name to path
+                            if (enemyName.includes('/') || enemyName.includes('.png')) {
+                                return enemyName;
+                            }
+                            return `Enemies/${enemyName}.png`;
+                        });
+                        
+                        // Parse modifiers from description (simplified for now - could be enhanced)
+                        const modifiers = {};
+                        const modText = (challengeData.modifier || '').toLowerCase();
+                        if (modText.includes('2x defense')) modifiers.defenseBoost = 2;
+                        if (modText.includes('1.5x speed')) modifiers.speedBoost = 1.5;
+                        if (modText.includes('+50% speed')) modifiers.speedBoost = 1.5;
+                        if (modText.includes('3x health')) modifiers.healthBoost = 3;
+                        if (modText.includes('2x health')) modifiers.healthBoost = 2;
+                        
+                        // Set up battle data from challenge
+                        battleData = {
+                            level: maxPartyLevel,
+                            enemies: enemyPaths,
+                            isBossTile: false,
+                            isChallenge: true,
+                            challengeId: parseInt(challengeId),
+                            challengeReward: challengeData.reward,
+                            challengeModifiers: modifiers
+                        };
+                        
+                        // Store in sessionStorage for consistency
+                        sessionStorage.setItem('battleData', JSON.stringify(battleData));
+                    }
+                } catch(e) {
+                    console.error('Failed to load challenge data:', e);
+                }
+            } else {
+                // Normal/hard mode - read from sessionStorage
+                try { battleData = JSON.parse(sessionStorage.getItem('battleData')||'{}'); } catch(e) { battleData = {}; }
+            }
+            
             const level = battleData.level || 1;
             const enemyImages = battleData.enemies && battleData.enemies.length ? battleData.enemies : ['Enemies/skull.png'];
+            const isChallenge = battleData.isChallenge || false;
+            const challengeModifiers = battleData.challengeModifiers || {};
 
             // Track active battle member and battle state
             let activeBattleMember = 'ONE';
@@ -752,9 +824,15 @@
             }
 
             // Helper: switch to a different party member during battle
-            function switchBattleMember(memberKey) {
+            function switchBattleMember(memberKey, isEmergencySwitch = false) {
                 if (!PARTY_STATS || !PARTY_STATS[memberKey]) return false;
                 const member = PARTY_STATS[memberKey];
+                
+                // Only allow switching during player's turn to prevent bugs (unless it's an emergency switch due to KO)
+                if (!isEmergencySwitch && (!playerCanAct || !playerWaiting)) {
+                    logCombat("You can only switch party members during your turn!");
+                    return false;
+                }
                 
                 // Skip if member is dead
                 if (Number(member.HEALTH) <= 0) {
@@ -763,8 +841,7 @@
                 }
 
                 activeBattleMember = memberKey;
-                // Mark this member as participant
-                try { battleParticipants.add(memberKey); } catch(e) {}
+                // DO NOT mark as participant just for switching - only when dealing/taking damage
                 logCombat(`Switched to ${member.NAME}!`);
                 updatePlayerArea();
                 renderAttacksForPlayer();
@@ -857,8 +934,7 @@
                 if (typeof member.MAX_MANA === 'undefined') member.MAX_MANA = 100;
                 if (typeof member.MANA === 'undefined') member.MANA = 75;
 
-                // Ensure health/stats up-to-date (but don't auto-heal)
-                if (typeof updateStats === 'function') updateStats();
+                // Don't call updateStats() during battle - it recalculates from equipment and overwrites enhanced stats
                 // Ensure numeric health values exist, but don't modify them
                 if (typeof member.MAX_HEALTH === 'undefined') member.MAX_HEALTH = 10;
                 if (typeof member.HEALTH === 'undefined') member.HEALTH = Number(member.MAX_HEALTH);
@@ -906,6 +982,154 @@
                 return name;
             }
 
+            // Function to spawn a new enemy during battle
+            function spawnEnemy(enemyKey, enemyLevel) {
+                const enemiesDiv = document.getElementById('enemies');
+                if (!enemiesDiv) return;
+                
+                const base = ENEMY_BASE_STATS[enemyKey] || { health:20, strength:3, magic:0, speed:2, defense:0, hBars:1 };
+                const scaled = Object.assign({}, base);
+                
+                // Scale stats for the given level
+                const scaleMultiplier = Math.pow(enemyLevel, 0.9);
+                scaled.health = Math.max(1, Math.round(base.health * scaleMultiplier));
+                scaled.strength = Math.round(base.strength * scaleMultiplier);
+                scaled.magic = Math.round(base.magic * scaleMultiplier);
+                scaled.speed = Math.round(base.speed * scaleMultiplier);
+                scaled.defense = Math.round((base.defense || 0) * scaleMultiplier);
+                
+                // Create enemy wrapper
+                const wrap = document.createElement('div');
+                wrap.className = 'enemy-single';
+                wrap.style.width = '100%';
+                wrap.style.display = 'flex';
+                wrap.style.flexDirection = 'column';
+                wrap.style.alignItems = 'center';
+                wrap.style.marginBottom = '8px';
+                
+                const nameH = document.createElement('h3');
+                nameH.className = 'w3-text-white';
+                nameH.textContent = (enemyKey || 'Enemy') + ` (Lv ${enemyLevel})`;
+                
+                const barWrap = document.createElement('div');
+                barWrap.className = 'enemy-health-bar w3-light-grey';
+                barWrap.style.width = '80%';
+                barWrap.style.height = '12px';
+                barWrap.style.marginBottom = '6px';
+                const inner = document.createElement('div');
+                inner.className = 'w3-green';
+                inner.style.width = '100%';
+                inner.style.height = '100%';
+                inner.textContent = `HP ${scaled.health}`;
+                barWrap.appendChild(inner);
+                
+                const img = document.createElement('img');
+                img.src = base.image || `Enemies/${enemyKey}.png`;
+                img.alt = enemyKey;
+                img.style.maxWidth = '28%';
+                img.style.objectFit = 'contain';
+                img.className = 'hoverable';
+                
+                wrap.appendChild(nameH);
+                wrap.appendChild(barWrap);
+                wrap.appendChild(img);
+                
+                // Store stats
+                wrap.dataset.hp = scaled.health;
+                wrap.dataset.maxHp = scaled.health;
+                wrap.dataset.str = scaled.strength;
+                wrap.dataset.speed = scaled.speed;
+                wrap.dataset.mag = scaled.magic;
+                wrap.dataset.def = scaled.defense;
+                wrap.dataset.key = enemyKey;
+                wrap.dataset.transformed = 'false';
+                
+                // Add hover tooltip functionality
+                let tooltip = document.getElementById('enemy-tooltip');
+                if (!tooltip) {
+                    tooltip = document.createElement('div');
+                    tooltip.id = 'enemy-tooltip';
+                    tooltip.className = 'enemy-tooltip';
+                    document.body.appendChild(tooltip);
+                }
+                
+                const showTooltip = (e) => {
+                    const isMobile = window.innerWidth <= 768;
+                    const rect = wrap.getBoundingClientRect();
+                    
+                    const currentHp = Number(wrap.dataset.hp) || 0;
+                    const currentMaxHp = Number(wrap.dataset.maxHp) || 1;
+                    const currentStr = Number(wrap.dataset.str) || 0;
+                    const currentMag = Number(wrap.dataset.mag) || 0;
+                    const currentSpeed = Number(wrap.dataset.speed) || 0;
+                    const currentDef = Number(wrap.dataset.def) || 0;
+                    const specialEffect = base.specialEffect || 'No special effect';
+                    
+                    tooltip.innerHTML = `
+                        <h4>${enemyKey} (Level ${enemyLevel})</h4>
+                        <div class="stat-row"><span>Health:</span><span>${currentHp}/${currentMaxHp}</span></div>
+                        <div class="stat-row"><span>Strength:</span><span>${currentStr}</span></div>
+                        <div class="stat-row"><span>Magic:</span><span>${currentMag}</span></div>
+                        <div class="stat-row"><span>Speed:</span><span>${currentSpeed}</span></div>
+                        <div class="stat-row"><span>Defense:</span><span>${currentDef}</span></div>
+                        ${specialEffect !== 'No special effect' ? `<div class="special-effect">${specialEffect}</div>` : ''}
+                    `;
+                    
+                    tooltip.classList.add('active');
+                    
+                    if (isMobile) {
+                        tooltip.style.left = Math.max(10, rect.left) + 'px';
+                        tooltip.style.top = (rect.bottom + 10) + 'px';
+                    } else {
+                        tooltip.style.left = (rect.right + 15) + 'px';
+                        tooltip.style.top = rect.top + 'px';
+                    }
+                };
+                
+                const hideTooltip = () => {
+                    tooltip.classList.remove('active');
+                };
+                
+                wrap.addEventListener('mouseenter', showTooltip);
+                wrap.addEventListener('mouseleave', hideTooltip);
+                wrap.addEventListener('mousemove', showTooltip);
+                
+                // Make clickable for targeting
+                wrap.style.cursor = 'pointer';
+                wrap.onclick = () => {
+                    getEnemyWrappers().forEach(w=>w.style.outline='');
+                    wrap.style.outline = '3px solid red';
+                    selectedTarget = wrap;
+                    logCombat(`Selected target: ${enemyKey}`);
+                    
+                    // Check if player can attack
+                    const memberKey = getActiveBattleMember();
+                    const attacks = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_INVENTORY : [];
+                    const equipped = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_EQUIPPED : new Set();
+                    const finalList = (attacks.filter(a=>equipped.has(a.id)).concat(attacks.filter(a=>!equipped.has(a.id)))).slice(0,5);
+                    const hasAttacks = finalList.length > 0;
+                    
+                    if (playerCanAct && typeof window.playerPerformAttackOn === 'function') {
+                        if (!hasAttacks || (hasAttacks && selectedAttackId)) {
+                            window.playerPerformAttackOn(wrap);
+                        } else {
+                            logCombat('Select an attack first!');
+                        }
+                    }
+                };
+                
+                // Add to enemies container
+                enemiesDiv.appendChild(wrap);
+                
+                // Register encounter
+                if (typeof registerEnemyEncountered === 'function') {
+                    registerEnemyEncountered(enemyKey);
+                }
+                
+                // Recalculate action queue with new enemy
+                recalculateActionQueue();
+            }
+            
             function renderEnemies(){
                 const enemyArea = document.getElementById('enemy-area');
                 const enemiesDiv = document.getElementById('enemies');
@@ -917,6 +1141,12 @@
 
                 enemyImages.forEach((imgPath, idx) => {
                     const key = enemyKeyFromImage(imgPath) || imgPath;
+                    
+                    // Register enemy encounter for index tracking
+                    if (typeof registerEnemyEncountered === 'function') {
+                        registerEnemyEncountered(key);
+                    }
+                    
                     const base = ENEMY_BASE_STATS[key] || { health:20, strength:3, magic:0, speed:2, defense:0, hBars:1 };
                     const scaled = Object.assign({}, base);
                     
@@ -924,15 +1154,18 @@
                     const isBossEnemy = base.tier >= 5;
                     const isBossTile = battleData.isBossTile || false;
                     
+                    // Use exponential scaling: level^0.9 (slightly faster than player/item scaling of level^0.8)
+                    let baseScale = Math.pow(level, 0.9);
+                    
                     // Apply different scaling based on boss tile vs regular tile
-                    let scaleMultiplier = level;
+                    let scaleMultiplier = baseScale;
                     if (isBossEnemy) {
                         if (isBossTile) {
                             // Boss on boss tile: buffed (extra 30% stats)
-                            scaleMultiplier = level * 1.3;
+                            scaleMultiplier = baseScale * 1.3;
                         } else {
                             // Boss on regular tile: weaker (70% stats)
-                            scaleMultiplier = level * 0.7;
+                            scaleMultiplier = baseScale * 0.7;
                         }
                     }
                     
@@ -941,6 +1174,23 @@
                     scaled.strength = Math.round(base.strength * scaleMultiplier);
                     scaled.magic = Math.round(base.magic * scaleMultiplier);
                     scaled.speed = Math.round(base.speed * scaleMultiplier);
+                    
+                    // Apply challenge modifiers if in challenge mode
+                    if (isChallenge && challengeModifiers) {
+                        if (challengeModifiers.healthBoost) {
+                            scaled.health = Math.round(scaled.health * challengeModifiers.healthBoost);
+                        }
+                        if (challengeModifiers.damageBoost) {
+                            scaled.strength = Math.round(scaled.strength * challengeModifiers.damageBoost);
+                            scaled.magic = Math.round(scaled.magic * challengeModifiers.damageBoost);
+                        }
+                        if (challengeModifiers.speedBoost) {
+                            scaled.speed = Math.round(scaled.speed * challengeModifiers.speedBoost);
+                        }
+                        if (challengeModifiers.defenseBoost) {
+                            scaled.defense = Math.round((scaled.defense || 0) * challengeModifiers.defenseBoost);
+                        }
+                    }
 
                     // Create enemy visual
                     const wrap = document.createElement('div');
@@ -1053,8 +1303,9 @@
                         selectedTarget = wrap;
                         logCombat(`Selected target: ${wrap.querySelector('img').alt}`);
                         // Only perform attack from clicking an enemy if it's the player's turn AND an attack is selected (or no attacks exist)
-                        const attacks = (PARTY_ATTACKS && PARTY_ATTACKS['ONE']) ? PARTY_ATTACKS['ONE'].ATTACK_INVENTORY : [];
-                        const equipped = (PARTY_ATTACKS && PARTY_ATTACKS['ONE']) ? PARTY_ATTACKS['ONE'].ATTACK_EQUIPPED : new Set();
+                        const memberKey = getActiveBattleMember();
+                        const attacks = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_INVENTORY : [];
+                        const equipped = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_EQUIPPED : new Set();
                         const finalList = (attacks.filter(a=>equipped.has(a.id)).concat(attacks.filter(a=>!equipped.has(a.id)))).slice(0,5);
                         const hasAttacks = finalList.length > 0;
                         if (playerCanAct && typeof window.playerPerformAttackOn === 'function') {
@@ -1064,6 +1315,8 @@
                                 // Prompt player to select an attack first
                                 logCombat('Please select an attack before targeting an enemy.');
                             }
+                        } else if (!playerCanAct) {
+                            logCombat('Wait for your turn to attack!');
                         }
                     };
 
@@ -1097,8 +1350,7 @@
             updatePlayerArea();
             renderEnemies();
             renderAttacksForPlayer();
-            // Initial participant is the starting active member
-            try { battleParticipants.add(activeBattleMember); } catch(e) {}
+            // DO NOT mark initial member as participant - they must deal or take damage first
 
             // Make party slots clickable to switch members during battle
             function enablePartySlotSwitching(){
@@ -1109,6 +1361,11 @@
                         slot.style.cursor = 'pointer';
                         slot.onclick = () => {
                             const key = ['ONE','TWO','THREE','FOUR','FIVE'][idx];
+                            // Check if it's player's turn before allowing switch
+                            if (!playerCanAct || !playerWaiting) {
+                                logCombat("You can only switch party members during your turn!");
+                                return;
+                            }
                             switchBattleMember(key);
                         };
                     }
@@ -1356,23 +1613,79 @@
                         // Calculate attacks per cycle for player
                         playerAttacksPerCycle = Math.round(pSpeed) / g;
 
-                        // Create action queue: 'p' for player, {type:'e', index:N} for each enemy
+                        // Create action queue: 'p' for player, {type:'e', index:N, enemyId:name} for each enemy
                         actionQueue = [];
-                        for (let i = 0; i < playerAttacksPerCycle; i++) actionQueue.push('p');
+                        const playerActions = [];
+                        const enemyActionsByEnemy = {}; // Track actions per individual enemy
+                        
+                        for (let i = 0; i < playerAttacksPerCycle; i++) playerActions.push('p');
                         
                         // Add actions for each enemy based on their individual speed
+                        let totalEnemyActions = 0;
                         enemySpeeds.forEach(enemyData => {
                             const enemyAttacks = Math.round(enemyData.speed) / g;
+                            const enemyName = enemyData.wrap.querySelector('img') ? enemyData.wrap.querySelector('img').alt : `Enemy${enemyData.index}`;
+                            enemyActionsByEnemy[enemyData.index] = {
+                                actions: [],
+                                name: enemyName,
+                                count: enemyAttacks
+                            };
                             for (let i = 0; i < enemyAttacks; i++) {
-                                actionQueue.push({ type: 'e', index: enemyData.index });
+                                enemyActionsByEnemy[enemyData.index].actions.push({ type: 'e', index: enemyData.index, enemyId: enemyName });
+                                totalEnemyActions++;
                             }
                         });
                         
-                        // Shuffle to interleave fairly
-                        for (let i = actionQueue.length - 1; i > 0; i--) {
-                            const j = Math.floor(Math.random() * (i + 1));
-                            [actionQueue[i], actionQueue[j]] = [actionQueue[j], actionQueue[i]];
+                        // Interleave player and all enemy actions evenly
+                        // Strategy: distribute actions proportionally across the cycle
+                        const totalActions = playerActions.length + totalEnemyActions;
+                        
+                        // Create sorted list of all action sources with their counts
+                        const actionSources = [
+                            { type: 'player', actions: playerActions, remaining: playerActions.length, ratio: playerActions.length / totalActions }
+                        ];
+                        
+                        Object.keys(enemyActionsByEnemy).forEach(enemyIdx => {
+                            const enemyData = enemyActionsByEnemy[enemyIdx];
+                            actionSources.push({
+                                type: 'enemy',
+                                enemyIndex: parseInt(enemyIdx),
+                                actions: enemyData.actions,
+                                remaining: enemyData.count,
+                                ratio: enemyData.count / totalActions,
+                                name: enemyData.name
+                            });
+                        });
+                        
+                        // Always start with player
+                        if (actionSources[0].remaining > 0) {
+                            actionQueue.push(actionSources[0].actions.shift());
+                            actionSources[0].remaining--;
                         }
+                        
+                        // Distribute remaining actions evenly
+                        while (actionQueue.length < totalActions) {
+                            // Calculate how much each source has contributed relative to their target
+                            actionSources.forEach(source => {
+                                const currentCount = actionQueue.filter(a => {
+                                    if (source.type === 'player') return a === 'p';
+                                    return a.type === 'e' && a.index === source.enemyIndex;
+                                }).length;
+                                source.deficit = (source.ratio * actionQueue.length) - currentCount;
+                            });
+                            
+                            // Sort by deficit (highest first) - but filter out sources with no remaining actions
+                            const availableSources = actionSources.filter(s => s.remaining > 0);
+                            if (availableSources.length === 0) break;
+                            
+                            availableSources.sort((a, b) => b.deficit - a.deficit);
+                            
+                            // Add action from the source with highest deficit
+                            const nextSource = availableSources[0];
+                            actionQueue.push(nextSource.actions.shift());
+                            nextSource.remaining--;
+                        }
+                        
                         queueIndex = 0;
                         
                         const totalEnemyAttacks = actionQueue.filter(a => typeof a === 'object' && a.type === 'e').length;
@@ -1400,11 +1713,6 @@
                                 queueIndex = 0;
                                 // Recalculate queue in case enemies died or speeds changed
                                 recalculateActionQueue();
-                                // Re-shuffle for variety
-                                for (let i = actionQueue.length - 1; i > 0; i--) {
-                                    const j = Math.floor(Math.random() * (i + 1));
-                                    [actionQueue[i], actionQueue[j]] = [actionQueue[j], actionQueue[i]];
-                                }
                             }
                             const action = actionQueue[queueIndex++];
                             
@@ -1423,6 +1731,97 @@
                                         if (Number(w.dataset.hp) > 0) return w;
                                     }
                                     return null;
+                                }
+
+                                // Coral ability tracking - consecutive attacks for bonus damage (max 80%)
+                                let consecutiveAttacks = 0;
+                                
+                                // Overuse ability tracking (ability 7) - consecutive attacks for 200% bonus
+                                let overuseConsecutive = 0;
+                                
+                                // After Shock ability tracking (ability 12) - opponent's next attack ignored
+                                let afterShockActive = false;
+                                let afterShockCooldown = 0;
+                                
+                                // Pixel Combo ability tracking (ability 13)
+                                let pixelComboCount = 0;
+                                let pixelComboActive = false;
+                                
+                                // Burn ground effect tracking (ability 8) - enemies in burn zone
+                                const burnGroundEffects = {}; // {enemyIndex: {duration, damage}}
+                                
+                                // Enhance ability tracking (ability 19) - permanent stat boosts for the battle
+                                const enhancedStats = {}; // {memberKey: {strength, magic, speed, defense, health}}
+
+                                // Helper function to get all equipped item abilities for a party member
+                                function getEquippedAbilities(memberKey) {
+                                    const member = PARTY_STATS[memberKey];
+                                    if (!member) return [];
+                                    
+                                    const abilities = [];
+                                    const slots = ['HELMET', 'CHEST', 'LEGS', 'BOOTS', 'MAINHAND', 'OFFHAND'];
+                                    
+                                    for (const slot of slots) {
+                                        const itemName = member[slot];
+                                        if (!itemName) continue;
+                                        
+                                        // Look up the item from INVENTORY (equipped items) or ITEM_TABLE
+                                        let itemData = null;
+                                        if (typeof INVENTORY !== 'undefined') {
+                                            itemData = INVENTORY.find(i => i.name === itemName && i.equipped);
+                                        }
+                                        if (!itemData && typeof ITEM_TABLE !== 'undefined') {
+                                            itemData = ITEM_TABLE[itemName];
+                                        }
+                                        
+                                        if (itemData && itemData.ability && itemData.ability > 0) {
+                                            abilities.push(itemData.ability);
+                                        }
+                                    }
+                                    
+                                    return abilities;
+                                }
+                                
+                                // Helper function to get item data from attack object
+                                function getItemFromAttack(attackObj) {
+                                    if (!attackObj || !attackObj.itemName) return null;
+                                    
+                                    // Look up the item from INVENTORY or ITEM_TABLE
+                                    let itemData = null;
+                                    if (typeof INVENTORY !== 'undefined') {
+                                        itemData = INVENTORY.find(i => i.name === attackObj.itemName);
+                                    }
+                                    if (!itemData && typeof ITEM_TABLE !== 'undefined') {
+                                        itemData = ITEM_TABLE[attackObj.itemName];
+                                    }
+                                    
+                                    return itemData;
+                                }
+                                
+                                // Helper function to count alive party members for Carried ability
+                                function countAlivePartyMembers() {
+                                    let count = 0;
+                                    ['ONE','TWO','THREE','FOUR','FIVE'].forEach(key => {
+                                        const m = PARTY_STATS[key];
+                                        if (m && Number(m.HEALTH) > 0) count++;
+                                    });
+                                    return count;
+                                }
+                                
+                                // Helper function to get Carried stat multiplier (ability 6)
+                                function getCarriedMultiplier(memberKey) {
+                                    const equippedAbilities = getEquippedAbilities(memberKey);
+                                    if (!equippedAbilities.includes(6)) return 1.0;
+                                    
+                                    const aliveCount = countAlivePartyMembers();
+                                    if (aliveCount > 3) {
+                                        // +20% per ally over 3
+                                        return 1.0 + ((aliveCount - 3) * 0.2);
+                                    } else if (aliveCount < 3) {
+                                        // -40% per ally under 3
+                                        return Math.max(0.1, 1.0 - ((3 - aliveCount) * 0.4));
+                                    }
+                                    return 1.0;
                                 }
 
                                 // Perform a player attack on a specific enemy wrapper (called when player clicks an enemy)
@@ -1445,19 +1844,141 @@
 
                                     const enemyDefense = Number( (ENEMY_BASE_STATS[enemyWrap.querySelector('img').alt] && ENEMY_BASE_STATS[enemyWrap.querySelector('img').alt].defense) || 0 );
                                     const attacker = PARTY_STATS[getActiveBattleMember()];
-                                    const str = Number(attacker.STRENGTH||0);
-                                    const mag = Number(attacker.MAGIC||0);
+                                    
+                                    // Check for attack-specific abilities (10: MultiStrike, 19: Enhance)
+                                    const attackSourceItem = getItemFromAttack(attackObj);
+                                    const attackAbility = attackSourceItem ? attackSourceItem.ability : 0;
+                                    console.log(`[Attack Ability] Attack: ${attackObj.name}, ItemName: ${attackObj.itemName}, SourceItem:`, attackSourceItem, `Ability: ${attackAbility}`);
+                                    
+                                    // Ability 19: Enhance - Each attack enhances stats with decaying multiplier (100%, 90%, 81%, etc.)
+                                    if (attackAbility === 19 && attackSourceItem) {
+                                        console.log(`[Enhance] Triggered! Count before: ${enhancedStats[memberKey] ? enhancedStats[memberKey].count : 0}`);
+                                        
+                                        if (!enhancedStats[memberKey]) {
+                                            enhancedStats[memberKey] = { count: 0 };
+                                        }
+                                        
+                                        // Calculate decaying multiplier: 100%, 90%, 81%, 72.9%, etc. (0.9^n)
+                                        const decayMultiplier = Math.pow(0.9, enhancedStats[memberKey].count);
+                                        
+                                        // Get stats from the actual attack source item (equipped) - use floats for precision
+                                        const strBoost = Number(attackSourceItem.strength || 0) * decayMultiplier;
+                                        const magBoost = Number(attackSourceItem.magic || 0) * decayMultiplier;
+                                        const spdBoost = Number(attackSourceItem.speed || 0) * decayMultiplier;
+                                        const defBoost = Number(attackSourceItem.defense || 0) * decayMultiplier;
+                                        const hpBoost = Number(attackSourceItem.health || 0) * decayMultiplier;
+                                        
+                                        console.log(`[Enhance] Item stats:`, attackSourceItem, `Multiplier: ${decayMultiplier}, Boosts:`, {strBoost, magBoost, spdBoost, defBoost, hpBoost});
+                                        console.log(`[Enhance] Stats BEFORE:`, {STR: attacker.STRENGTH, MAG: attacker.MAGIC, SPD: attacker.SPEED, DEF: attacker.DEFENSE, HP: attacker.HEALTH, MAX_HP: attacker.MAX_HEALTH});
+                                        
+                                        // Always apply enhancement, even if individual stats round to 0
+                                        if (strBoost >= 0.01 || magBoost >= 0.01 || spdBoost >= 0.01 || defBoost >= 0.01 || hpBoost >= 0.01) {
+                                            // Apply enhancements with floating point precision
+                                            attacker.STRENGTH = Number(attacker.STRENGTH || 0) + strBoost;
+                                            attacker.MAGIC = Number(attacker.MAGIC || 0) + magBoost;
+                                            attacker.SPEED = Number(attacker.SPEED || 0) + spdBoost;
+                                            attacker.DEFENSE = Number(attacker.DEFENSE || 0) + defBoost;
+                                            attacker.MAX_HEALTH = Number(attacker.MAX_HEALTH || 0) + hpBoost;
+                                            attacker.HEALTH = Number(attacker.HEALTH || 0) + hpBoost;
+                                            
+                                            console.log(`[Enhance] Stats AFTER:`, {STR: attacker.STRENGTH, MAG: attacker.MAGIC, SPD: attacker.SPEED, DEF: attacker.DEFENSE, HP: attacker.HEALTH, MAX_HP: attacker.MAX_HEALTH});
+                                            
+                                            enhancedStats[memberKey].count++;
+                                            
+                                            // Update stats display in battle UI
+                                            updatePlayerStatsDisplay();
+                                            updatePlayerArea();
+                                            
+                                            const percentBoost = Math.round(decayMultiplier * 100);
+                                            const displayStr = strBoost >= 0.5 ? Math.round(strBoost) : strBoost.toFixed(1);
+                                            const displayMag = magBoost >= 0.5 ? Math.round(magBoost) : magBoost.toFixed(1);
+                                            const displaySpd = spdBoost >= 0.5 ? Math.round(spdBoost) : spdBoost.toFixed(1);
+                                            const displayDef = defBoost >= 0.5 ? Math.round(defBoost) : defBoost.toFixed(1);
+                                            const displayHp = hpBoost >= 0.5 ? Math.round(hpBoost) : hpBoost.toFixed(1);
+                                            logCombat(`✨ Enhance (${percentBoost}%): +${displayStr} STR, +${displayMag} MAG, +${displaySpd} SPD, +${displayDef} DEF, +${displayHp} HP`);
+                                        } else {
+                                            console.log(`[Enhance] Skipped - all boosts below 0.01`);
+                                        }
+                                    }
+                                    
+                                    // Apply Carried multiplier (ability 6) to stats
+                                    const carriedMult = getCarriedMultiplier(memberKey);
+                                    const str = Number(attacker.STRENGTH||0) * carriedMult;
+                                    const mag = Number(attacker.MAGIC||0) * carriedMult;
                                     const strMult = Number(attackObj.strMultiplier||0);
                                     const magMult = Number(attackObj.magicMultiplier||0);
                                     
                                     // Get enemy index for status tracking
                                     const enemyIndex = Array.from(getEnemyWrappers()).indexOf(enemyWrap);
                                     
-                                    // Apply bleed multiplier if present
-                                    const bleedMult = getBleedMultiplier('enemy', enemyIndex);
+                    // Apply bleed multiplier if present
+                    const bleedMult = getBleedMultiplier('enemy', enemyIndex);
+                    
+                    // Calculate base damage before defense
+                    const baseDmg = (mag * magMult + str * strMult) * bleedMult;
+                    
+                    // Apply defense with diminishing returns: damage reduction = def / (def + 100)
+                    // This ensures attacks always deal at least some damage (max 95% reduction)
+                    // and defense has better scaling without hard cutoffs
+                    const defenseReduction = enemyDefense / (enemyDefense + 100);
+                    const damageAfterDefense = baseDmg * (1 - defenseReduction * 0.95); // Max 95% reduction
+                    
+                    let dmg = Math.max(1, Math.round(Math.max(damageAfterDefense, baseDmg * 0.05)));
+                    if (isNaN(dmg)) dmg = 1;                                    // ===== ITEM ABILITIES =====
+                                    // Get all equipped abilities for the active member
+                                    const equippedAbilities = getEquippedAbilities(memberKey);
+                                    console.log(`[Abilities] Member ${memberKey} equipped abilities:`, equippedAbilities);
                                     
-                                    let dmg = Math.round((mag * magMult + str * strMult - enemyDefense) * bleedMult);
-                                    if (isNaN(dmg) || dmg < 1) dmg = 1;
+                                    // Ability 13: Pixel Combo - Reduce damage to 50%, with mini-game for extra attacks
+                                    let pixelComboMultiplier = 1.0;
+                                    if (equippedAbilities.includes(13)) {
+                                        pixelComboMultiplier = pixelComboCount >= 8 ? 1.0 : 0.5;
+                                    }
+                                    dmg = Math.round(dmg * pixelComboMultiplier);
+                                    
+                                    // Ability 7: Overuse - Consecutive attacks deal 200% bonus but 20% recoil
+                                    let overuseSelfDamage = 0;
+                                    if (equippedAbilities.includes(7)) {
+                                        const overuseBonus = Math.round(dmg * 2.0); // 200% bonus
+                                        dmg += overuseBonus;
+                                        overuseSelfDamage = Math.round(dmg * 0.2); // 20% recoil
+                                        overuseConsecutive++;
+                                        logCombat(`⚔️ Overuse: +${overuseBonus} damage (200% bonus)`);
+                                    } else {
+                                        overuseConsecutive = 0;
+                                    }
+                                    
+                                    // Ability 2: Coral - Consecutive attacks deal bonus damage (20% per turn, max 80%)
+                                    if (equippedAbilities.includes(2)) {
+                                        const coralBonus = Math.min(consecutiveAttacks * 0.2, 0.8); // Max 80%
+                                        if (coralBonus > 0) {
+                                            const bonusDmg = Math.round(dmg * coralBonus);
+                                            dmg += bonusDmg;
+                                            logCombat(`🌊 Coral Bonus: +${bonusDmg} damage (${Math.round(coralBonus * 100)}%)`);
+                                        }
+                                        consecutiveAttacks++;
+                                    } else {
+                                        consecutiveAttacks = 0; // Reset if coral not equipped
+                                    }
+                                    
+                                    // Ability 6: Carried - Log if multiplier is active
+                                    if (equippedAbilities.includes(6) && carriedMult !== 1.0) {
+                                        const aliveCount = countAlivePartyMembers();
+                                        logCombat(`👥 Carried: ${aliveCount} allies (${Math.round((carriedMult - 1) * 100)}% stat bonus)`);
+                                    }
+                                    
+                                    // Ability 17: Perfectly Timed - 50% chance to critically strike for 150% damage
+                                    if (equippedAbilities.includes(17)) {
+                                        const critRoll = Math.random();
+                                        if (critRoll < 0.5) {
+                                            const critBonus = Math.round(dmg * 0.5);
+                                            dmg += critBonus;
+                                            logCombat(`💥 CRITICAL STRIKE! +${critBonus} damage (150% total)`);
+                                            console.log(`[Perfectly Timed] Critical strike! Roll: ${critRoll.toFixed(3)} < 0.5 | Bonus: ${critBonus} | Total damage: ${dmg}`);
+                                        } else {
+                                            console.log(`[Perfectly Timed] No crit. Roll: ${critRoll.toFixed(3)} >= 0.5`);
+                                        }
+                                    }
 
                                     logCombat(`Player uses ${attackObj.name} on ${enemyWrap.querySelector('img').alt} and deals ${dmg} damage${bleedMult > 1 ? ' (BLEED +' + Math.round((bleedMult - 1) * 100) + '%)' : ''}`);
                                     
@@ -1466,12 +1987,67 @@
                                         applyStatusEffect(enemyWrap, 'enemy', enemyIndex, attackObj.status, dmg);
                                     }
                                     
+                                    // Ability 1: Bleed - Each attack gives bleed status (can stack with attack's bleed)
+                                    if (equippedAbilities.includes(1)) {
+                                        applyStatusEffect(enemyWrap, 'enemy', enemyIndex, 'bleed', dmg);
+                                        logCombat('🩸 Bleed ability activated!');
+                                    }
+                                    
+                                    // Ability 5: Plasma - Every attack grants random status effect
+                                    if (equippedAbilities.includes(5)) {
+                                        const plasmaStatuses = ['burn', 'leech', 'bleed', 'grim', 'chill'];
+                                        const randomStatus = plasmaStatuses[Math.floor(Math.random() * plasmaStatuses.length)];
+                                        applyStatusEffect(enemyWrap, 'enemy', enemyIndex, randomStatus, dmg);
+                                        logCombat(`⚡ Plasma: Applied ${randomStatus}!`);
+                                    }
+                                    
+                                    // Ability 8: Burn - Set ground aflame (35% magic damage per turn)
+                                    if (equippedAbilities.includes(8)) {
+                                        const burnDmg = Math.round(Number(attacker.MAGIC||0) * 0.35);
+                                        burnGroundEffects[enemyIndex] = { duration: 3, damage: burnDmg };
+                                        logCombat(`🔥 Burn: Ground aflame! ${burnDmg} damage/turn for 3 turns`);
+                                    }
+                                    
+                                    // Ability 12: After Shock - Next enemy attack ignored (2 turn cooldown)
+                                    if (equippedAbilities.includes(12) && afterShockCooldown === 0) {
+                                        afterShockActive = true;
+                                        afterShockCooldown = 2;
+                                        logCombat(`⚡ After Shock: Next enemy attack will be ignored!`);
+                                    }
+                                    
+                                    // Apply Overuse self-damage
+                                    if (overuseSelfDamage > 0) {
+                                        attacker.HEALTH = Math.max(1, Number(attacker.HEALTH) - overuseSelfDamage);
+                                        updatePlayerArea();
+                                        logCombat(`💔 Overuse recoil: ${overuseSelfDamage} self-damage`);
+                                    }
+                                    
                                     // Decrement bleed duration
                                     decrementBleed('enemy', enemyIndex);
                                     
                                     const curHp = Number(enemyWrap.dataset.hp) - dmg;
                                     enemyWrap.dataset.hp = Math.max(0, curHp);
                                     updateEnemyBar(enemyWrap);
+                                    
+                                    // Ability 10: MultiStrike - Attack twice with this attack
+                                    if (attackAbility === 10 && Number(enemyWrap.dataset.hp) > 0) {
+                                        // Recalculate damage for second strike (same formula)
+                                        const str2 = Number(attacker.STRENGTH||0) * carriedMult;
+                                        const mag2 = Number(attacker.MAGIC||0) * carriedMult;
+                                        const bleedMult2 = getBleedMultiplier('enemy', enemyIndex);
+                                        let dmg2 = Math.round((mag2 * magMult + str2 * strMult - enemyDefense) * bleedMult2);
+                                        if (isNaN(dmg2) || dmg2 < 1) dmg2 = 1;
+                                        
+                                        const curHp2 = Number(enemyWrap.dataset.hp) - dmg2;
+                                        enemyWrap.dataset.hp = Math.max(0, curHp2);
+                                        updateEnemyBar(enemyWrap);
+                                        logCombat(`⚔️⚔️ MultiStrike: Second hit deals ${dmg2} damage!`);
+                                        
+                                        // Apply attack status on second hit too
+                                        if (attackObj.status && attackObj.status !== 'none') {
+                                            applyStatusEffect(enemyWrap, 'enemy', enemyIndex, attackObj.status, dmg2);
+                                        }
+                                    }
 
                                                 // Play hit animation on the enemy image
                                                 try {
@@ -1485,6 +2061,12 @@
                                                     }
                                                 } catch(e){}
 
+                                                  // Ability 13: Pixel Combo mini-game
+                                                  if (equippedAbilities.includes(13)) {
+                                                      showPixelComboMiniGame(enemyWrap);
+                                                      return; // Wait for mini-game to complete
+                                                  }
+
                                                   // After attacking, clear selectedAttackId so player must re-select an attack next time
                                                   selectedAttackId = null;
                                                   // After attacking, consume selection and reset waiting flag to resume queue
@@ -1494,10 +2076,43 @@
 
                                     // Check if this enemy dies
                                     if (Number(enemyWrap.dataset.hp) <= 0) {
-                                        // Check if this is Divine King (phase 1) - transform to phase 2
                                         const enemyName = enemyWrap.querySelector('img') ? enemyWrap.querySelector('img').alt : '';
+                                        const enemyKey = enemyWrap.dataset.key || enemyName;
+                                        
+                                        // Check if this is Divine King (phase 1) - transform to phase 2
                                         const isDivineKing = enemyName.toLowerCase().includes('divineking') || 
                                                            (enemyWrap.dataset.key && enemyWrap.dataset.key.toLowerCase() === 'divineking');
+                                        
+                                        // Check if this is a crawler with two lives
+                                        const isCrawler = enemyKey.toLowerCase().includes('crawler');
+                                        const crawlerFirstLife = !enemyWrap.dataset.crawlerSecondForm;
+                                        
+                                        // Crawler mechanic: Transform to second form on first death
+                                        if (isCrawler && crawlerFirstLife) {
+                                            logCombat('🦎 Crawler survives! Transforming to frenzied form!');
+                                            
+                                            const crawlerStats = ENEMY_BASE_STATS['crawler'];
+                                            if (crawlerStats && crawlerStats.secondForm) {
+                                                const level = battleData.level || 1;
+                                                const baseScale = Math.pow(level, 0.9);
+                                                const scaleMultiplier = baseScale;
+                                                
+                                                const secondForm = crawlerStats.secondForm;
+                                                enemyWrap.dataset.hp = Math.max(1, Math.round(secondForm.health * scaleMultiplier));
+                                                enemyWrap.dataset.maxHp = enemyWrap.dataset.hp;
+                                                enemyWrap.dataset.str = Math.round(secondForm.strength * scaleMultiplier);
+                                                enemyWrap.dataset.mag = Math.round(secondForm.magic * scaleMultiplier);
+                                                enemyWrap.dataset.speed = Math.round(secondForm.speed * scaleMultiplier);
+                                                enemyWrap.dataset.def = 0; // No defense in second form
+                                                enemyWrap.dataset.crawlerSecondForm = 'true';
+                                                
+                                                updateEnemyBar(enemyWrap);
+                                                recalculateActionQueue();
+                                                
+                                                logCombat('Crawler is now fragile but extremely fast!');
+                                                return true;
+                                            }
+                                        }
                                         
                                         // Only transform if not already transformed (check for phase flag)
                                         const alreadyTransformed = enemyWrap.dataset.transformed === 'true';
@@ -1506,9 +2121,10 @@
                                             logCombat('⚡ Divine King transforms into Demon King! ⚡');
                                             
                                             // Transform to Demon King (phase 2)
-                                            const demonKingStats = ENEMY_BASE_STATS['demonKing'] || { health:500, strength:20, magic:20, speed:4, defense:25 };
+                                            const demonKingStats = ENEMY_BASE_STATS['demonKing'] || { health:600, strength:25, magic:25, speed:5, defense:30 };
                                             const level = battleData.level || 100;
-                                            const scaleMultiplier = level * 1.3; // Boss on boss tile
+                                            const baseScale = Math.pow(level, 0.9); // Use exponential scaling
+                                            const scaleMultiplier = baseScale * 1.3; // Boss on boss tile
                                             
                                             // Update enemy to demon king
                                             enemyWrap.dataset.hp = Math.max(1, Math.round(demonKingStats.health * scaleMultiplier));
@@ -1547,10 +2163,43 @@
                                         }
                                         
                                         logCombat('Enemy defeated!');
+                                        
+                                        // Register enemy defeat for index tracking
+                                        const defeatedKey = enemyWrap.dataset.key || (enemyWrap.querySelector('img') ? enemyWrap.querySelector('img').alt : '');
+                                        if (typeof registerEnemyDefeated === 'function' && defeatedKey) {
+                                            registerEnemyDefeated(defeatedKey);
+                                        }
+                                        
+                                        // Necromancer resurrection mechanic
+                                        const allEnemies = getEnemyWrappers();
+                                        const hasNecromancer = allEnemies.some(w => {
+                                            const key = w.dataset.key || (w.querySelector('img') ? w.querySelector('img').alt : '');
+                                            return key.toLowerCase().includes('necromancer') && Number(w.dataset.hp) > 0;
+                                        });
+                                        
+                                        if (hasNecromancer && !enemyWrap.dataset.zombie) {
+                                            // Resurrect as zombie with 50% hp and marked as zombie
+                                            const maxHp = Number(enemyWrap.dataset.maxHp);
+                                            enemyWrap.dataset.hp = Math.max(1, Math.round(maxHp * 0.5));
+                                            enemyWrap.dataset.zombie = 'true';
+                                            
+                                            // Add visual indicator
+                                            const nameH = enemyWrap.querySelector('h3');
+                                            if (nameH && !nameH.textContent.includes('Zombie')) {
+                                                nameH.textContent = 'Zombie ' + nameH.textContent;
+                                            }
+                                            
+                                            updateEnemyBar(enemyWrap);
+                                            logCombat('🧟 Necromancer resurrects fallen ally as a zombie!');
+                                            return true;
+                                        }
+                                        
+                                        // Hide the defeated enemy completely (remove from DOM)
+                                        enemyWrap.remove();
+                                        
                                         // Clear status effects for defeated enemy
                                         delete enemyStatusEffects[enemyIndex];
-                                        const allEnemies = getEnemyWrappers();
-                                        const anyAlive = allEnemies.some(w => Number(w.dataset.hp) > 0);
+                                        const anyAlive = getEnemyWrappers().some(w => Number(w.dataset.hp) > 0);
                                         if (!anyAlive) {
                                             logCombat('All enemies defeated! Redirecting to home...');
                                             combatRunning = false;
@@ -1724,6 +2373,92 @@
                                 }
                             }
                         }
+                        
+                        // Pixel Combo mini-game (ability 13)
+                        function showPixelComboMiniGame(lastTargetWrap) {
+                            const optionCount = pixelComboCount >= 8 ? 3 : 4;
+                            const enemies = getEnemyWrappers().filter(w => Number(w.dataset.hp) > 0);
+                            
+                            // Create overlay
+                            const overlay = document.createElement('div');
+                            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:10000;';
+                            
+                            const panel = document.createElement('div');
+                            panel.style.cssText = 'background:#222;border:3px solid #00ff00;padding:20px;border-radius:10px;text-align:center;color:#fff;';
+                            
+                            const title = document.createElement('h2');
+                            title.textContent = '🎮 PIXEL COMBO! 🎮';
+                            title.style.color = '#00ff00';
+                            panel.appendChild(title);
+                            
+                            const info = document.createElement('p');
+                            info.textContent = `Choose the correct symbol to attack again! (${pixelComboCount} combo)`;
+                            panel.appendChild(info);
+                            
+                            const btnContainer = document.createElement('div');
+                            btnContainer.style.cssText = 'display:flex;gap:10px;margin-top:20px;';
+                            
+                            // Generate symbols (one correct, rest infected)
+                            const correctSymbol = '✓';
+                            const infectedSymbol = '☠';
+                            const symbols = [];
+                            symbols.push(correctSymbol);
+                            for (let i = 1; i < optionCount; i++) {
+                                symbols.push(infectedSymbol);
+                            }
+                            
+                            // Shuffle
+                            for (let i = symbols.length - 1; i > 0; i--) {
+                                const j = Math.floor(Math.random() * (i + 1));
+                                [symbols[i], symbols[j]] = [symbols[j], symbols[i]];
+                            }
+                            
+                            symbols.forEach(symbol => {
+                                const btn = document.createElement('button');
+                                btn.textContent = symbol;
+                                btn.style.cssText = 'font-size:48px;width:80px;height:80px;cursor:pointer;background:#333;border:2px solid #666;border-radius:5px;color:#fff;';
+                                btn.onmouseover = () => btn.style.background = '#444';
+                                btn.onmouseout = () => btn.style.background = '#333';
+                                
+                                btn.onclick = () => {
+                                    document.body.removeChild(overlay);
+                                    
+                                    if (symbol === correctSymbol) {
+                                        // Success! Increment combo and attack again
+                                        pixelComboCount++;
+                                        logCombat(`✓ Pixel Combo Success! (${pixelComboCount} streak)`);
+                                        
+                                        // Attack again on the same target if alive, otherwise first alive enemy
+                                        const target = Number(lastTargetWrap.dataset.hp) > 0 ? lastTargetWrap : enemies[0];
+                                        if (target) {
+                                            setTimeout(() => playerPerformAttackOn(target), 100);
+                                        } else {
+                                            // End turn if no targets
+                                            selectedAttackId = null;
+                                            playerCanAct = false;
+                                            playerWaiting = false;
+                                            waitingForPlayerAction = false;
+                                        }
+                                    } else {
+                                        // Failed! Reset combo
+                                        logCombat(`☠ Pixel Combo Failed! Combo reset.`);
+                                        pixelComboCount = 0;
+                                        
+                                        // End turn
+                                        selectedAttackId = null;
+                                        playerCanAct = false;
+                                        playerWaiting = false;
+                                        waitingForPlayerAction = false;
+                                    }
+                                };
+                                
+                                btnContainer.appendChild(btn);
+                            });
+                            
+                            panel.appendChild(btnContainer);
+                            overlay.appendChild(panel);
+                            document.body.appendChild(overlay);
+                        }
 
                         function performPlayerAction(){
                             // Called by the scheduler when it's the player's turn. We set flags so the UI can accept a target click.
@@ -1797,10 +2532,164 @@
                                 logCombat(`${enemyName} #${enemyIndex + 1} (${attackType}:${attackStat}, SPD:${enemySpeed}) attacking — queue pos: ${queueIndex}/${actionQueue.length}`);
                             } catch(e){}
                             const defense = Number(target.DEFENSE || 0);
-                            let dmg = Math.round(enemyMag * atk.magicMultiplier + enemyStr * atk.strMultiplier - defense);
-                            if (isNaN(dmg) || dmg < 1) dmg = 1;
+                            
+                            // Calculate base damage before defense
+                            const baseDmg = enemyMag * atk.magicMultiplier + enemyStr * atk.strMultiplier;
+                            
+                            // Apply defense with diminishing returns: damage reduction = def / (def + 100)
+                            // This ensures attacks always deal at least 5% damage (max 95% reduction)
+                            const defenseReduction = defense / (defense + 100);
+                            const damageAfterDefense = baseDmg * (1 - defenseReduction * 0.95); // Max 95% reduction
+                            
+                            let dmg = Math.max(1, Math.round(Math.max(damageAfterDefense, baseDmg * 0.05)));
+                            if (isNaN(dmg)) dmg = 1;
+                            
+                            // Store original damage and check if this was a magic attack
+                            const originalDmg = dmg;
+                            const isMagicAttack = atk.magicMultiplier > 0;
+                            
+            // Ability 12: After Shock - Ignore enemy attack if active
+            if (afterShockActive) {
+                afterShockActive = false;
+                logCombat(`⚡ After Shock: Enemy attack ignored!`);
+                dmg = 0;
+            }
+            
+            // Decrement After Shock cooldown
+            if (afterShockCooldown > 0) {
+                afterShockCooldown--;
+            }
+            
+            // Player Lightning Status - Ignore enemy attack if active (from Lightning Shark)
+            if (typeof playerLightningActive !== 'undefined' && playerLightningActive) {
+                playerLightningActive = false;
+                logCombat(`⚡ Lightning Shield: Enemy attack ignored!`);
+                dmg = 0;
+            }
+            
+            // Decrement player lightning cooldown
+            if (typeof playerLightningCooldown !== 'undefined' && playerLightningCooldown > 0) {
+                playerLightningCooldown--;
+            }                            // Apply burn ground damage to this enemy
+                            if (burnGroundEffects[enemyIndex]) {
+                                const burn = burnGroundEffects[enemyIndex];
+                                const burnDmg = burn.damage;
+                                const curEnemyHp = Number(enemyWrap.dataset.hp);
+                                enemyWrap.dataset.hp = Math.max(0, curEnemyHp - burnDmg);
+                                updateEnemyBar(enemyWrap);
+                                logCombat(`🔥 Burn ground: ${burnDmg} damage to enemy #${enemyIndex + 1}`);
+                                
+                                burn.duration--;
+                                if (burn.duration <= 0) {
+                                    delete burnGroundEffects[enemyIndex];
+                                    logCombat(`🔥 Burn ground expired on enemy #${enemyIndex + 1}`);
+                                }
+                            }
+                            
                             target.HEALTH = (Number(target.HEALTH) || Number(target.MAX_HEALTH) || 0) - dmg;
-                            // Update player health UI
+                            
+            // Get the active member key for status effects
+            const memberKey = getActiveBattleMember();
+            
+            // Apply special enemy status effects
+            const enemyKey = enemyWrap.dataset.key || (enemyWrap.querySelector('img') ? enemyWrap.querySelector('img').alt : '');
+            const enemyBaseStats = ENEMY_BASE_STATS[enemyKey];
+            if (enemyBaseStats && enemyBaseStats.attackStatus) {
+                // Frozen corpse applies chill on attack
+                if (enemyBaseStats.attackStatus === 'chill') {
+                    if (!playerStatusEffects[memberKey]) playerStatusEffects[memberKey] = {};
+                    playerStatusEffects[memberKey].chill = { duration: 3 };
+                    logCombat(`❄️ Frozen Touch: ${target.NAME} has been chilled! (-25% speed for 3 turns)`);
+                }
+            }
+            
+            // Mage: Apply random status effect
+            if (enemyKey === 'Mage') {
+                const randomStatuses = ['burn', 'bleed', 'chill'];
+                const chosenStatus = randomStatuses[Math.floor(Math.random() * randomStatuses.length)];
+                applyStatusEffect(target, 'player', memberKey, chosenStatus, dmg);
+                logCombat(`🔮 Arcane Curse: Mage applied ${chosenStatus.toUpperCase()}!`);
+            }
+            
+            // Alien: Apply burn status effect
+            if (enemyKey === 'alien') {
+                applyStatusEffect(target, 'player', memberKey, 'burn', dmg);
+                logCombat(`👽 Alien Fire: Applied BURN!`);
+            }
+            
+            // Crawler: Apply bleed status effect
+            if (enemyKey === 'crawler') {
+                applyStatusEffect(target, 'player', memberKey, 'bleed', dmg);
+                logCombat(`🦂 Venomous Bite: Applied BLEED!`);
+            }
+            
+            // Vine Lasher: Apply leech status effect
+            if (enemyKey === 'vineLasher') {
+                applyStatusEffect(target, 'player', memberKey, 'leech', dmg);
+                logCombat(`🌿 Draining Vines: Applied LEECH!`);
+            }
+            
+            // Cursed Knight: Apply grim status effect
+            if (enemyKey === 'cursedKnight') {
+                applyStatusEffect(target, 'player', memberKey, 'grim', dmg);
+                logCombat(`⚔️ Cursed Blade: Applied GRIM!`);
+            }
+            
+            // Lightning Shark: Apply lightning status (ignore next attack with 2 turn cooldown)
+            if (enemyKey === 'lightning_shark') {
+                // Initialize lightning cooldown if not exists
+                if (typeof playerLightningCooldown === 'undefined') window.playerLightningCooldown = 0;
+                if (playerLightningCooldown <= 0) {
+                    window.playerLightningActive = true;
+                    window.playerLightningCooldown = 2;
+                    logCombat(`⚡ Lightning Shock: Player's next enemy attack will be ignored!`);
+                }
+            }
+            
+            // Elder Ent: Gain 10% bonus magic stats each turn (compounds)
+            if (enemyKey === 'elderEnt') {
+                const currentMag = Number(enemyWrap.dataset.mag) || 0;
+                const magBoost = Math.max(1, Math.round(currentMag * 0.1));
+                enemyWrap.dataset.mag = currentMag + magBoost;
+                logCombat(`🌳 Ancient Growth: Elder Ent gained ${magBoost} magic (now ${Number(enemyWrap.dataset.mag)})!`);
+            }
+            
+            // Worldroot: Spawn a Vine Lasher (15 levels lower, min level 1)
+            if (enemyKey === 'Worldroot') {
+                const spawnLevel = Math.max(1, level - 15);
+                spawnEnemy('vineLasher', spawnLevel);
+                logCombat(`🌲 Nature's Call: Worldroot summoned a Vine Lasher (Lv ${spawnLevel})!`);
+            }
+            
+            // King: Spawn King's Guard (15 levels lower, min level 1) and gain 10% bonus stats per King's Guard alive
+            if (enemyKey === 'King') {
+                const spawnLevel = Math.max(1, level - 15);
+                spawnEnemy('kingsGuard', spawnLevel);
+                
+                // Count alive King's Guards
+                const allEnemies = getEnemyWrappers();
+                const kingsGuardCount = allEnemies.filter(w => 
+                    (w.dataset.key === 'kingsGuard' || (w.querySelector('img') && w.querySelector('img').alt === 'kingsGuard')) 
+                    && Number(w.dataset.hp) > 0
+                ).length;
+                
+                if (kingsGuardCount > 0) {
+                    const statBoost = 0.1 * kingsGuardCount;
+                    const currentStr = Number(enemyWrap.dataset.str) || 0;
+                    const currentMag = Number(enemyWrap.dataset.mag) || 0;
+                    const currentSpeed = Number(enemyWrap.dataset.speed) || 0;
+                    const currentDef = Number(enemyWrap.dataset.def) || 0;
+                    
+                    enemyWrap.dataset.str = Math.round(currentStr * (1 + statBoost));
+                    enemyWrap.dataset.mag = Math.round(currentMag * (1 + statBoost));
+                    enemyWrap.dataset.speed = Math.round(currentSpeed * (1 + statBoost));
+                    enemyWrap.dataset.def = Math.round(currentDef * (1 + statBoost));
+                    
+                    logCombat(`👑 Royal Command: King summoned King's Guard and gained ${(statBoost * 100).toFixed(0)}% stats (${kingsGuardCount} guards alive)!`);
+                } else {
+                    logCombat(`👑 Royal Command: King summoned a King's Guard (Lv ${spawnLevel})!`);
+                }
+            }                            // Update player health UI
                             updatePlayerArea();
                                         // Play hit animation on player image
                                         try {
@@ -1812,6 +2701,35 @@
                                                 setTimeout(()=> pimg.classList.remove('hit-animation'), 700);
                                             }
                                         } catch(e){}
+                                        
+                                        // ===== DEFENSIVE ITEM ABILITIES =====
+                                        // Check if player survived to trigger defensive abilities
+                                        const playerSurvived = Number(target.HEALTH) > 0;
+                                        const equippedAbilities = getEquippedAbilities(memberKey);
+                                        
+                                        // Ability 3: Magi Reflect - Reflect 10% of holder's magic damage if survived magic attack
+                                        if (playerSurvived && isMagicAttack && equippedAbilities.includes(3)) {
+                                            const playerMagic = Number(target.MAGIC || 0);
+                                            const reflectDmg = Math.max(1, Math.round(playerMagic * 0.1));
+                                            const curEnemyHp = Number(enemyWrap.dataset.hp);
+                                            enemyWrap.dataset.hp = Math.max(0, curEnemyHp - reflectDmg);
+                                            updateEnemyBar(enemyWrap);
+                                            logCombat(`🔮 Magi Reflect: ${reflectDmg} magic damage reflected!`);
+                                        }
+                                        
+                                        // Ability 4: Spikes - Counter with 20% STR damage + apply bleed
+                                        if (equippedAbilities.includes(4)) {
+                                            const playerStr = Number(target.STRENGTH || 0);
+                                            const spikeDmg = Math.max(1, Math.round(playerStr * 0.2));
+                                            const curEnemyHp = Number(enemyWrap.dataset.hp);
+                                            enemyWrap.dataset.hp = Math.max(0, curEnemyHp - spikeDmg);
+                                            updateEnemyBar(enemyWrap);
+                                            
+                                            // Apply bleed to the enemy
+                                            applyStatusEffect(enemyWrap, 'enemy', enemyIndex, 'bleed', spikeDmg);
+                                            logCombat(`🌵 Spikes: ${spikeDmg} counter damage + bleed!`);
+                                        }
+                                        
                                         if (Number(target.HEALTH) <= 0) {
                                                 const activeMember = PARTY_STATS[getActiveBattleMember()];
                                                 logCombat(`${activeMember.NAME} has been defeated! Choose another member...`);
@@ -1829,8 +2747,25 @@
                             });
 
                             if (aliveMembers.length === 0) {
-                                logCombat('All party members defeated! Game Over!');
-                                setTimeout(()=> window.location.href = 'home.html', 2000);
+                                logCombat('All party members defeated! Battle lost...');
+                                combatRunning = false;
+                                
+                                // Count defeated enemies
+                                const allEnemies = getEnemyWrappers();
+                                const totalEnemies = allEnemies.length;
+                                const defeatedEnemies = allEnemies.filter(w => Number(w.dataset.hp) <= 0).length;
+                                
+                                // Calculate partial rewards: 10% base + 30% per enemy defeated
+                                const level = battleData.level || 1;
+                                const baseExp = Math.max(10, Math.round(100 * level));
+                                const defeatExpPercent = 0.10 + (0.30 * (defeatedEnemies / totalEnemies));
+                                const partialExp = Math.round(baseExp * defeatExpPercent);
+                                
+                                // Award partial exp to participants
+                                const expInfo = awardExpToParticipants(level, partialExp);
+                                
+                                // Show defeat modal
+                                showDefeatModal(defeatedEnemies, totalEnemies, expInfo, level);
                                 return;
                             }
 
@@ -1889,7 +2824,7 @@
                                     btn.style.transform = 'scale(1)';
                                 };
                                 btn.onclick = () => {
-                                    switchBattleMember(key);
+                                    switchBattleMember(key, true); // true = emergency switch, bypass turn check
                                     overlay.remove();
                                     combatRunning = true;
                                     // Resume combat after short delay
@@ -1928,6 +2863,10 @@
                                 waitingForPlayerAction = true;
                                 performPlayerAction();
                             } else {
+                                // Reset consecutive attack counters when enemy interrupts player's turn
+                                consecutiveAttacks = 0;
+                                overuseConsecutive = 0;
+                                pixelComboCount = 0;
                                 performEnemyAction(actor.enemyIndex);
                             }
 
@@ -1988,9 +2927,91 @@
             return Math.max(1, Math.round(lvl * 100 * Math.sqrt(lvl)));
         }
 
-        function awardExpToParticipants(level){
+        function showDefeatModal(defeatedEnemies, totalEnemies, expInfo, level) {
+            // Build modal overlay
+            const overlay = document.createElement('div');
+            overlay.style.position = 'fixed';
+            overlay.style.inset = '0';
+            overlay.style.background = 'rgba(0,0,0,0.85)';
+            overlay.style.display = 'flex';
+            overlay.style.alignItems = 'center';
+            overlay.style.justifyContent = 'center';
+            overlay.style.zIndex = '100000';
+
+            const panel = document.createElement('div');
+            panel.style.background = 'rgba(40,20,20,0.95)';
+            panel.style.border = '3px solid #cc0000';
+            panel.style.borderRadius = '10px';
+            panel.style.padding = '20px 24px';
+            panel.style.color = 'white';
+            panel.style.minWidth = '320px';
+            panel.style.maxWidth = '520px';
+
+            const title = document.createElement('h2');
+            title.textContent = 'Defeat';
+            title.style.marginTop = '0';
+            title.style.color = '#cc0000';
+            panel.appendChild(title);
+
+            const message = document.createElement('p');
+            message.textContent = 'Your party has been defeated...';
+            message.style.marginBottom = '16px';
+            panel.appendChild(message);
+
+            // Enemies defeated section
+            const enemyDiv = document.createElement('div');
+            enemyDiv.style.margin = '10px 0 6px';
+            const defeatPercent = Math.round((defeatedEnemies / totalEnemies) * 100);
+            enemyDiv.innerHTML = `<strong>Enemies Defeated:</strong> ${defeatedEnemies} / ${totalEnemies} (${defeatPercent}%)`;
+            panel.appendChild(enemyDiv);
+
+            // EXP section
+            const expDiv = document.createElement('div');
+            expDiv.style.margin = '6px 0 10px';
+            const fullReward = Math.max(10, Math.round(100 * level));
+            const totalPercent = Math.round((expInfo.totalExp / fullReward) * 100);
+            expDiv.innerHTML = `<strong>Partial EXP:</strong> ${expInfo.totalExp} (${totalPercent}% of full reward)`;
+            const list = document.createElement('ul');
+            list.style.margin = '8px 0 0';
+            list.style.paddingLeft = '18px';
+            expInfo.participants.forEach(p => {
+                const li = document.createElement('li');
+                li.textContent = `${p.name}: +${p.gained} EXP • Lv ${p.level}` + (p.levelsGained>0?` (↑ +${p.levelsGained})`:'' );
+                list.appendChild(li);
+            });
+            panel.appendChild(expDiv);
+            panel.appendChild(list);
+
+            const btnRow = document.createElement('div');
+            btnRow.style.display = 'flex';
+            btnRow.style.gap = '10px';
+            btnRow.style.marginTop = '16px';
+            btnRow.style.justifyContent = 'flex-end';
+
+            const ok = document.createElement('button');
+            ok.textContent = 'Return to Map';
+            ok.style.padding = '10px 14px';
+            ok.style.background = 'rgba(200,50,50,0.9)';
+            ok.style.border = '2px solid rgba(200,50,50,1)';
+            ok.style.borderRadius = '6px';
+            ok.style.color = 'white';
+            ok.style.cursor = 'pointer';
+            ok.onclick = ()=>{ 
+                overlay.remove(); 
+                // Save game data before leaving
+                if (typeof saveGameData === 'function') saveGameData();
+                window.location.href = 'map.html'; 
+            };
+
+            btnRow.appendChild(ok);
+            panel.appendChild(btnRow);
+            overlay.appendChild(panel);
+            document.body.appendChild(overlay);
+        }
+
+        function awardExpToParticipants(level, customTotalExp = null){
             // Base total EXP proportional to level
-            const totalExp = Math.max(10, Math.round(100 * (Number(level)||1)));
+            const totalExp = customTotalExp !== null ? customTotalExp : Math.max(10, Math.round(100 * (Number(level)||1)));
             const participants = Array.from(battleParticipants);
             const count = participants.length || 1;
             const per = Math.floor(totalExp / count);
@@ -2024,33 +3045,152 @@
         function generateVictoryLoot(level){
             try {
                 if (typeof window.generateRandomItem === 'function') {
+                    // Check if this is the first time clearing this level
+                    const progression = typeof window.loadDungeonProgression === 'function' ? window.loadDungeonProgression() : { clearedLevels: [] };
+                    const isFirstClear = !progression.clearedLevels.includes(level);
+                    const numItems = isFirstClear ? 3 : 1;
+                    
                     // Check if this is a boss tile - if so, guarantee mythic rarity
                     const isBossTile = battleData.isBossTile || false;
-                    let item;
+                    const items = [];
                     
-                    if (isBossTile) {
-                        // Boss tile: force mythic rarity
-                        item = window.generateRandomItem(level, 'mythic');
-                        logCombat('🎁 BOSS REWARD: Mythic item guaranteed!');
-                    } else {
-                        // Regular tile: random item
-                        item = window.generateRandomItem(level);
+                    for (let i = 0; i < numItems; i++) {
+                        let item;
+                        if (isBossTile) {
+                            // Boss tile: force mythic rarity
+                            item = window.generateRandomItem(level, 'mythic');
+                            if (i === 0) logCombat('🎁 BOSS REWARD: Mythic item guaranteed!');
+                        } else {
+                            // Regular tile: random item
+                            item = window.generateRandomItem(level);
+                        }
+                        if (item) items.push(item);
+                    }
+                    
+                    if (isFirstClear && items.length > 1) {
+                        logCombat(`✨ FIRST CLEAR BONUS: ${items.length}x loot drops!`);
                     }
                     
                     try { if (typeof saveGameData === 'function') saveGameData(); } catch(e){}
-                    return item;
+                    return items;
                 }
             } catch(e) { console.error('generateRandomItem failed', e); }
-            return null;
+            return [];
+        }
+
+        function showDefeatModal(defeatedEnemies, totalEnemies, expInfo) {
+            // Build modal overlay
+            const overlay = document.createElement('div');
+            overlay.style.position = 'fixed';
+            overlay.style.inset = '0';
+            overlay.style.background = 'rgba(0,0,0,0.85)';
+            overlay.style.display = 'flex';
+            overlay.style.alignItems = 'center';
+            overlay.style.justifyContent = 'center';
+            overlay.style.zIndex = '100000';
+
+            const panel = document.createElement('div');
+            panel.style.background = 'rgba(40,20,20,0.95)';
+            panel.style.border = '3px solid #cc0000';
+            panel.style.borderRadius = '10px';
+            panel.style.padding = '20px 24px';
+            panel.style.color = 'white';
+            panel.style.minWidth = '320px';
+            panel.style.maxWidth = '520px';
+
+            const title = document.createElement('h2');
+            title.textContent = 'Defeat';
+            title.style.marginTop = '0';
+            title.style.color = '#cc0000';
+            panel.appendChild(title);
+
+            const message = document.createElement('p');
+            message.textContent = 'Your party has been defeated...';
+            message.style.marginBottom = '16px';
+            panel.appendChild(message);
+
+            // Enemies defeated section
+            const enemyDiv = document.createElement('div');
+            enemyDiv.style.margin = '10px 0 6px';
+            const defeatPercent = Math.round((defeatedEnemies / totalEnemies) * 100);
+            enemyDiv.innerHTML = `<strong>Enemies Defeated:</strong> ${defeatedEnemies} / ${totalEnemies} (${defeatPercent}%)`;
+            panel.appendChild(enemyDiv);
+
+            // EXP section
+            const expDiv = document.createElement('div');
+            expDiv.style.margin = '6px 0 10px';
+            const totalPercent = Math.round((expInfo.totalExp / (Math.round((battleData.level||1) * 100 * Math.sqrt(battleData.level||1)))) * 100);
+            expDiv.innerHTML = `<strong>Partial EXP:</strong> ${expInfo.totalExp} (${totalPercent}% of full reward)`;
+            const list = document.createElement('ul');
+            list.style.margin = '8px 0 0';
+            list.style.paddingLeft = '18px';
+            expInfo.participants.forEach(p => {
+                const li = document.createElement('li');
+                li.textContent = `${p.name}: +${p.gained} EXP • Lv ${p.level}` + (p.levelsGained>0?` (↑ +${p.levelsGained})`:'' );
+                list.appendChild(li);
+            });
+            panel.appendChild(expDiv);
+            panel.appendChild(list);
+
+            const btnRow = document.createElement('div');
+            btnRow.style.display = 'flex';
+            btnRow.style.gap = '10px';
+            btnRow.style.marginTop = '16px';
+            btnRow.style.justifyContent = 'flex-end';
+
+            const ok = document.createElement('button');
+            ok.textContent = 'Return to Map';
+            ok.style.padding = '10px 14px';
+            ok.style.background = 'rgba(200,50,50,0.9)';
+            ok.style.border = '2px solid rgba(200,50,50,1)';
+            ok.style.borderRadius = '6px';
+            ok.style.color = 'white';
+            ok.style.cursor = 'pointer';
+            ok.onclick = ()=>{ 
+                overlay.remove(); 
+                // Save game data before leaving
+                if (typeof saveGameData === 'function') saveGameData();
+                window.location.href = 'map.html'; 
+            };
+
+            btnRow.appendChild(ok);
+            panel.appendChild(btnRow);
+            overlay.appendChild(panel);
+            document.body.appendChild(overlay);
         }
 
         function showVictoryRewards(level){
             // Compute rewards
             const expInfo = awardExpToParticipants(level);
-            const loot = generateVictoryLoot(level);
+            const lootArray = generateVictoryLoot(level);
 
-            // Unlock progression immediately
-            try { if (typeof window.clearLevelAndUnlock === 'function') window.clearLevelAndUnlock(level); } catch(e) { console.error('clearLevelAndUnlock failed', e); }
+            // Check if this is a challenge mode victory
+            const isChallengeVictory = battleData.isChallenge || false;
+            const challengeReward = battleData.challengeReward || null;
+            const challengeId = battleData.challengeId || null;
+            
+            // Handle challenge completion
+            if (isChallengeVictory && challengeId && challengeReward) {
+                // Mark challenge as completed
+                try {
+                    const completed = JSON.parse(localStorage.getItem('completedChallenges') || '[]');
+                    if (!completed.includes(challengeId)) {
+                        completed.push(challengeId);
+                        localStorage.setItem('completedChallenges', JSON.stringify(completed));
+                    }
+                } catch(e) {
+                    console.error('Failed to mark challenge as completed:', e);
+                }
+                
+                // Award enchantment
+                if (typeof window.addEnchantment === 'function') {
+                    window.addEnchantment(challengeReward);
+                    logCombat(`🎁 Challenge Reward: ${challengeReward} enchantment unlocked!`);
+                }
+            } else {
+                // Normal/Hard mode - unlock progression
+                try { if (typeof window.clearLevelAndUnlock === 'function') window.clearLevelAndUnlock(level); } catch(e) { console.error('clearLevelAndUnlock failed', e); }
+            }
 
             // Build modal overlay
             const overlay = document.createElement('div');
@@ -2064,36 +3204,139 @@
 
             const panel = document.createElement('div');
             panel.style.background = 'rgba(30,30,30,0.95)';
-            panel.style.border = '3px solid gold';
+            panel.style.border = isChallengeVictory ? '3px solid #a335ee' : '3px solid gold';
             panel.style.borderRadius = '10px';
             panel.style.padding = '20px 24px';
             panel.style.color = 'white';
             panel.style.minWidth = '320px';
-            panel.style.maxWidth = '520px';
+            panel.style.maxWidth = '600px';
 
             const title = document.createElement('h2');
-            title.textContent = 'Victory!';
+            title.textContent = isChallengeVictory ? 'Challenge Complete!' : 'Victory!';
             title.style.marginTop = '0';
-            title.style.color = 'gold';
+            title.style.color = isChallengeVictory ? '#a335ee' : 'gold';
             panel.appendChild(title);
+            
+            // Show enchantment reward for challenges
+            if (isChallengeVictory && challengeReward) {
+                const rewardDiv = document.createElement('div');
+                rewardDiv.style.margin = '10px 0';
+                rewardDiv.style.padding = '15px';
+                rewardDiv.style.background = 'rgba(163, 53, 238, 0.2)';
+                rewardDiv.style.border = '2px solid #a335ee';
+                rewardDiv.style.borderRadius = '8px';
+                rewardDiv.innerHTML = `<strong style="color: #a335ee;">🌟 Enchantment Unlocked:</strong> <span style="color: #ff8000; font-weight: bold;">${challengeReward}</span>`;
+                panel.appendChild(rewardDiv);
+            }
 
-            // Loot section
+            // Loot section - display multiple items
             const lootDiv = document.createElement('div');
             lootDiv.style.margin = '10px 0 6px';
-            const rarityColor = (loot && loot.rarity && typeof window.getRarityColor === 'function') ? window.getRarityColor(loot.rarity) : 'gold';
-            lootDiv.innerHTML = '<strong>Loot:</strong> ' + (loot ? `<span style="color: ${rarityColor}">${loot.name} (Lv ${loot.level||level})</span>` : '—');
-            if (loot && loot.image) {
-                const img = document.createElement('img');
-                img.src = loot.image;
-                img.alt = loot.name;
-                img.style.width = '64px';
-                img.style.height = '64px';
-                img.style.objectFit = 'contain';
-                img.style.display = 'block';
-                img.style.marginTop = '6px';
-                img.style.border = `3px solid ${rarityColor}`;
-                img.style.boxShadow = `0 0 10px ${rarityColor}`;
-                lootDiv.appendChild(img);
+            const lootHeader = document.createElement('strong');
+            lootHeader.textContent = `Loot (${lootArray.length}):`;
+            lootDiv.appendChild(lootHeader);
+            
+            // Track which items are marked for deletion (declare outside to be accessible in button handler)
+            const markedForDeletion = new Set();
+            
+            if (lootArray.length > 0) {
+                const itemGrid = document.createElement('div');
+                itemGrid.style.display = 'grid';
+                itemGrid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(100px, 1fr))';
+                itemGrid.style.gap = '10px';
+                itemGrid.style.marginTop = '10px';
+                
+                lootArray.forEach((loot, index) => {
+                    if (!loot) return;
+                    const itemCard = document.createElement('div');
+                    itemCard.style.textAlign = 'center';
+                    itemCard.style.padding = '8px';
+                    itemCard.style.background = 'rgba(0,0,0,0.3)';
+                    itemCard.style.borderRadius = '6px';
+                    itemCard.style.cursor = 'pointer';
+                    itemCard.style.transition = 'all 0.2s';
+                    itemCard.style.position = 'relative';
+                    
+                    const rarityColor = (loot.rarity && typeof window.getRarityColor === 'function') ? window.getRarityColor(loot.rarity) : 'gold';
+                    
+                    // Click handler to toggle deletion mark
+                    itemCard.onclick = () => {
+                        if (markedForDeletion.has(index)) {
+                            // Unmark for deletion
+                            markedForDeletion.delete(index);
+                            itemCard.style.opacity = '1';
+                            itemCard.style.background = 'rgba(0,0,0,0.3)';
+                            itemCard.style.border = 'none';
+                            deleteLabel.style.display = 'none';
+                        } else {
+                            // Mark for deletion
+                            markedForDeletion.add(index);
+                            itemCard.style.opacity = '0.5';
+                            itemCard.style.background = 'rgba(100,0,0,0.4)';
+                            itemCard.style.border = '2px solid #ff0000';
+                            deleteLabel.style.display = 'block';
+                        }
+                    };
+                    
+                    if (loot.image) {
+                        const img = document.createElement('img');
+                        img.src = loot.image;
+                        img.alt = loot.name;
+                        img.style.width = '64px';
+                        img.style.height = '64px';
+                        img.style.objectFit = 'contain';
+                        img.style.border = `3px solid ${rarityColor}`;
+                        img.style.boxShadow = `0 0 10px ${rarityColor}`;
+                        img.style.borderRadius = '4px';
+                        itemCard.appendChild(img);
+                    }
+                    
+                    const itemName = document.createElement('div');
+                    itemName.style.color = rarityColor;
+                    itemName.style.fontSize = '0.9em';
+                    itemName.style.marginTop = '4px';
+                    itemName.textContent = `${loot.name}`;
+                    itemCard.appendChild(itemName);
+                    
+                    const itemLevel = document.createElement('div');
+                    itemLevel.style.color = '#aaa';
+                    itemLevel.style.fontSize = '0.8em';
+                    itemLevel.textContent = `Lv ${loot.level || level}`;
+                    itemCard.appendChild(itemLevel);
+                    
+                    // Delete label (hidden by default)
+                    const deleteLabel = document.createElement('div');
+                    deleteLabel.textContent = '🗑️ DELETE';
+                    deleteLabel.style.position = 'absolute';
+                    deleteLabel.style.top = '2px';
+                    deleteLabel.style.right = '2px';
+                    deleteLabel.style.background = 'rgba(255,0,0,0.9)';
+                    deleteLabel.style.color = 'white';
+                    deleteLabel.style.fontSize = '0.7em';
+                    deleteLabel.style.padding = '2px 4px';
+                    deleteLabel.style.borderRadius = '3px';
+                    deleteLabel.style.fontWeight = 'bold';
+                    deleteLabel.style.display = 'none';
+                    itemCard.appendChild(deleteLabel);
+                    
+                    itemGrid.appendChild(itemCard);
+                });
+                
+                lootDiv.appendChild(itemGrid);
+                
+                // Add deletion info text
+                const deletionInfo = document.createElement('div');
+                deletionInfo.style.fontSize = '0.85em';
+                deletionInfo.style.color = '#aaa';
+                deletionInfo.style.marginTop = '8px';
+                deletionInfo.style.fontStyle = 'italic';
+                deletionInfo.textContent = 'Click items to mark for deletion';
+                lootDiv.appendChild(deletionInfo);
+            } else {
+                const noLoot = document.createElement('div');
+                noLoot.textContent = '—';
+                noLoot.style.marginTop = '6px';
+                lootDiv.appendChild(noLoot);
             }
             panel.appendChild(lootDiv);
 
@@ -2126,7 +3369,35 @@
             ok.style.borderRadius = '6px';
             ok.style.color = 'white';
             ok.style.cursor = 'pointer';
-            ok.onclick = ()=>{ overlay.remove(); window.location.href = 'map.html'; };
+            ok.onclick = ()=>{ 
+                // Remove marked items from INVENTORY before continuing
+                if (markedForDeletion.size > 0 && typeof INVENTORY !== 'undefined') {
+                    const itemsToDelete = [];
+                    lootArray.forEach((loot, index) => {
+                        if (markedForDeletion.has(index)) {
+                            itemsToDelete.push(loot);
+                        }
+                    });
+                    
+                    itemsToDelete.forEach(item => {
+                        const idx = INVENTORY.findIndex(i => i === item || (i._uid && item._uid && i._uid === item._uid));
+                        if (idx !== -1) {
+                            INVENTORY.splice(idx, 1);
+                        }
+                    });
+                    
+                    try { if (typeof saveGameData === 'function') saveGameData(); } catch(e){}
+                }
+                
+                overlay.remove();
+                
+                // Redirect based on mode
+                if (isChallengeVictory) {
+                    window.location.href = 'challenge.html';
+                } else {
+                    window.location.href = 'map.html';
+                }
+            };
 
             btnRow.appendChild(ok);
             panel.appendChild(btnRow);

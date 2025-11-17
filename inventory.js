@@ -93,7 +93,39 @@ function displayItemInfo(item) {
   const memberKey = getSelectedMember();
   const infoItem = document.getElementById('info-item');
   const rarityColor = (item.rarity && typeof window.getRarityColor === 'function') ? window.getRarityColor(item.rarity) : '#ffffff';
-  infoItem.innerHTML = `\n    <h3 style="color: ${rarityColor}">${item.name} Level ${item.level||1}</h3>\n    <img src="${item.image||'Assests/empty-slot.png'}" style="width:30%; border: 3px solid ${rarityColor}; box-shadow: 0 0 8px ${rarityColor}">\n    <p>Strength: ${item.strength||0} Magic: ${item.magic||0} Speed: ${item.speed||0}</p>\n    <p>Health: ${item.health||0} Defense: ${item.defense||0} Attack: ${item.attack||'none'}</p>\n    <div style="margin-top:8px">\n      <button id="equip-btn">Equip</button>\n      <button id="unequip-btn">Unequip</button>\n    </div>\n  `;
+  
+  // Ability descriptions
+  const abilityDescriptions = {
+    1: "Bleed - Each attack applies bleed status (stacks with attack bleed)",
+    2: "Coral - Consecutive attacks deal +20% bonus damage per turn (max 80%)",
+    3: "Magi Reflect - Reflect 10% of magic damage if you survive magic attacks",
+    4: "Spikes - Counter attacks with 20% STR damage + apply bleed",
+    5: "Plasma - Every attack grants random status effect",
+    6: "Carried - Stats buffed 20% per ally over 3, -40% per ally under 3",
+    7: "Overuse - Consecutive attacks deal 200% bonus damage but 20% recoil",
+    8: "Burn - Set ground aflame for 35% magic damage/turn (3 turns)",
+    10: "MultiStrike - Attack twice when using this item's attack",
+    12: "After Shock - Next enemy attack ignored after hitting (2 turn cooldown)",
+    13: "Pixel Combo - 50% damage initially, mini-game to chain attacks (100% after 8 combos)",
+    17: "Perfectly Timed - 50% chance to critically strike for 150% damage",
+    19: "Enhance - Each attack boosts stats by item's stats with decay (100%, 90%, 81%, ...)"
+  };
+  
+  const abilityText = (item.ability && item.ability > 0 && abilityDescriptions[item.ability]) 
+    ? `<p style="color: #ffcc00; font-weight: bold;">⚡ ${abilityDescriptions[item.ability]}</p>` 
+    : '';
+  
+  infoItem.innerHTML = `
+    <h3 style="color: ${rarityColor}">${item.name} Level ${item.level||1}</h3>
+    <img src="${item.image||'Assests/empty-slot.png'}" style="width:30%; border: 3px solid ${rarityColor}; box-shadow: 0 0 8px ${rarityColor}">
+    <p>Strength: ${item.strength||0} Magic: ${item.magic||0} Speed: ${item.speed||0}</p>
+    <p>Health: ${item.health||0} Defense: ${item.defense||0} Attack: ${item.attack||'none'}</p>
+    ${abilityText}
+    <div style="margin-top:8px">
+      <button id="equip-btn">Equip</button>
+      <button id="unequip-btn">Unequip</button>
+    </div>
+  `;
   const equipBtn = document.getElementById('equip-btn');
   const unequipBtn = document.getElementById('unequip-btn');
   // Determine equipped state: check item.equipped flag AND verify it's actually in a slot
@@ -188,7 +220,13 @@ function equipItemToMember(item, memberKey = getSelectedMember()) {
     const prevInv = INVENTORY.find(i => i.name === prevName && i.equipped);
     if (prevInv) {
       prevInv.equipped = false;
-  if (prevInv._uid) removeAttackBySourceUid(prevInv._uid, memberKey);
+      // Remove attack by uid if available, otherwise remove by item name
+      if (prevInv._uid) {
+        removeAttackBySourceUid(prevInv._uid, memberKey);
+      } else if (prevInv.attack && prevInv.attack !== 'none') {
+        // Fallback: remove attack by matching the attack name from this item
+        removeAttackByItemName(prevInv.name, memberKey);
+      }
     }
   }
 
@@ -394,7 +432,7 @@ function generateAndShowItem() {
 renderInventory();
 
 // Create Reset Inventory button after DOM is ready
-function ensureResetButton() {
+/*function ensureResetButton() {
   if (document.getElementById('reset-inv-btn')) return;
   const btn = document.createElement('button');
   btn.id = 'reset-inv-btn';
@@ -413,7 +451,7 @@ function ensureResetButton() {
     if (typeof resetInventory === 'function') resetInventory();
   });
   document.body.appendChild(btn);
-}
+}*/
 
 if (document.readyState === 'loading') {
   window.addEventListener('DOMContentLoaded', ensureResetButton);
@@ -448,3 +486,118 @@ function saveMemberName() {
     }
   }
 }
+
+// Enchantment Inventory Management
+const ENCHANTMENT_LIST = [
+  // Basic Enchantments
+  "Sharpness",
+  "Lifesteal", 
+  "Burning",
+  "Fortification",
+  "Swiftness",
+  "Vitality",
+  "Hemorrhage",
+  "Precision",
+  "Arcane Power",
+  "Berserker",
+  "Resilience",
+  "Haste",
+  "Frost",
+  "Vengeance",
+  "Warding",
+  // Legendary Enchantments
+  "Multistrike",
+  "Soulrend",
+  "Phoenix Rebirth",
+  "Temporal Flux",
+  "Chaos Storm"
+];
+
+function renderEnchantmentInventory() {
+  const container = document.getElementById('enchantment-inventory');
+  if (!container) return;
+  
+  // Get enchantment counts from global variable
+  if (typeof ENCHANTMENT_INVENTORY === 'undefined') {
+    window.ENCHANTMENT_INVENTORY = {};
+  }
+  
+  let html = '';
+  
+  ENCHANTMENT_LIST.forEach(enchantName => {
+    const count = ENCHANTMENT_INVENTORY[enchantName] || 0;
+    const isLegendary = ['Multistrike', 'Soulrend', 'Phoenix Rebirth', 'Temporal Flux', 'Chaos Storm'].includes(enchantName);
+    
+    if (count > 0) {
+      const borderColor = isLegendary ? '#ff8000' : '#ffcc00';
+      const bgColor = isLegendary ? 'rgba(255, 128, 0, 0.1)' : 'rgba(255, 204, 0, 0.1)';
+      const icon = isLegendary ? '🌟' : '✨';
+      html += `
+        <div class="enchant-slot has-enchant" style="border-color: ${borderColor}; background: ${bgColor};">
+          <div class="enchant-name" style="color: ${borderColor};">${icon} ${enchantName}</div>
+          <div class="enchant-count">${count}</div>
+        </div>
+      `;
+    } else {
+      html += `
+        <div class="enchant-slot empty">
+          <div class="enchant-empty-text">${enchantName}</div>
+          <div style="color: #444; font-size: 0.9em; margin-top: 5px;">0 owned</div>
+        </div>
+      `;
+    }
+  });
+  
+  container.innerHTML = html;
+}
+
+// Add enchantment to inventory
+function addEnchantment(enchantName, count = 1) {
+  if (typeof ENCHANTMENT_INVENTORY === 'undefined') {
+    window.ENCHANTMENT_INVENTORY = {};
+  }
+  
+  if (!ENCHANTMENT_INVENTORY[enchantName]) {
+    ENCHANTMENT_INVENTORY[enchantName] = 0;
+  }
+  
+  ENCHANTMENT_INVENTORY[enchantName] += count;
+  
+  // Save to localStorage
+  if (typeof saveGameData === 'function') saveGameData();
+  
+  // Re-render enchantment inventory
+  renderEnchantmentInventory();
+}
+
+// Remove enchantment from inventory (used when applying to item)
+function removeEnchantment(enchantName, count = 1) {
+  if (typeof ENCHANTMENT_INVENTORY === 'undefined') {
+    window.ENCHANTMENT_INVENTORY = {};
+  }
+  
+  if (ENCHANTMENT_INVENTORY[enchantName] && ENCHANTMENT_INVENTORY[enchantName] > 0) {
+    ENCHANTMENT_INVENTORY[enchantName] -= count;
+    if (ENCHANTMENT_INVENTORY[enchantName] < 0) {
+      ENCHANTMENT_INVENTORY[enchantName] = 0;
+    }
+    
+    // Save to localStorage
+    if (typeof saveGameData === 'function') saveGameData();
+    
+    // Re-render enchantment inventory
+    renderEnchantmentInventory();
+    return true;
+  }
+  return false;
+}
+
+// Make functions globally accessible
+window.addEnchantment = addEnchantment;
+window.removeEnchantment = removeEnchantment;
+window.renderEnchantmentInventory = renderEnchantmentInventory;
+
+// Initialize enchantment inventory on page load
+document.addEventListener('DOMContentLoaded', () => {
+  renderEnchantmentInventory();
+});

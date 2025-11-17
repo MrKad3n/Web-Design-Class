@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Challenge Mode - Kaden's Dungeon Game</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/5/w3.css">
+    <link rel="stylesheet" href="https://www.w3schools.com/lib/w3-theme-blue.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        .challenge-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .challenge-header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 2px solid #a335ee;
+            margin-bottom: 30px;
+        }
+
+        .challenge-header h1 {
+            font-size: 3em;
+            color: #a335ee;
+            text-shadow: 0 0 10px rgba(163, 53, 238, 0.5);
+            margin-bottom: 10px;
+        }
+
+        .back-button {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
+            color: #fff;
+            border: 2px solid #e94560;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 1.1em;
+            font-weight: bold;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .back-button:hover {
+            background: linear-gradient(135deg, #e94560 0%, #ff6b88 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(233, 69, 96, 0.4);
+        }
+
+        .challenges-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .challenge-card {
+            background: rgba(15, 52, 96, 0.3);
+            border: 3px solid #a335ee;
+            border-radius: 15px;
+            padding: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .challenge-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(163, 53, 238, 0.4);
+            border-color: #c45eff;
+        }
+
+        .challenge-card.completed {
+            opacity: 0.6;
+            border-color: #1eff00;
+        }
+
+        .challenge-card.completed:hover {
+            opacity: 0.8;
+            box-shadow: 0 10px 30px rgba(30, 255, 0, 0.3);
+        }
+
+        .challenge-name {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #a335ee;
+            margin-bottom: 15px;
+        }
+
+        .challenge-card.completed .challenge-name {
+            color: #1eff00;
+        }
+
+        .challenge-reward {
+            background: rgba(255, 204, 0, 0.1);
+            border: 2px solid #ffcc00;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 15px 0;
+            font-weight: bold;
+            color: #ffcc00;
+        }
+
+        .challenge-reward.legendary {
+            border-color: #ff8000;
+            color: #ff8000;
+            background: rgba(255, 128, 0, 0.1);
+        }
+
+        .challenge-description {
+            color: #aaa;
+            font-size: 1.05em;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+
+        .challenge-modifier {
+            background: rgba(233, 69, 96, 0.2);
+            border-left: 3px solid #e94560;
+            padding: 10px;
+            margin-top: 15px;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .challenge-enemies {
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+        }
+
+        .challenge-enemies-title {
+            color: #e94560;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .enemy-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .enemy-tag {
+            background: rgba(233, 69, 96, 0.3);
+            padding: 5px 12px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="challenge-container">
+        <a href="select.html" class="back-button">← Back to Mode Select</a>
+        
+        <div class="challenge-header">
+            <h1>✨ Challenge Mode</h1>
+            <p style="color: #aaa; font-size: 1.2em;">Specialized encounters with unique enchantment rewards</p>
+            <p style="color: #e94560; font-size: 1.1em;">Enemy levels scale to your highest party member</p>
+        </div>
+
+        <div class="challenges-grid" id="challenges-grid">
+            <!-- Challenges will be rendered here -->
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Challenge definitions
+        const CHALLENGES = [
+            {
+                id: 1,
+                name: "Trial of Sharpness",
+                reward: "Sharpness",
+                legendary: false,
+                description: "Face three agile enemies that test your precision and timing.",
+                modifier: "All enemies have +50% Speed but -20% Defense",
+                enemies: ["skull", "slime", "Shadow"]
+            },
+            {
+                id: 2,
+                name: "Vampiric Onslaught",
+                reward: "Lifesteal",
+                legendary: false,
+                description: "Survive waves of undead creatures in this battle of attrition.",
+                modifier: "Enemies have moderate lifesteal on attacks",
+                enemies: ["corspe", "crawler", "frozenCorspe", "necromancer"]
+            },
+            {
+                id: 3,
+                name: "Infernal Crucible",
+                reward: "Burning",
+                legendary: false,
+                description: "Endure intense heat from fire-aligned foes.",
+                modifier: "All attacks apply burn status, burn damage increased by 50%",
+                enemies: ["alien", "Mage", "Mage"]
+            },
+            {
+                id: 4,
+                name: "Ironclad Fortress",
+                reward: "Fortification",
+                legendary: false,
+                description: "Break through heavily armored defenders.",
+                modifier: "All enemies have 2x Defense",
+                enemies: ["Knight", "cursedKnight", "kingsGuard", "kingsGuard"]
+            },
+            {
+                id: 5,
+                name: "Lightning Rush",
+                reward: "Swiftness",
+                legendary: false,
+                description: "Outlast enemies with supernatural speed.",
+                modifier: "Enemies have 1.5x Speed and attack first",
+                enemies: ["Shadow", "Archer", "Archer", "alien"]
+            },
+            {
+                id: 6,
+                name: "Endurance Trial",
+                reward: "Vitality",
+                legendary: false,
+                description: "Survive against enemies with massive health pools.",
+                modifier: "All enemies have 3x Health",
+                enemies: ["Treant", "elderEnt", "Worldroot"]
+            },
+            {
+                id: 7,
+                name: "Bleeding Edge",
+                reward: "Hemorrhage",
+                legendary: false,
+                description: "Fight enemies that inflict grievous wounds.",
+                modifier: "All attacks apply bleed, bleed damage stacks",
+                enemies: ["crawler", "cursedKnight", "kingsGuard"]
+            },
+            {
+                id: 8,
+                name: "Critical Moment",
+                reward: "Precision",
+                legendary: false,
+                description: "Master timing against enemies with high evasion.",
+                modifier: "Enemies have 30% dodge chance",
+                enemies: ["Shadow", "Archer", "vineLasher", "alien"]
+            },
+            {
+                id: 9,
+                name: "Arcane Convergence",
+                reward: "Arcane Power",
+                legendary: false,
+                description: "Withstand overwhelming magical force.",
+                modifier: "All enemies have 1.5x Magic damage",
+                enemies: ["alien", "Mage", "elderEnt", "necromancer"]
+            },
+            {
+                id: 10,
+                name: "Wrath Unleashed",
+                reward: "Berserker",
+                legendary: false,
+                description: "Face brutal physical attackers.",
+                modifier: "All enemies have 1.5x Strength",
+                enemies: ["cursedKnight", "kingsGuard", "Treant"]
+            },
+            {
+                id: 11,
+                name: "Resilient Defenders",
+                reward: "Resilience",
+                legendary: false,
+                description: "Outlast tanky enemies with balanced defenses.",
+                modifier: "Enemies have +40% Health and +40% Defense",
+                enemies: ["Knight", "Treant", "elderEnt", "cursedKnight"]
+            },
+            {
+                id: 12,
+                name: "Velocity Storm",
+                reward: "Haste",
+                legendary: false,
+                description: "Keep pace with incredibly fast opponents.",
+                modifier: "Enemies have 2x Speed",
+                enemies: ["Shadow", "Shadow", "Archer", "Archer", "alien"]
+            },
+            {
+                id: 13,
+                name: "Frozen Wasteland",
+                reward: "Frost",
+                legendary: false,
+                description: "Battle through freezing conditions.",
+                modifier: "All attacks apply chill, chill duration doubled",
+                enemies: ["frozenCorspe", "frozenCorspe", "alien", "Mage"]
+            },
+            {
+                id: 14,
+                name: "Vengeful Spirits",
+                reward: "Vengeance",
+                legendary: false,
+                description: "Defeat spirits that grow stronger when wounded.",
+                modifier: "Enemies gain +10% damage per 20% HP lost",
+                enemies: ["Shadow", "corspe", "necromancer", "Shadow"]
+            },
+            {
+                id: 15,
+                name: "Impenetrable Wall",
+                reward: "Warding",
+                legendary: false,
+                description: "Overcome ultimate defensive formations.",
+                modifier: "All enemies have 2.5x Defense",
+                enemies: ["Knight", "kingsGuard", "elderEnt", "Treant", "cursedKnight"]
+            },
+            {
+                id: 16,
+                name: "Twin Strike Gauntlet",
+                reward: "Multistrike",
+                legendary: true,
+                description: "🌟 LEGENDARY: Face enemies that attack twice per turn.",
+                modifier: "All enemies attack twice per turn, +30% to all stats",
+                enemies: ["kingsGuard", "Shadow", "Archer", "cursedKnight", "necromancer"]
+            },
+            {
+                id: 17,
+                name: "Soul Harvest",
+                reward: "Soulrend",
+                legendary: true,
+                description: "🌟 LEGENDARY: Battle creatures of death itself.",
+                modifier: "Enemies execute at 30% HP, all enemies are undead",
+                enemies: ["necromancer", "frozenCorspe", "corspe", "crawler", "necromancer"]
+            },
+            {
+                id: 18,
+                name: "Eternal Rebirth",
+                reward: "Phoenix Rebirth",
+                legendary: true,
+                description: "🌟 LEGENDARY: Fight enemies that refuse to stay dead.",
+                modifier: "Enemies revive once at 40% HP, +50% to all stats",
+                enemies: ["necromancer", "kingsGuard", "Worldroot"]
+            },
+            {
+                id: 19,
+                name: "Time Paradox",
+                reward: "Temporal Flux",
+                legendary: true,
+                description: "🌟 LEGENDARY: Enemies can predict and evade your attacks.",
+                modifier: "Enemies immune to damage for 1 turn after taking damage, +40% stats",
+                enemies: ["Shadow", "alien", "Mage", "elderEnt", "kingsGuard"]
+            },
+            {
+                id: 20,
+                name: "Chaos Incarnate",
+                reward: "Chaos Storm",
+                legendary: true,
+                description: "🌟 LEGENDARY: Face unpredictable and devastating foes.",
+                modifier: "Random status effects every turn, enemies have random stat boosts",
+                enemies: ["alien", "Shadow", "Mage", "necromancer", "elderEnt", "kingsGuard"]
+            }
+        ];
+
+        function renderChallenges() {
+            const container = document.getElementById('challenges-grid');
+            if (!container) return;
+
+            // Load completed challenges
+            const completedChallenges = JSON.parse(localStorage.getItem('completedChallenges') || '{}');
+
+            let html = '';
+            CHALLENGES.forEach(challenge => {
+                const isCompleted = completedChallenges[challenge.id] || false;
+                const legendaryClass = challenge.legendary ? 'legendary' : '';
+                const completedClass = isCompleted ? 'completed' : '';
+                
+                html += `
+                    <div class="challenge-card ${completedClass}" onclick="startChallenge(${challenge.id})">
+                        <div class="challenge-name">${challenge.name}</div>
+                        <div class="challenge-reward ${legendaryClass}">
+                            ${challenge.legendary ? '🌟' : '✨'} Reward: ${challenge.reward} Enchantment
+                        </div>
+                        <div class="challenge-description">${challenge.description}</div>
+                        <div class="challenge-modifier">⚡ ${challenge.modifier}</div>
+                        <div class="challenge-enemies">
+                            <div class="challenge-enemies-title">Enemies:</div>
+                            <div class="enemy-list">
+                                ${challenge.enemies.map(e => `<span class="enemy-tag">${e.replace(/_/g, ' ')}</span>`).join('')}
+                            </div>
+                        </div>
+                        ${isCompleted ? '<div style="text-align: center; margin-top: 15px; color: #1eff00; font-weight: bold;">✓ COMPLETED</div>' : ''}
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function startChallenge(challengeId) {
+            const challenge = CHALLENGES.find(c => c.id === challengeId);
+            if (!challenge) return;
+
+            // Save challenge data to localStorage
+            localStorage.setItem('activeChallengeData', JSON.stringify(challenge));
+            
+            // Redirect to battle page
+            window.location.href = 'battle.html?mode=challenge&id=' + challengeId;
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            renderChallenges();
+        });
+    </script>
+</body>
+<footer>
+    Kaden Cruts - 2025
+</footer>
+</html>
