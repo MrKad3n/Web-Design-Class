@@ -815,14 +815,60 @@
                             return `Enemies/${enemyName}.png`;
                         });
                         
-                        // Parse modifiers from description (simplified for now - could be enhanced)
+                        // Parse modifiers from challenge description
                         const modifiers = {};
                         const modText = (challengeData.modifier || '').toLowerCase();
-                        if (modText.includes('2x defense')) modifiers.defenseBoost = 2;
-                        if (modText.includes('1.5x speed')) modifiers.speedBoost = 1.5;
-                        if (modText.includes('+50% speed')) modifiers.speedBoost = 1.5;
-                        if (modText.includes('3x health')) modifiers.healthBoost = 3;
-                        if (modText.includes('2x health')) modifiers.healthBoost = 2;
+                        
+                        // Defense modifiers
+                        if (modText.includes('4x defense')) modifiers.defenseBoost = 4;
+                        else if (modText.includes('3x defense')) modifiers.defenseBoost = 3;
+                        else if (modText.includes('2x defense')) modifiers.defenseBoost = 2;
+                        else if (modText.includes('+80% defense')) modifiers.defenseBoost = 1.8;
+                        
+                        // Speed modifiers
+                        if (modText.includes('2.5x speed')) modifiers.speedBoost = 2.5;
+                        else if (modText.includes('2x speed')) modifiers.speedBoost = 2;
+                        else if (modText.includes('1.5x speed')) modifiers.speedBoost = 1.5;
+                        else if (modText.includes('+100% speed')) modifiers.speedBoost = 2;
+                        else if (modText.includes('+60% speed')) modifiers.speedBoost = 1.6;
+                        else if (modText.includes('+50% speed')) modifiers.speedBoost = 1.5;
+                        else if (modText.includes('+40% speed')) modifiers.speedBoost = 1.4;
+                        else if (modText.includes('+30% speed')) modifiers.speedBoost = 1.3;
+                        
+                        // Health modifiers
+                        if (modText.includes('4x health')) modifiers.healthBoost = 4;
+                        else if (modText.includes('3x health')) modifiers.healthBoost = 3;
+                        else if (modText.includes('2x health')) modifiers.healthBoost = 2;
+                        else if (modText.includes('+80% health')) modifiers.healthBoost = 1.8;
+                        else if (modText.includes('+50% health')) modifiers.healthBoost = 1.5;
+                        
+                        // Strength modifiers
+                        if (modText.includes('2x strength')) modifiers.strengthBoost = 2;
+                        else if (modText.includes('+50% strength')) modifiers.strengthBoost = 1.5;
+                        
+                        // Magic modifiers
+                        if (modText.includes('2x magic')) modifiers.magicBoost = 2;
+                        else if (modText.includes('+75% magic')) modifiers.magicBoost = 1.75;
+                        
+                        // Overall stat boosts
+                        if (modText.includes('+100% stats')) modifiers.allStatsBoost = 2;
+                        else if (modText.includes('+75% to all stats')) modifiers.allStatsBoost = 1.75;
+                        else if (modText.includes('+60% stats')) modifiers.allStatsBoost = 1.6;
+                        else if (modText.includes('+50% to all stats')) modifiers.allStatsBoost = 1.5;
+                        else if (modText.includes('+40% to all stats')) modifiers.allStatsBoost = 1.4;
+                        else if (modText.includes('+30% to all stats')) modifiers.allStatsBoost = 1.3;
+                        
+                        // Special modifiers
+                        if (modText.includes('necromancer has 5x health') || modText.includes('necromancer has 6x')) modifiers.necromancerBoost = modText.includes('6x') ? 6 : 5;
+                        if (modText.includes('lifesteal')) modifiers.lifesteal = 0.5;
+                        if (modText.includes('burn damage increased by 100%')) modifiers.burnBoost = 2;
+                        else if (modText.includes('burn damage increased by 50%')) modifiers.burnBoost = 1.5;
+                        if (modText.includes('bleed damage increased by 75%')) modifiers.bleedBoost = 1.75;
+                        if (modText.includes('30% crit chance')) modifiers.critChance = 0.3;
+                        if (modText.includes('40% dodge')) modifiers.dodgeChance = 0.4;
+                        else if (modText.includes('30% dodge')) modifiers.dodgeChance = 0.3;
+                        if (modText.includes('attack twice per turn')) modifiers.doubleAttack = true;
+                        if (modText.includes('regenerate 5%')) modifiers.regen = 0.05;
                         
                         // Set up battle data from challenge
                         battleData = {
@@ -1230,12 +1276,24 @@
                         
                         // Additional challenge-specific modifiers
                         if (challengeModifiers) {
+                            // Apply all stats boost first if present
+                            if (challengeModifiers.allStatsBoost) {
+                                scaled.health = Math.round(scaled.health * challengeModifiers.allStatsBoost);
+                                scaled.strength = Math.round(scaled.strength * challengeModifiers.allStatsBoost);
+                                scaled.magic = Math.round(scaled.magic * challengeModifiers.allStatsBoost);
+                                scaled.speed = Math.round(scaled.speed * challengeModifiers.allStatsBoost);
+                                scaled.defense = Math.round((scaled.defense || 0) * challengeModifiers.allStatsBoost);
+                            }
+                            
+                            // Individual stat boosts (stack with allStatsBoost)
                             if (challengeModifiers.healthBoost) {
                                 scaled.health = Math.round(scaled.health * challengeModifiers.healthBoost);
                             }
-                            if (challengeModifiers.damageBoost) {
-                                scaled.strength = Math.round(scaled.strength * challengeModifiers.damageBoost);
-                                scaled.magic = Math.round(scaled.magic * challengeModifiers.damageBoost);
+                            if (challengeModifiers.strengthBoost) {
+                                scaled.strength = Math.round(scaled.strength * challengeModifiers.strengthBoost);
+                            }
+                            if (challengeModifiers.magicBoost) {
+                                scaled.magic = Math.round(scaled.magic * challengeModifiers.magicBoost);
                             }
                             if (challengeModifiers.speedBoost) {
                                 scaled.speed = Math.round(scaled.speed * challengeModifiers.speedBoost);
@@ -1245,9 +1303,10 @@
                             }
                         }
                         
-                        // Vampiric Onslaught (challenge ID 2): Necromancer has 2x health
+                        // Vampiric Onslaught (challenge ID 2): Necromancer has massive health boost
                         if (battleData.challengeId === 2 && key.toLowerCase().includes('necromancer')) {
-                            scaled.health = Math.round(scaled.health * 2);
+                            const necroBoost = challengeModifiers.necromancerBoost || 5;
+                            scaled.health = Math.round(scaled.health * necroBoost);
                         }
                     }
 
@@ -1713,11 +1772,12 @@
                                 img.alt = 'Player';
                                 box.appendChild(img);
                             } else if (action.type === 'e') {
-                                // Enemy turn
+                                // Enemy turn - check if enemy is still alive
                                 box.classList.add('enemy-turn');
                                 const enemies = getEnemyWrappers();
                                 const enemyWrap = enemies[action.index];
-                                if (enemyWrap) {
+                                // Only show the turn box if the enemy exists and is alive
+                                if (enemyWrap && Number(enemyWrap.dataset.hp) > 0) {
                                     const enemyImg = enemyWrap.querySelector('img');
                                     const img = document.createElement('img');
                                     img.src = enemyImg ? enemyImg.src : 'Enemies/skull.png';
@@ -1729,6 +1789,9 @@
                                     numLabel.className = 'enemy-number';
                                     numLabel.textContent = `#${action.index + 1}`;
                                     box.appendChild(numLabel);
+                                } else {
+                                    // Enemy is dead, skip adding this box entirely
+                                    continue;
                                 }
                             }
                             
@@ -2090,6 +2153,11 @@
                     // Calculate base damage before defense
                     let baseDmg = (mag * magMult + str * strMult) * bleedMult;
                     
+                    // AOE attacks deal 50% damage to balance multi-target effectiveness
+                    if (isAOE) {
+                        baseDmg = baseDmg * 0.5;
+                    }
+                    
                     // Apply chill effect BEFORE defense: 25% damage reduction if enemy is chilled
                     const enemyEffects = enemyStatusEffects[enemyIndex];
                     if (enemyEffects && enemyEffects.find(e => e.type === 'chill')) {
@@ -2255,8 +2323,98 @@
                                     currentEnemyWrap.dataset.hp = Math.max(0, curHp);
                                     updateEnemyBar(currentEnemyWrap);
                                     
-                                    // Ability 10: MultiStrike - Attack twice ONLY with this specific attack
-                                    const isMultiStrikeAttack = attackAbility === 10 && attackSourceItem;
+                                    // Check for Lifesteal enchantment on equipped items
+                                    let hasLifesteal = false;
+                                    const memberKey = getActiveBattleMember();
+                                    const member = PARTY_STATS[memberKey];
+                                    if (member) {
+                                        const slots = ['HELMET', 'CHEST', 'LEGS', 'BOOTS', 'MAINHAND', 'OFFHAND'];
+                                        for (const slot of slots) {
+                                            const itemName = member[slot];
+                                            if (itemName) {
+                                                const item = INVENTORY.find(i => i.name === itemName && i.equipped);
+                                                if (item && item.enchantment === 'Lifesteal') {
+                                                    hasLifesteal = true;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    
+                                    // Apply Lifesteal: Heal for 20% of damage dealt
+                                    if (hasLifesteal) {
+                                        const healAmount = Math.ceil(dmg * 0.2);
+                                        const currentHealth = Number(attacker.HEALTH || 0);
+                                        const maxHealth = Number(attacker.MAX_HEALTH || 1);
+                                        const newHealth = Math.min(maxHealth, currentHealth + healAmount);
+                                        attacker.HEALTH = newHealth;
+                                        updatePlayerArea();
+                                        logCombat(`💉 Lifesteal: Healed ${healAmount} HP (${newHealth}/${maxHealth})`);
+                                    }
+                                    
+                                    // Tree People multi-hit: Attacks once per alive party member (plus multistrike bonus)
+                                    const isTreePeopleAttack = attackObj.name === 'Tree People';
+                                    if (isTreePeopleAttack && Number(currentEnemyWrap.dataset.hp) > 0) {
+                                        // Count alive party members
+                                        let aliveCount = 0;
+                                        ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE'].forEach(m => {
+                                            const memberStats = PARTY_STATS[m];
+                                            if (memberStats && Number(memberStats.HEALTH || 0) > 0) {
+                                                aliveCount++;
+                                            }
+                                        });
+                                        
+                                        console.log(`[Tree People] Alive party members: ${aliveCount}`, PARTY_STATS);
+                                        
+                                        // Start at 1 because we already hit once, subtract 1 from alive count
+                                        let extraHits = Math.max(0, aliveCount - 1);
+                                        
+                                        // Add 1 extra hit if MultiStrike ability is active
+                                        const hasMultiStrike = attackAbility === 10 && attackSourceItem;
+                                        if (hasMultiStrike) {
+                                            extraHits += 1;
+                                            logCombat(`🌳⚔️ Tree People + MultiStrike: ${aliveCount + 1} total strikes!`);
+                                        } else {
+                                            logCombat(`🌳 Tree People: ${aliveCount} strike${aliveCount !== 1 ? 's' : ''} (one per alive member)`);
+                                        }
+                                        
+                                        // Execute extra hits
+                                        for (let i = 0; i < extraHits; i++) {
+                                            if (Number(currentEnemyWrap.dataset.hp) <= 0) break; // Stop if enemy dies
+                                            
+                                            // Recalculate damage for each hit
+                                            const strHit = Number(attacker.STRENGTH||0) * carriedMult;
+                                            const magHit = Number(attacker.MAGIC||0) * carriedMult;
+                                            const bleedMultHit = getBleedMultiplier('enemy', enemyIndex);
+                                            let baseDmgHit = (magHit * magMult + strHit * strMult) * bleedMultHit;
+                                            
+                                            // Apply chill if present
+                                            const enemyEffectsHit = enemyStatusEffects[enemyIndex];
+                                            if (enemyEffectsHit && enemyEffectsHit.find(e => e.type === 'chill')) {
+                                                baseDmgHit = baseDmgHit * 0.75;
+                                            }
+                                            
+                                            // Apply defense
+                                            const defenseMultiplier = Math.max(0.5, 1.0 - (Math.log10(enemyDefense + 1) * 0.05));
+                                            const damageReduction = enemyDefense * defenseMultiplier;
+                                            const damageAfterDefense = baseDmgHit - damageReduction;
+                                            const minimumDamage = Math.ceil(baseDmgHit * 0.1);
+                                            let dmgHit = Math.max(minimumDamage, Math.round(damageAfterDefense));
+                                            if (isNaN(dmgHit)) dmgHit = minimumDamage || 1;
+                                            
+                                            // Apply damage
+                                            const curHpHit = Number(currentEnemyWrap.dataset.hp) - dmgHit;
+                                            currentEnemyWrap.dataset.hp = Math.max(0, curHpHit);
+                                            updateEnemyBar(currentEnemyWrap);
+                                            logCombat(`🌳 Strike ${i + 2}: ${dmgHit} damage!`);
+                                            
+                                            // Apply leech status on each hit
+                                            applyStatusEffect(currentEnemyWrap, 'enemy', enemyIndex, 'leech', dmgHit);
+                                        }
+                                    }
+                                    
+                                    // Ability 10: MultiStrike - Attack twice ONLY with this specific attack (skip if Tree People already handled it)
+                                    const isMultiStrikeAttack = !isTreePeopleAttack && attackAbility === 10 && attackSourceItem;
                                     if (isMultiStrikeAttack && Number(currentEnemyWrap.dataset.hp) > 0) {
                                         // Recalculate damage for second strike (same formula)
                                         const str2 = Number(attacker.STRENGTH||0) * carriedMult;
@@ -2475,6 +2633,10 @@
                             
                             // Clear status effects for defeated enemy
                             delete enemyStatusEffects[enemyIndex];
+                            
+                            // Update turn order display to remove dead enemy's turn boxes
+                            updateTurnOrderDisplay();
+                            
                             const anyAlive = getEnemyWrappers().some(w => Number(w.dataset.hp) > 0);
                             if (!anyAlive) {
                                 logCombat('All enemies defeated! Redirecting to home...');
@@ -2502,6 +2664,19 @@
                             // baseDamage: the original damage dealt for calculating effect strength
                             
                             if (!effectType || effectType === 'none' || effectType === 'player buff') return;
+                            
+                            // Check for ability 21 (Sea Shield) immunity to leech, burn, and chill
+                            if (targetType === 'player') {
+                                const memberKey = targetKey;
+                                const activeAbilities = getEquippedAbilities(memberKey);
+                                if (activeAbilities.includes(21)) {
+                                    // Sea Shield grants immunity to leech, burn, and chill
+                                    if (effectType === 'leech' || effectType === 'burn' || effectType === 'chill') {
+                                        logCombat(`🌊 Sea Shield: Immune to ${effectType}!`);
+                                        return; // Block the status effect
+                                    }
+                                }
+                            }
                             
                             let effectsArray = targetType === 'enemy' ? enemyStatusEffects[targetKey] : playerStatusEffects[targetKey];
                             if (!effectsArray) {
@@ -2817,7 +2992,7 @@
                             // Check if player died from status effects
                             if (Number(target.HEALTH) <= 0) {
                                 logCombat(`${target.NAME} was defeated by status effects!`);
-                                handlePlayerDefeat();
+                                handleMemberDeath();
                                 return;
                             }
                             
@@ -3187,6 +3362,10 @@
                                     switchBattleMember(key, true); // true = emergency switch, bypass turn check
                                     overlay.remove();
                                     combatRunning = true;
+                                    // Reset player action flags to allow combat to proceed
+                                    playerCanAct = false;
+                                    playerWaiting = false;
+                                    waitingForPlayerAction = false;
                                     // Resume combat after short delay
                                     setTimeout(combatTick, COMBAT_TICK_MS);
                                 };
@@ -3281,7 +3460,11 @@
                     // -------------------- End combat engine --------------------
 
         // -------------------- Victory Rewards (loot + EXP) --------------------
+        // Player level cap
+        const MAX_PLAYER_LEVEL = 75;
         function xpToNext(level){
+            // At or above cap: no further leveling
+            if ((Number(level)||1) >= MAX_PLAYER_LEVEL) return Infinity;
             // Per spec: level * 100 * sqrt(level) to reach next level
             const lvl = Math.max(1, Number(level)||1);
             return Math.max(1, Math.round(lvl * 100 * Math.sqrt(lvl)));
@@ -3384,15 +3567,23 @@
                 if (typeof m.LEVEL !== 'number' || m.LEVEL < 1) m.LEVEL = 1;
                 let gain = per;
                 let leveled = 0;
-                m.XP += gain;
-                let need = xpToNext(m.LEVEL);
-                while (m.XP >= need) {
-                    m.XP -= need;
-                    m.LEVEL += 1;
-                    leveled += 1;
-                    need = xpToNext(m.LEVEL);
+                // Clamp current level before awarding
+                if (m.LEVEL >= MAX_PLAYER_LEVEL) {
+                    m.LEVEL = MAX_PLAYER_LEVEL;
+                    m.XP = 0; // at cap, no XP stored
+                } else {
+                    m.XP += gain;
+                    let need = xpToNext(m.LEVEL);
+                    while (m.XP >= need && m.LEVEL < MAX_PLAYER_LEVEL) {
+                        m.XP -= need;
+                        m.LEVEL += 1;
+                        leveled += 1;
+                        need = xpToNext(m.LEVEL);
+                    }
                 }
-                breakdown.push({ key, name: m.NAME||key, gained: gain, newXP: m.XP, level: m.LEVEL, levelsGained: leveled, nextReq: need });
+                // Compute next requirement display
+                const nextReq = (m.LEVEL >= MAX_PLAYER_LEVEL) ? 'MAX' : xpToNext(m.LEVEL);
+                breakdown.push({ key, name: m.NAME||key, gained: gain, newXP: m.XP, level: m.LEVEL, levelsGained: leveled, nextReq });
             });
 
             // Recalculate stats after possible level ups
@@ -3410,18 +3601,21 @@
                     const isFirstClear = !progression.clearedLevels.includes(level);
                     const numItems = isFirstClear ? 3 : 1;
                     
-                    // Boss tiles grant bonus loot but use normal rarity distribution
+                    // Boss tiles grant bonus loot
                     const isBossTile = battleData.isBossTile || false;
                     const items = [];
                     
                     for (let i = 0; i < numItems; i++) {
                         let item;
-                        if (isBossTile && level >= 40) {
-                            // Boss tile at high level: force legendary rarity
-                            item = window.generateRandomItem(level, 'legendary');
-                            if (i === 0) logCombat('🎁 BOSS REWARD: Legendary item guaranteed!');
+                        // LEGENDARY GUARANTEED: Only at boss stages 75 and 100
+                        if (isBossTile && (level === 75 || level === 100)) {
+                            item = window.generateRandomItem(level, 'Legendary');
+                            if (i === 0) {
+                                logCombat('�✨ LEGENDARY BOSS REWARD: Guaranteed Legendary Item! ✨🌟');
+                                console.log(`[BOSS REWARD] Level ${level} boss guaranteed legendary!`);
+                            }
                         } else {
-                            // Regular tile or low-level boss: use normal rarity system
+                            // All other stages use normal rarity distribution based on level
                             item = window.generateRandomItem(level);
                         }
                         if (item) items.push(item);

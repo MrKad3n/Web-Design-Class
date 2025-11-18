@@ -226,7 +226,9 @@ function getAbilityDescription(abilityNum) {
         12: "After Shock - Next enemy attack ignored after hitting (2 turn cooldown)",
         13: "Pixel Combo - 50% damage initially, mini-game to chain attacks (100% after 8 combos)",
         17: "Perfectly Timed - 50% chance to critically strike for 150% damage",
-        19: "Enhance - Each attack boosts stats by item's stats with decay (100%, 90%, 81%, ...)"
+        19: "Enhance - Each attack boosts stats by item's stats with decay (100%, 90%, 81%, ...)",
+        20: "Spell Shield - Add 25% of magic stat as bonus defense",
+        21: "Sea Shield - Immune to leech, burn, and chill status effects"
     };
     return descriptions[abilityNum] || 'No special ability';
 }

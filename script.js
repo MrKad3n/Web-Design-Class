@@ -811,11 +811,11 @@ const ITEM_TABLE = {
   "Wooden Sword": {
     slot: "Weapon",
     rarity: "Common",
-    strength: 4,
+    strength: 3,
     speed: 1,
     magic: 0,
-    defense: 2,
-    health: 3,
+    defense: 1,
+    health: 2,
     attack: "stap",
     ability: 1,
     image: "Items/woodenSword.png",
@@ -823,9 +823,9 @@ const ITEM_TABLE = {
   "Stick": {
     slot: "Weapon",
     rarity: "Base",
-    strength: 2,
+    strength: 1,
     speed: 1,
-    magic: 2,
+    magic: 1,
     defense: 0,
     health: 0,
     attack: "poke",
@@ -837,9 +837,9 @@ const ITEM_TABLE = {
     rarity: "Common",
     strength: 1,
     speed: 1,
-    magic: 4,
-    defense: 2,
-    health: 3,
+    magic: 3,
+    defense: 1,
+    health: 2,
     attack: "leaf impale",
     ability: 1,
     image: "Items/grassStaff.png",
@@ -847,11 +847,11 @@ const ITEM_TABLE = {
   "Coral Dagger": {
     slot: "Weapon",
     rarity: "Uncommon",
-    strength: 5,
+    strength: 3,
     speed: 2,
-    magic: 2,
+    magic: 1,
     defense: 1,
-    health: 4,
+    health: 3,
     attack: "coral leech",
     ability: null,
     image: "Items/coralDagger.png",
@@ -859,11 +859,11 @@ const ITEM_TABLE = {
   "Spell Shield": {
     slot: "Offhand",
     rarity: "Epic",
-    strength: 2,
+    strength: 1,
     speed: 1,
-    magic: 8,
-    defense: 10,
-    health: 9,
+    magic: 5,
+    defense: 6,
+    health: 6,
     attack: null,
     ability: 20,
     image: "Items/spellShield.png",
@@ -873,21 +873,21 @@ const ITEM_TABLE = {
     rarity: "Uncommon",
     strength: 1,
     speed: 1,
-    magic: 5,
-    defense: 2,
-    health: 4,
+    magic: 3,
+    defense: 1,
+    health: 3,
     attack: "sea shield",
-    ability: 2,
+    ability: 21,
     image: "Items/seaCrystal.png",
   },
   "Shell": {
     slot: "Offhand",
     rarity: "Uncommon",
-    strength: 3,
+    strength: 2,
     speed: 0,
     magic: 0,
-    defense: 10,
-    health: 5,
+    defense: 6,
+    health: 3,
     attack: "none",
     ability: 0,
     image: "Items/shell.png",
@@ -898,8 +898,8 @@ const ITEM_TABLE = {
     strength: 0,
     speed: 0,
     magic: 0,
-    defense: 3,
-    health: 3,
+    defense: 2,
+    health: 2,
     attack: "none",
     ability: 0,
     image: "Items/ironHelmet.png",
@@ -910,8 +910,8 @@ const ITEM_TABLE = {
     strength: 0,
     speed: 0,
     magic: 0,
-    defense: 5,
-    health: 5,
+    defense: 3,
+    health: 3,
     attack: "none",
     ability: 0,
     image: "Items/ironChest.png",
@@ -922,8 +922,8 @@ const ITEM_TABLE = {
     strength: 0,
     speed: 0,
     magic: 0,
-    defense: 4,
-    health: 3,
+    defense: 2,
+    health: 2,
     attack: "none",
     ability: 0,
     image: "Items/ironPants.png",
@@ -934,8 +934,8 @@ const ITEM_TABLE = {
     strength: 0,
     speed: 1,
     magic: 0,
-    defense: 2,
-    health: 2,
+    defense: 1,
+    health: 1,
     attack: "none",
     ability: 0,
     image: "Items/ironBoots.png",
@@ -943,11 +943,11 @@ const ITEM_TABLE = {
   "Spiked Shield": {
     slot: "Weapon",
     rarity: "Rare",
-    strength: 7,
+    strength: 4,
     speed: 1,
     magic: 1,
-    defense: 11,
-    health: 8,
+    defense: 7,
+    health: 5,
     attack: "Charge",
     ability: 4,
     image: "Items/spikedShield.png",
@@ -955,11 +955,11 @@ const ITEM_TABLE = {
   "Grimore": {
     slot: "Weapon",
     rarity: "Rare",
-    strength: 2,
+    strength: 1,
     speed: 2,
-    magic: 7,
+    magic: 4,
     defense: 1,
-    health: 5,
+    health: 3,
     attack: "Plasma Blast",
     ability: 5,
     image: "Items/grimoire.png",
@@ -967,13 +967,13 @@ const ITEM_TABLE = {
   "Forest Crown": {
     slot: "Helmet",
     rarity: "Rare",
-    strength: 2,
-    speed: 3,
-    magic: 3,
-    defense: 5,
-    health: 9,
+    strength: 1,
+    speed: 2,
+    magic: 2,
+    defense: 3,
+    health: 6,
     attack: "Tree People",
-    ability: 6,
+    ability: 0,
     image: "Items/forestCrown.png",
   },
   "Frosted Helmet": {
@@ -981,9 +981,9 @@ const ITEM_TABLE = {
     rarity: "Rare",
     strength: 1,
     speed: 1,
-    magic: 2,
-    defense: 6,
-    health: 9,
+    magic: 1,
+    defense: 4,
+    health: 6,
     attack: "none",
     ability: 0,
     image: "Items/frostHelmet.png",
@@ -991,11 +991,11 @@ const ITEM_TABLE = {
   "Frosted Chest": {
     slot: "Chest",
     rarity: "Rare",
-    strength: 2,
+    strength: 1,
     speed: 0,
-    magic: 3,
-    defense: 10,
-    health: 11,
+    magic: 2,
+    defense: 6,
+    health: 7,
     attack: "none",
     ability: 0,
     image: "Items/frostChest.png",
@@ -1005,9 +1005,9 @@ const ITEM_TABLE = {
     rarity: "Rare",
     strength: 1,
     speed: 1,
-    magic: 2,
-    defense: 8,
-    health: 6,
+    magic: 1,
+    defense: 5,
+    health: 4,
     attack: "none",
     ability: 0,
     image: "Items/frostPants.png",
@@ -1016,10 +1016,10 @@ const ITEM_TABLE = {
     slot: "Boot",
     rarity: "Rare",
     strength: 1,
-    speed: 3,
-    magic: 2,
-    defense: 4,
-    health: 5,
+    speed: 2,
+    magic: 1,
+    defense: 3,
+    health: 3,
     attack: "none",
     ability: 0,
     image: "Items/frostBoots.png",
@@ -1027,11 +1027,11 @@ const ITEM_TABLE = {
   "Ice Spear": {
     slot: "Weapon",
     rarity: "Rare",
-    strength: 8,
+    strength: 5,
     speed: 2,
-    magic: 2,
+    magic: 1,
     defense: 1,
-    health: 5,
+    health: 3,
     attack: "plunge",
     ability: 1,
     image: "Items/iceSpear.png",
@@ -1039,11 +1039,11 @@ const ITEM_TABLE = {
   "Shadow Staff": {
     slot: "Weapon",
     rarity: "Epic",
-    strength: 3,
+    strength: 2,
     speed: 2,
-    magic: 10,
-    defense: 2,
-    health: 6,
+    magic: 6,
+    defense: 1,
+    health: 4,
     attack: "shadow vortex",
     ability: 7,
     image: "Items/shadowStaff.png",
@@ -1051,11 +1051,11 @@ const ITEM_TABLE = {
   "Blaze Blade": {
     slot: "Weapon",
     rarity: "Epic",
-    strength: 10,
+    strength: 6,
     speed: 3,
-    magic: 4,
-    defense: 3,
-    health: 6,
+    magic: 3,
+    defense: 2,
+    health: 4,
     attack: "Incenerate",
     ability: 8,
     image: "Items/blazeBlade.png",
@@ -1063,11 +1063,11 @@ const ITEM_TABLE = {
   "Gem Helmet": {
     slot: "Helmet",
     rarity: "Epic",
-    strength: 3,
+    strength: 2,
     speed: 1,
-    magic: 3,
-    defense: 9,
-    health: 13,
+    magic: 2,
+    defense: 6,
+    health: 8,
     attack: "none",
     ability: 3,
     image: "Items/gemHelmet.png",
@@ -1075,11 +1075,11 @@ const ITEM_TABLE = {
   "Gem Chest": {
     slot: "Chest",
     rarity: "Epic",
-    strength: 4,
+    strength: 3,
     speed: 1,
-    magic: 4,
-    defense: 14,
-    health: 16,
+    magic: 3,
+    defense: 9,
+    health: 10,
     attack: "none",
     ability: 0,
     image: "Items/gemChest.png",
@@ -1087,11 +1087,11 @@ const ITEM_TABLE = {
   "Gem Legs": {
     slot: "Leg",
     rarity: "Epic",
-    strength: 3,
+    strength: 2,
     speed: 2,
-    magic: 3,
-    defense: 10,
-    health: 10,
+    magic: 2,
+    defense: 6,
+    health: 6,
     attack: "none",
     ability: 0,
     image: "Items/gemLegs.png",
@@ -1099,11 +1099,11 @@ const ITEM_TABLE = {
   "Gem Boots": {
     slot: "Boots",
     rarity: "Epic",
-    strength: 2,
-    speed: 4,
-    magic: 2,
-    defense: 6,
-    health: 8,
+    strength: 1,
+    speed: 3,
+    magic: 1,
+    defense: 4,
+    health: 5,
     attack: "none",
     ability: 3,
     image: "Items/gemBoots.png",
@@ -1112,10 +1112,10 @@ const ITEM_TABLE = {
     slot: "Boots",
     rarity: "Uncommon",
     strength: 1,
-    speed: 3,
+    speed: 2,
     magic: 1,
-    defense: 4,
-    health: 5,
+    defense: 3,
+    health: 3,
     attack: null,
     ability: null,
     image: "Items/waterSkaters.png",
@@ -1123,11 +1123,11 @@ const ITEM_TABLE = {
   "Energy Saber": {
     slot: "Weapon",
     rarity: "Legendary",
-    strength: 12,
+    strength: 7,
     speed: 3,
-    magic: 5,
-    defense: 5,
-    health: 9,
+    magic: 3,
+    defense: 3,
+    health: 6,
     attack: "force strike",
     ability: 10,
     image: "Items/energySaber.png",
@@ -1135,11 +1135,11 @@ const ITEM_TABLE = {
   "Demon Sythe": {
     slot: "Weapon",
     rarity: "Legendary",
-    strength: 14,
+    strength: 8,
     speed: 3,
-    magic: 3,
-    defense: 4,
-    health: 8,
+    magic: 2,
+    defense: 3,
+    health: 5,
     attack: "Grim slice",
     ability: 10,
     image: "Items/demonSythe.png",
@@ -1147,11 +1147,11 @@ const ITEM_TABLE = {
   "Lightning Spear": {
     slot: "Offhand",
     rarity: "Legendary",
-    strength: 10,
-    speed: 5,
-    magic: 5,
-    defense: 5,
-    health: 9,
+    strength: 6,
+    speed: 4,
+    magic: 3,
+    defense: 3,
+    health: 6,
     attack: "Thunder",
     ability: 12,
     image: "Items/lightningSpear.png",
@@ -1159,11 +1159,11 @@ const ITEM_TABLE = {
   "Pixel Sword": {
     slot: "Weapon",
     rarity: "Legendary",
-    strength: 13,
+    strength: 8,
     speed: 4,
-    magic: 3,
-    defense: 4,
-    health: 9,
+    magic: 2,
+    defense: 3,
+    health: 6,
     attack: "Combo",
     ability: 13,
     image: "Items/pixelSword.png",
@@ -1171,11 +1171,11 @@ const ITEM_TABLE = {
   "Ice Cream Gun": {
     slot: "Weapon",
     rarity: "Legendary",
-    strength: 4,
+    strength: 3,
     speed: 3,
-    magic: 12,
-    defense: 4,
-    health: 8,
+    magic: 7,
+    defense: 3,
+    health: 5,
     attack: "Chilled Cream",
     ability: 14,
     image: "Items/iceCreamGun.png",
@@ -1183,11 +1183,11 @@ const ITEM_TABLE = {
   "Running Spikes": {
     slot: "Boots",
     rarity: "Mythical",
-    strength: 4,
-    speed: 8,
-    magic: 4,
-    defense: 9,
-    health: 11,
+    strength: 3,
+    speed: 6,
+    magic: 3,
+    defense: 6,
+    health: 7,
     attack: "none",
     ability: 15,
     image: "Items/runningSpikes.png",
@@ -1195,11 +1195,11 @@ const ITEM_TABLE = {
   "Rulers Hand": {
     slot: "Weapon",
     rarity: "Mythical",
-    strength: 10,
+    strength: 6,
     speed: 4,
-    magic: 5,
-    defense: 8,
-    health: 13,
+    magic: 3,
+    defense: 5,
+    health: 8,
     attack: "Arise",
     ability: 16,
     image: "Items/rulersHand.png",
@@ -1207,11 +1207,11 @@ const ITEM_TABLE = {
   "Muramasa": {
     slot: "Weapon",
     rarity: "Mythical",
-    strength: 16,
+    strength: 10,
     speed: 5,
-    magic: 4,
-    defense: 4,
-    health: 10,
+    magic: 3,
+    defense: 3,
+    health: 6,
     attack: "Pure skill",
     ability: 17,
     image: "Items/muramasa.png",
@@ -1219,11 +1219,11 @@ const ITEM_TABLE = {
   "Spell Blade": {
     slot: "Weapon",
     rarity: "Mythical",
-    strength: 6,
+    strength: 4,
     speed: 4,
-    magic: 15,
-    defense: 5,
-    health: 10,
+    magic: 9,
+    defense: 3,
+    health: 6,
     attack: "spell infused",
     ability: 18,
     image: "Items/spellBlade.png",
@@ -1231,11 +1231,11 @@ const ITEM_TABLE = {
   "Enhanced Stick": {
     slot: "Weapon",
     rarity: "Mythical",
-    strength: 8,
+    strength: 5,
     speed: 3,
-    magic: 7,
-    defense: 5,
-    health: 9,
+    magic: 4,
+    defense: 3,
+    health: 6,
     attack: "enhance",
     ability: 19,
     image: "Items/enhancedStick.png",
@@ -1243,11 +1243,11 @@ const ITEM_TABLE = {
   "Divine Crown": {
     slot: "Helmet",
     rarity: "Artifact",
-    strength: 6,
-    speed: 5,
-    magic: 6,
-    defense: 12,
-    health: 19,
+    strength: 4,
+    speed: 4,
+    magic: 4,
+    defense: 8,
+    health: 12,
     attack: "Rulers Authority",
     ability: 20,
     image: "Items/divineCrown.png",
@@ -1693,7 +1693,7 @@ const ATTACK_STATS = {
   "sea shield":      { strMultiplier: 0,    magicMultiplier: 1,    status: "none" },
   "Charge":          { strMultiplier: 1.4,  magicMultiplier: 0,    status: "none" },
   "Plasma Blast":    { strMultiplier: 0,    magicMultiplier: 1.4,  status: "none" },
-  "Tree People":     { strMultiplier: 0.4,  magicMultiplier: 0.9,  status: "leech" },
+  "Tree People":     { strMultiplier: 0.3,  magicMultiplier: 0.5,  status: "leech" },
   "plunge":          { strMultiplier: 1.5,  magicMultiplier: 0,    status: "bleed" },
   "shadow vortex":   { strMultiplier: 0,    magicMultiplier: 1.7,  status: "none" },
   "Incenerate":      { strMultiplier: 1.4,  magicMultiplier: 1,    status: "burn" },
@@ -1710,6 +1710,9 @@ const ATTACK_STATS = {
   "Rulers Authority":{ strMultiplier: 0,    magicMultiplier: 4,    status: "player buff" }
 };
 
+
+// Maximum player level cap
+const MAX_PLAYER_LEVEL = 75;
 
 //party member stats
 const PARTY_STATS = {
@@ -1781,7 +1784,15 @@ function updateStats(){
       continue;
     }
 
-    const level = member.LEVEL;
+    // Enforce max player level cap
+    const level = Math.min(Number(member.LEVEL) || 1, MAX_PLAYER_LEVEL);
+    if (member.LEVEL !== level) {
+      member.LEVEL = level; // clamp persisted level if it exceeded cap previously
+      // If XP exists beyond cap, clear it
+      if (typeof member.XP === 'number' && level >= MAX_PLAYER_LEVEL) {
+        member.XP = 0;
+      }
+    }
     // Use level^1.2 for base stat scaling
     const levelScale = Math.pow(level, 1.2);
 
@@ -1883,38 +1894,43 @@ function generateRandomItem(level, forceRarity = null) {
 
   // If no forced rarity, use normal weighted random selection
   if (!chosenRarity) {
-    // Build a weight map per bucket; gradually shift from common to legendary as level increases
-    // Level-gated progression: Common/Uncommon/Rare until 20, Epic at 20+, Legendary at 40+
+    // Build a weight map per bucket with strict level gating
     let weights = {};
     
-    // Early game (levels 1-19): Only Common, Uncommon, Rare
-    if (lvl < 20) {
+    // Levels 1-20: ONLY Common and Uncommon
+    if (lvl <= 20) {
       const earlyFactor = Math.min(1, Math.max(0, (lvl - 1) / 19));
       weights = {
-        [R.Common]: Math.max(30, 60 - (30 * earlyFactor)),
-        [R.Uncommon]: Math.max(30, 25 + (5 * earlyFactor)),
-        [R.Rare]: 15 + (25 * earlyFactor)
+        [R.Common]: Math.max(40, 70 - (30 * earlyFactor)),  // 70% -> 40%
+        [R.Uncommon]: 30 + (30 * earlyFactor)                // 30% -> 60%
       };
     }
-    // Mid game (levels 20-39): Common, Uncommon, Rare, Epic
-    else if (lvl < 40) {
-      const midFactor = Math.min(1, Math.max(0, (lvl - 20) / 20));
+    // Levels 21-40: Common, Uncommon, and Rare
+    else if (lvl <= 40) {
+      const midFactor = Math.min(1, Math.max(0, (lvl - 21) / 19));
       weights = {
-        [R.Common]: Math.max(10, 30 - (20 * midFactor)),
-        [R.Uncommon]: Math.max(15, 30 - (15 * midFactor)),
-        [R.Rare]: Math.max(20, 25 - (5 * midFactor)),
-        [R.Epic]: 15 + (25 * midFactor)
+        [R.Common]: Math.max(15, 35 - (20 * midFactor)),     // 35% -> 15%
+        [R.Uncommon]: Math.max(30, 40 - (10 * midFactor)),   // 40% -> 30%
+        [R.Rare]: 25 + (30 * midFactor)                      // 25% -> 55%
       };
     }
-    // Late game (level 40+): All rarities except Mythical
+    // Levels 41-60: Uncommon, Rare, and Epic (no more Common)
+    else if (lvl <= 60) {
+      const lateFactor = Math.min(1, Math.max(0, (lvl - 41) / 19));
+      weights = {
+        [R.Uncommon]: Math.max(15, 40 - (25 * lateFactor)), // 40% -> 15%
+        [R.Rare]: Math.max(25, 40 - (15 * lateFactor)),     // 40% -> 25%
+        [R.Epic]: 20 + (40 * lateFactor)                    // 20% -> 60%
+      };
+    }
+    // Levels 61+: Uncommon (very rare), Rare, Epic, Legendary
     else {
-      const lateFactor = Math.min(1, Math.max(0, (lvl - 40) / 50));
+      const endFactor = Math.min(1, Math.max(0, (lvl - 61) / 29));
       weights = {
-        [R.Common]: Math.max(5, 10 - (5 * lateFactor)),
-        [R.Uncommon]: Math.max(10, 15 - (5 * lateFactor)),
-        [R.Rare]: 20,
-        [R.Epic]: Math.max(25, 30 - (5 * lateFactor)),
-        [R.Legendary]: 25 + (15 * lateFactor)
+        [R.Uncommon]: Math.max(2, 10 - (8 * endFactor)),    // 10% -> 2% (super rare)
+        [R.Rare]: Math.max(15, 30 - (15 * endFactor)),      // 30% -> 15%
+        [R.Epic]: Math.max(35, 45 - (10 * endFactor)),      // 45% -> 35%
+        [R.Legendary]: 15 + (33 * endFactor)                // 15% -> 48%
       };
     }
     
@@ -1941,8 +1957,11 @@ function generateRandomItem(level, forceRarity = null) {
 
     chosenRarity = pickWeighted(weights);
     if (!chosenRarity) {
-      // Fallback: allow any rarity up to Legendary
-      chosenRarity = R.Common;
+      // Fallback: use appropriate rarity for level
+      if (lvl <= 20) chosenRarity = R.Common;
+      else if (lvl <= 40) chosenRarity = R.Rare;
+      else if (lvl <= 60) chosenRarity = R.Epic;
+      else chosenRarity = R.Legendary;
     }
   }
 
