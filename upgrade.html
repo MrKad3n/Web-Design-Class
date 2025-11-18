@@ -256,7 +256,7 @@
         
         <div class="w3-row">
             <div class="w3-col m4">
-                <h2 class="glow clickable" onclick="craftClick()">Craft</h2>
+                <h2 class="glow clickable" onclick="showCraftScreen()">Craft</h2>
                 <img src="Assests/smelting.png" alt="img">
             </div>
             
@@ -271,14 +271,34 @@
             </div>
         </div>
     </div>
+    
+    <!-- Craft Screen -->
+    <div class="upgrade-container" id="craft-screen">
+        <div class="w3-container w3-left" style="width:50%">
+            <a href="#" onclick="hideCraftScreen(); return false;"><h2 class="glow">← Back</h2></a>
+        </div>
 
+        <h1 class="glow" style="text-align: center; margin: 20px 0;">Craft Mythical Items</h1>
+        
+        <div style="text-align: center; margin-bottom: 30px;">
+            <div style="display: inline-block; background: rgba(0, 200, 255, 0.2); border: 3px solid #00c8ff; border-radius: 15px; padding: 15px 30px;">
+                <span style="color: #00c8ff; font-size: 1.5em; font-weight: bold;">💎 Gems: </span>
+                <span id="craft-gem-count" style="color: #fff; font-size: 1.8em; font-weight: bold;">0</span>
+            </div>
+        </div>
+
+        <div id="craft-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 25px; max-width: 1600px; margin: 0 auto; padding: 20px;">
+            <!-- Craft recipes will be rendered here -->
+        </div>
+    </div>
+    
     <!-- Upgrade Screen -->
     <div class="upgrade-container" id="upgrade-screen">
         <div class="w3-container w3-left" style="width:50%">
             <a href="#" onclick="hideUpgradeScreen(); return false;"><h2 class="glow">← Back</h2></a>
         </div>
 
-        <h1 class="glow" style="text-align: center; margin: 20px 0;">Upgrade Equipment</h1>
+        <h1 class="glow" style="text-align: center; margin: 20px 0;">Enchant Equipment</h1>
 
         <div class="party-equipment-grid" id="party-equipment">
             <!-- Party member equipment will be rendered here -->
@@ -434,30 +454,26 @@
             }
         };
 
-        function craftClick() {
-            alert("Crafting feature coming soon!");
-        }
-
         function showUpgradeScreen() {
-            document.getElementById('selection-screen').style.display = 'none';
+            hideAllScreens();
             document.getElementById('upgrade-screen').classList.add('active');
             renderPartyEquipment();
         }
 
         function hideUpgradeScreen() {
-            document.getElementById('selection-screen').style.display = 'block';
             document.getElementById('upgrade-screen').classList.remove('active');
+            document.getElementById('selection-screen').style.display = 'block';
         }
 
         function showAttacksScreen() {
-            document.getElementById('selection-screen').style.display = 'none';
+            hideAllScreens();
             document.getElementById('attacks-screen').classList.add('active');
             renderAttacksShop();
         }
         
         function hideAttacksScreen() {
-            document.getElementById('selection-screen').style.display = 'block';
             document.getElementById('attacks-screen').classList.remove('active');
+            document.getElementById('selection-screen').style.display = 'block';
         }
         
         function renderAttacksShop() {
@@ -745,9 +761,18 @@
                         <span class="info-value">${item.health || 0}</span>
                     </div>
                 </div>
-
-                <button class="upgrade-button" onclick="upgradeItemLevel('${itemName}')">
-                    ⬆️ Upgrade Level (Coming Soon)
+            `;
+            
+            // Calculate and display level up cost
+            const itemLevel = item.level || 1;
+            const baseGemCost = getRarityGemCost(item.rarity);
+            const gemCost = Math.ceil((baseGemCost * (1 + itemLevel * 0.5)) / 4);
+            const currentGems = PARTY_STATS.GEMS || 0;
+            const canAfford = currentGems >= gemCost;
+            
+            html += `
+                <button class="upgrade-button" onclick="levelUpEquippedItem('${itemName}')" style="${!canAfford ? 'opacity: 0.5; cursor: not-allowed;' : ''}">
+                    ⬆️ Level Up Item (${gemCost} 💎)
                 </button>
             `;
 
@@ -946,8 +971,307 @@
             }
         }
 
-        function upgradeItemLevel(itemName) {
-            alert("Item upgrade functionality coming soon!");
+        function levelUpEquippedItem(itemName) {
+            const item = INVENTORY.find(i => i.name === itemName);
+            if (!item) {
+                alert("Item not found!");
+                return;
+            }
+            
+            const itemLevel = item.level || 1;
+            const baseGemCost = getRarityGemCost(item.rarity);
+            const gemCost = Math.ceil((baseGemCost * (1 + itemLevel * 0.5)) / 4);
+            const currentGems = PARTY_STATS.GEMS || 0;
+            
+            if (currentGems < gemCost) {
+                alert(`Not enough gems! You need ${gemCost} gems but only have ${currentGems}.`);
+                return;
+            }
+            
+            // Get base item stats from ITEM_TABLE
+            const baseItem = ITEM_TABLE[item.name];
+            if (!baseItem) {
+                alert("Cannot find base item data!");
+                return;
+            }
+            
+            // Calculate new level stats
+            const newLevel = itemLevel + 1;
+            const newScale = Math.pow(newLevel, 0.8);
+            
+            function scaleStat(baseValue) {
+                if (!baseValue || baseValue <= 0) return baseValue || 0;
+                return Math.round(baseValue * newScale);
+            }
+            
+            const newStats = {
+                strength: scaleStat(baseItem.strength),
+                magic: scaleStat(baseItem.magic),
+                speed: scaleStat(baseItem.speed),
+                defense: scaleStat(baseItem.defense),
+                health: scaleStat(baseItem.health)
+            };
+            
+            if (!confirm(`Level up ${item.name} from level ${itemLevel} to ${newLevel}?\nCost: ${gemCost} gems\n\nNew stats:\nSTR: ${item.strength} → ${newStats.strength}\nMAG: ${item.magic} → ${newStats.magic}\nSPD: ${item.speed} → ${newStats.speed}\nDEF: ${item.defense} → ${newStats.defense}\nHP: ${item.health} → ${newStats.health}`)) {
+                return;
+            }
+            
+            // Deduct gems
+            PARTY_STATS.GEMS -= gemCost;
+            
+            // Update item stats to match new level
+            item.level = newLevel;
+            item.strength = newStats.strength;
+            item.magic = newStats.magic;
+            item.speed = newStats.speed;
+            item.defense = newStats.defense;
+            item.health = newStats.health;
+            
+            // Update stats if equipped
+            if (typeof updateStats === 'function') {
+                updateStats();
+            }
+            
+            if (typeof saveGameData === 'function') {
+                saveGameData();
+            }
+            
+            alert(`${item.name} leveled up to ${item.level}!`);
+            
+            // Refresh the modal to show new stats
+            const memberKey = getEquippedMemberKey(itemName);
+            const slot = item.slot || 'MAINHAND';
+            showUpgradeModal(memberKey, slot, itemName);
+        }
+        
+        // ==================== CRAFT SCREEN ====================
+        const MYTHICAL_RECIPES = {
+            "Running Spikes": {
+                requiredItem: "Gem Boots",
+                gems: 500,
+                enchantment: "Haste",
+                description: "Sprint through battles with legendary speed"
+            },
+            "Rulers Hand": {
+                requiredItem: "Energy Saber",
+                gems: 600,
+                enchantment: "Phoenix Rebirth",
+                description: "Command the battlefield with royal authority"
+            },
+            "Muramasa": {
+                requiredItem: "Demon Sythe",
+                gems: 750,
+                enchantment: "Soulrend",
+                description: "The cursed blade of perfect precision"
+            },
+            "Spell Blade": {
+                requiredItem: "Pixel Sword",
+                gems: 700,
+                enchantment: "Chaos Storm",
+                description: "Merge steel and magic into one"
+            },
+            "Enhanced Stick": {
+                requiredItem: "Stick",
+                requiredLevel: 100,
+                gems: 650,
+                enchantment: "Temporal Flux",
+                description: "A simple weapon with infinite potential"
+            }
+        };
+        
+        function showCraftScreen() {
+            hideAllScreens();
+            document.getElementById('craft-screen').classList.add('active');
+            renderCraftGrid();
+        }
+        
+        function hideCraftScreen() {
+            document.getElementById('craft-screen').classList.remove('active');
+            document.getElementById('selection-screen').style.display = 'block';
+        }
+        
+        function renderCraftGrid() {
+            const grid = document.getElementById('craft-grid');
+            const gemDisplay = document.getElementById('craft-gem-count');
+            if (!grid) return;
+            
+            const currentGems = PARTY_STATS.GEMS || 0;
+            gemDisplay.textContent = currentGems;
+            
+            grid.innerHTML = '';
+            
+            for (const mythicalName in MYTHICAL_RECIPES) {
+                const recipe = MYTHICAL_RECIPES[mythicalName];
+                const mythicalData = ITEM_TABLE[mythicalName];
+                if (!mythicalData) continue;
+                
+                // Check if player has the required legendary item
+                let hasRequiredItem = false;
+                const requiredItemInstance = INVENTORY.find(item => {
+                    const nameMatch = item.name === recipe.requiredItem;
+                    const levelMatch = !recipe.requiredLevel || (item.level >= recipe.requiredLevel);
+                    return nameMatch && levelMatch;
+                });
+                hasRequiredItem = !!requiredItemInstance;
+                
+                // Check if player has the required enchantment
+                const hasEnchantment = (typeof ENCHANTMENT_INVENTORY !== 'undefined' && 
+                                       ENCHANTMENT_INVENTORY[recipe.enchantment] > 0) ||
+                                       (typeof getEnchantmentCount === 'function' && 
+                                       getEnchantmentCount(recipe.enchantment) > 0);
+                
+                const hasGems = currentGems >= recipe.gems;
+                const canCraft = hasRequiredItem && hasEnchantment && hasGems;
+                
+                const card = document.createElement('div');
+                card.style.cssText = `
+                    background: linear-gradient(135deg, rgba(138, 43, 226, 0.2), rgba(75, 0, 130, 0.2));
+                    border: 3px solid ${canCraft ? '#9d4edd' : '#555'};
+                    border-radius: 15px;
+                    padding: 25px;
+                    position: relative;
+                    ${canCraft ? 'cursor: pointer;' : 'opacity: 0.6;'}
+                    transition: all 0.3s;
+                `;
+                
+                if (canCraft) {
+                    card.onmouseenter = () => card.style.transform = 'translateY(-5px)';
+                    card.onmouseleave = () => card.style.transform = 'translateY(0)';
+                    card.onclick = () => craftMythicalItem(mythicalName);
+                }
+                
+                card.innerHTML = `
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <h2 style="color: #9d4edd; margin: 0 0 10px 0;">${mythicalName}</h2>
+                        <p style="color: #aaa; font-style: italic; margin: 5px 0;">${recipe.description}</p>
+                    </div>
+                    
+                    <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                        <h3 style="color: #fff; margin: 0 0 10px 0;">Required Materials:</h3>
+                        <div style="color: ${hasRequiredItem ? '#51cf66' : '#ff6b6b'};">
+                            ${hasRequiredItem ? '✓' : '✗'} ${recipe.requiredItem}${recipe.requiredLevel ? ` (Level ${recipe.requiredLevel})` : ''}
+                        </div>
+                        <div style="color: ${hasEnchantment ? '#51cf66' : '#ff6b6b'};">
+                            ${hasEnchantment ? '✓' : '✗'} ${recipe.enchantment} Enchantment
+                        </div>
+                        <div style="color: ${hasGems ? '#51cf66' : '#ff6b6b'};">
+                            ${hasGems ? '✓' : '✗'} ${recipe.gems} Gems
+                        </div>
+                    </div>
+                    
+                    <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px;">
+                        <h3 style="color: #fff; margin: 0 0 10px 0;">Stats:</h3>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; color: #fff;">
+                            <div>⚔️ STR: ${mythicalData.strength || 0}</div>
+                            <div>✨ MAG: ${mythicalData.magic || 0}</div>
+                            <div>⚡ SPD: ${mythicalData.speed || 0}</div>
+                            <div>🛡️ DEF: ${mythicalData.defense || 0}</div>
+                            <div>❤️ HP: ${mythicalData.health || 0}</div>
+                            ${mythicalData.ability ? `<div>🎯 Ability: #${mythicalData.ability}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+            }
+        }
+        
+        function craftMythicalItem(mythicalName) {
+            const recipe = MYTHICAL_RECIPES[mythicalName];
+            if (!recipe) return;
+            
+            const levelReq = recipe.requiredLevel ? ` (Level ${recipe.requiredLevel})` : '';
+            if (!confirm(`Craft ${mythicalName}? This will consume:\n- ${recipe.requiredItem}${levelReq}\n- ${recipe.enchantment} Enchantment\n- ${recipe.gems} Gems`)) {
+                return;
+            }
+            
+            // Verify materials again
+            const currentGems = PARTY_STATS.GEMS || 0;
+            if (currentGems < recipe.gems) {
+                alert("Not enough gems!");
+                return;
+            }
+            
+            const requiredItemIndex = INVENTORY.findIndex(item => {
+                const nameMatch = item.name === recipe.requiredItem;
+                const levelMatch = !recipe.requiredLevel || (item.level >= recipe.requiredLevel);
+                return nameMatch && levelMatch;
+            });
+            
+            if (requiredItemIndex === -1) {
+                alert(`You don't have ${recipe.requiredItem}${levelReq}!`);
+                return;
+            }
+            
+            // Check enchantment
+            let hasEnchantment = false;
+            if (typeof ENCHANTMENT_INVENTORY !== 'undefined' && ENCHANTMENT_INVENTORY[recipe.enchantment] > 0) {
+                hasEnchantment = true;
+            } else if (typeof getEnchantmentCount === 'function' && getEnchantmentCount(recipe.enchantment) > 0) {
+                hasEnchantment = true;
+            }
+            
+            if (!hasEnchantment) {
+                alert(`You don't have ${recipe.enchantment} enchantment!`);
+                return;
+            }
+            
+            // Consume materials
+            INVENTORY.splice(requiredItemIndex, 1);
+            PARTY_STATS.GEMS -= recipe.gems;
+            
+            if (typeof window.removeEnchantment === 'function') {
+                window.removeEnchantment(recipe.enchantment, 1);
+            } else if (typeof ENCHANTMENT_INVENTORY !== 'undefined') {
+                ENCHANTMENT_INVENTORY[recipe.enchantment]--;
+            }
+            
+            // Create mythical item
+            const mythicalData = ITEM_TABLE[mythicalName];
+            const newItem = {
+                name: mythicalName,
+                level: 1,
+                slot: mythicalData.slot,
+                rarity: mythicalData.rarity,
+                strength: mythicalData.strength || 0,
+                speed: mythicalData.speed || 0,
+                magic: mythicalData.magic || 0,
+                defense: mythicalData.defense || 0,
+                health: mythicalData.health || 0,
+                attack: mythicalData.attack,
+                ability: mythicalData.ability,
+                image: mythicalData.image
+            };
+            
+            INVENTORY.push(newItem);
+            
+            if (typeof saveGameData === 'function') {
+                saveGameData();
+            }
+            
+            alert(`Successfully crafted ${mythicalName}!`);
+            renderCraftGrid();
+        }
+        
+        function getRarityGemCost(rarity) {
+            const costs = {
+                'Common': 10,
+                'Uncommon': 25,
+                'Rare': 50,
+                'Epic': 100,
+                'Legendary': 200,
+                'Mythical': 500,
+                'Artifact': 1000
+            };
+            return costs[rarity] || 50;
+        }
+        
+        // Helper function to hide all screens
+        function hideAllScreens() {
+            document.getElementById('selection-screen').style.display = 'none';
+            document.getElementById('craft-screen').classList.remove('active');
+            document.getElementById('upgrade-screen').classList.remove('active');
+            document.getElementById('attacks-screen').classList.remove('active');
         }
 
         // Close modal when clicking outside

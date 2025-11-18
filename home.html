@@ -163,6 +163,13 @@
             <button class="settings-close" onclick="closeSettings()">×</button>
             <h2 class="settings-title">⚙️ Settings</h2>
 
+            <div class="settings-option" onclick="fillAllIndexes()">
+                <div class="option-title">📋 Fill All Indexes</div>
+                <div class="option-description">
+                    Instantly unlock all items and enemies in your collection index without having to discover them.
+                </div>
+            </div>
+
             <div class="settings-option danger-option" onclick="completelyRestart()">
                 <div class="option-title">🔄 Complete Restart</div>
                 <div class="option-description">
@@ -174,6 +181,7 @@
 
     <script src="script.js"></script>
     <script src="index.js"></script>
+    <script src="enemy-index.js"></script>
     <script>
         function openSettings() {
             document.getElementById('settings-modal').classList.add('active');
@@ -181,6 +189,46 @@
 
         function closeSettings() {
             document.getElementById('settings-modal').classList.remove('active');
+        }
+
+        function fillAllIndexes() {
+            if (!confirm('Fill all collection indexes?\n\nThis will unlock all items and enemies in your collection.')) {
+                return;
+            }
+            
+            try {
+                // Fill item index
+                if (typeof ITEM_TABLE !== 'undefined') {
+                    for (const itemName in ITEM_TABLE) {
+                        if (typeof registerItemCollected === 'function') {
+                            registerItemCollected(itemName);
+                        }
+                    }
+                }
+                
+                // Fill enemy index
+                if (typeof ENEMY_BASE_STATS !== 'undefined') {
+                    for (const enemyKey in ENEMY_BASE_STATS) {
+                        if (typeof registerEnemyDefeated === 'function') {
+                            registerEnemyDefeated(enemyKey);
+                        }
+                    }
+                }
+                
+                alert('✅ All indexes have been filled!\n\nCheck your Collection page to see all items and enemies.');
+                closeSettings();
+                
+                // Refresh index pages if their reload functions exist
+                if (typeof loadItemIndex === 'function') {
+                    loadItemIndex();
+                }
+                if (typeof renderEnemyIndex === 'function') {
+                    renderEnemyIndex();
+                }
+            } catch (e) {
+                console.error('Error filling indexes:', e);
+                alert('An error occurred while filling indexes. Please check the console.');
+            }
         }
 
         function completelyRestart() {

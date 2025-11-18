@@ -40,9 +40,10 @@ function registerEnemyEncountered(enemyName) {
 
 // Register an enemy defeat
 function registerEnemyDefeated(enemyName) {
-    const index = loadEnemyIndex();
+    let index = loadEnemyIndex();
     if (!index[enemyName]) {
         registerEnemyEncountered(enemyName);
+        index = loadEnemyIndex(); // Reload index after registering encounter
     }
     index[enemyName].timesDefeated = (index[enemyName].timesDefeated || 0) + 1;
     saveEnemyIndex(index);

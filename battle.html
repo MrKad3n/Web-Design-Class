@@ -226,30 +226,15 @@
                 filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.6));
             }
             
-            /* Status effect display */
-            .status-effects-display {
-                position: absolute;
-                bottom: -25px;
-                left: 50%;
-                transform: translateX(-50%);
-                display: none;
-                font-size: 18px;
-                background: rgba(0, 0, 0, 0.8);
-                padding: 2px 8px;
-                border-radius: 8px;
-                border: 1px solid rgba(255, 215, 0, 0.5);
-                white-space: nowrap;
-                z-index: 100;
-            }
-            
-            .status-effects-display span {
-                margin: 0 2px;
-            }
-            
+            /* Player status effects display above head */
             #player-status-effects {
                 text-align: center;
                 color: #ffaa00;
                 font-weight: bold;
+            }
+            
+            #player-status-effects span {
+                margin: 0 3px;
             }
             
             /* Turn order display */
@@ -460,6 +445,58 @@
                 overflow: hidden;
                 text-overflow: ellipsis;
                 max-width: 70px;
+            }
+            
+            /* Attack tooltip */
+            .attack-tooltip {
+                position: fixed;
+                background: linear-gradient(135deg, rgba(20, 20, 40, 0.98), rgba(40, 40, 60, 0.98));
+                border: 2px solid rgba(255, 215, 0, 0.6);
+                border-radius: 8px;
+                padding: 12px;
+                color: white;
+                font-size: 0.9rem;
+                pointer-events: none;
+                z-index: 10000;
+                max-width: 280px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+                backdrop-filter: blur(5px);
+                display: none;
+            }
+            
+            .attack-tooltip.visible {
+                display: block;
+            }
+            
+            .attack-tooltip .tooltip-header {
+                font-weight: bold;
+                font-size: 1.1rem;
+                color: #FFD700;
+                margin-bottom: 8px;
+                border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+                padding-bottom: 4px;
+            }
+            
+            .attack-tooltip .tooltip-damage {
+                color: #FF6B6B;
+                margin: 4px 0;
+            }
+            
+            .attack-tooltip .tooltip-status {
+                color: #51CF66;
+                margin: 4px 0;
+            }
+            
+            .attack-tooltip .tooltip-special {
+                color: #74C0FC;
+                margin: 4px 0;
+                font-style: italic;
+            }
+            
+            .attack-tooltip .tooltip-ability {
+                color: #FFA94D;
+                margin: 4px 0;
+                font-size: 0.85rem;
             }
             
             /* Responsive adjustments */
@@ -709,6 +746,9 @@
             </div>
         </div>
     </div>
+    
+    <!-- Attack tooltip for showing attack details on hover -->
+    <div id="attack-tooltip" class="attack-tooltip"></div>
     
     <footer>
         Kaden Cruts - 2025
@@ -1177,6 +1217,7 @@
                     scaled.strength = Math.round(base.strength * scaleMultiplier);
                     scaled.magic = Math.round(base.magic * scaleMultiplier);
                     scaled.speed = Math.round(base.speed * scaleMultiplier);
+                    scaled.defense = Math.round((base.defense || 0) * scaleMultiplier);
                     
                     // Apply challenge modifiers if in challenge mode
                     if (isChallenge) {
@@ -1280,6 +1321,24 @@
                         const currentDef = Number(wrap.dataset.def) || 0;
                         const specialEffect = currentBase.specialEffect || 'No special effect';
                         
+                        // Get status effects for this enemy
+                        const enemyIdx = Array.from(wrap.parentElement.children).indexOf(wrap);
+                        const effects = (typeof enemyStatusEffects !== 'undefined' && enemyStatusEffects[enemyIdx]) ? enemyStatusEffects[enemyIdx] : [];
+                        let statusHtml = '';
+                        if (effects && effects.length > 0) {
+                            const statusIcons = effects.map(e => {
+                                const icon = e.type === 'burn' ? '🔥' : 
+                                             e.type === 'leech' ? '🩸' : 
+                                             e.type === 'bleed' ? '💉' : 
+                                             e.type === 'grim' ? '💀' : 
+                                             e.type === 'chill' ? '❄️' : '?';
+                                const stackDisplay = (e.stacks && e.stacks > 1) ? `×${e.stacks}` : '';
+                                const label = e.type.charAt(0).toUpperCase() + e.type.slice(1);
+                                return `${icon} ${label}${stackDisplay}`;
+                            }).join(', ');
+                            statusHtml = `<div class="stat-row" style="color: #ffaa00; font-weight: bold;"><span>Status Effects:</span><span>${statusIcons}</span></div>`;
+                        }
+                        
                         tooltip.innerHTML = `
                             <h4>${currentKey} (Level ${level})</h4>
                             <div class="stat-row"><span>Health:</span><span>${currentHp}/${currentMaxHp}</span></div>
@@ -1287,6 +1346,7 @@
                             <div class="stat-row"><span>Magic:</span><span>${currentMag}</span></div>
                             <div class="stat-row"><span>Speed:</span><span>${currentSpeed}</span></div>
                             <div class="stat-row"><span>Defense:</span><span>${currentDef}</span></div>
+                            ${statusHtml}
                             ${specialEffect !== 'No special effect' ? `<div class="special-effect">${specialEffect}</div>` : ''}
                         `;
                         
@@ -1358,8 +1418,105 @@
                     const slot = document.createElement('div');
                     slot.className = 'attack-slot';
                     slot.innerHTML = `<img src="${(ITEM_TABLE && ITEM_TABLE[a.itemName] && ITEM_TABLE[a.itemName].image) || 'Assests/empty-slot.png'}" alt="${a.name}"><span>${a.name}</span>`;
+                    
+                    // Add tooltip functionality
+                    slot.addEventListener('mouseenter', (e) => showAttackTooltip(e, a));
+                    slot.addEventListener('mousemove', (e) => updateTooltipPosition(e));
+                    slot.addEventListener('mouseleave', hideAttackTooltip);
+                    
                     atkArea.appendChild(slot);
                 });
+            }
+            
+            // Show attack tooltip with detailed stats
+            function showAttackTooltip(event, attackObj) {
+                const tooltip = document.getElementById('attack-tooltip');
+                if (!tooltip) return;
+                
+                // Get current member's stats
+                const memberKey = getActiveBattleMember();
+                const attacker = PARTY_STATS[memberKey];
+                if (!attacker) return;
+                
+                const str = Number(attacker.STRENGTH || 0);
+                const mag = Number(attacker.MAGIC || 0);
+                
+                // Build tooltip content
+                let content = `<div class="tooltip-header">${attackObj.name}</div>`;
+                
+                // Calculate base damage from stats
+                const strMult = attackObj.strMultiplier || attackObj.strMult || 0;
+                const magMult = attackObj.magicMultiplier || attackObj.magMult || 0;
+                
+                if (strMult > 0 || magMult > 0) {
+                    const strDamage = Math.round(str * strMult);
+                    const magDamage = Math.round(mag * magMult);
+                    const totalDamage = strDamage + magDamage;
+                    
+                    content += `<div class="tooltip-damage">💥 Base Damage: ${totalDamage}`;
+                    if (strDamage > 0 && magDamage > 0) {
+                        content += ` (${strDamage} + ${magDamage})`;
+                    }
+                    content += `</div>`;
+                }
+                
+                // Status effect
+                const status = attackObj.statusEffect || attackObj.status;
+                if (status) {
+                    const statusIcons = {
+                        burn: '🔥',
+                        leech: '🩸',
+                        bleed: '💉',
+                        grim: '💀',
+                        chill: '❄️'
+                    };
+                    const icon = statusIcons[status.toLowerCase()] || '✨';
+                    content += `<div class="tooltip-status">${icon} Inflicts ${status.toUpperCase()}</div>`;
+                }
+                
+                // AOE indicator
+                if (attackObj.aoe === true) {
+                    content += `<div class="tooltip-special">💥 Hits ALL enemies (AOE)</div>`;
+                }
+                
+                // Item ability
+                if (attackObj.itemAbilityNum) {
+                    content += `<div class="tooltip-ability">🎯 Ability #${attackObj.itemAbilityNum}</div>`;
+                }
+                
+                tooltip.innerHTML = content;
+                tooltip.classList.add('visible');
+                updateTooltipPosition(event);
+            }
+            
+            // Update tooltip position to follow cursor
+            function updateTooltipPosition(event) {
+                const tooltip = document.getElementById('attack-tooltip');
+                if (!tooltip || !tooltip.classList.contains('visible')) return;
+                
+                const offset = 15;
+                let x = event.clientX + offset;
+                let y = event.clientY + offset;
+                
+                // Prevent tooltip from going off-screen
+                const tooltipRect = tooltip.getBoundingClientRect();
+                if (x + tooltipRect.width > window.innerWidth) {
+                    x = event.clientX - tooltipRect.width - offset;
+                }
+                if (y + tooltipRect.height > window.innerHeight) {
+                    y = event.clientY - tooltipRect.height - offset;
+                }
+                
+                tooltip.style.left = x + 'px';
+                tooltip.style.top = y + 'px';
+            }
+            
+            // Hide attack tooltip
+            function hideAttackTooltip() {
+                const tooltip = document.getElementById('attack-tooltip');
+                if (tooltip) {
+                    tooltip.classList.remove('visible');
+                }
             }
 
             // Run updates
@@ -1458,47 +1615,31 @@
                         // Safety check - only run if status effects are initialized
                         if (typeof enemyStatusEffects === 'undefined' || typeof playerStatusEffects === 'undefined') return;
                         
-                        // Show status effects on enemies
-                        const enemyWraps = getEnemyWrappers();
-                        enemyWraps.forEach((wrap, idx) => {
-                            const effects = enemyStatusEffects[idx];
-                            // Remove any existing status display first to prevent duplicates
-                            const oldDisplay = wrap.querySelector('.status-effects-display');
-                            if (oldDisplay) oldDisplay.remove();
-                            
-                            let existing = document.createElement('div');
-                            existing.className = 'status-effects-display';
-                            wrap.appendChild(existing);
-                            
-                            if (effects && effects.length > 0) {
-                                const icons = effects.map(e => {
-                                    const icon = e.type === 'burn' ? '🔥' : 
-                                                 e.type === 'leech' ? '🩸' : 
-                                                 e.type === 'bleed' ? '💉' : 
-                                                 e.type === 'grim' ? '💀' : 
-                                                 e.type === 'chill' ? '❄️' : '?';
-                                    const stackDisplay = (e.stacks && e.stacks > 1) ? `×${e.stacks}` : '';
-                                    return `<span title="${e.type.toUpperCase()}${stackDisplay}">${icon}${stackDisplay}</span>`;
-                                }).join(' ');
-                                existing.innerHTML = icons;
-                                existing.style.display = 'block';
-                            } else {
-                                existing.style.display = 'none';
-                            }
-                        });
+                        // Status effects on enemies are now shown in tooltip on hover
                         
-                        // Show status effects on player (in player stats display)
+                        // Show status effects above player's head in arena
                         const memberKey = getActiveBattleMember();
                         const effects = playerStatusEffects[memberKey];
                         let playerEffectDisplay = document.getElementById('player-status-effects');
                         if (!playerEffectDisplay) {
-                            const statsDisplay = document.getElementById('player-stats-display');
-                            if (statsDisplay) {
+                            const playerArea = document.getElementById('player-area');
+                            if (playerArea) {
                                 playerEffectDisplay = document.createElement('div');
                                 playerEffectDisplay.id = 'player-status-effects';
-                                playerEffectDisplay.style.marginTop = '5px';
-                                playerEffectDisplay.style.fontSize = '18px';
-                                statsDisplay.appendChild(playerEffectDisplay);
+                                playerEffectDisplay.style.position = 'absolute';
+                                playerEffectDisplay.style.top = '0';
+                                playerEffectDisplay.style.left = '50%';
+                                playerEffectDisplay.style.transform = 'translateX(-50%)';
+                                playerEffectDisplay.style.fontSize = '24px';
+                                playerEffectDisplay.style.background = 'rgba(0, 0, 0, 0.8)';
+                                playerEffectDisplay.style.padding = '5px 12px';
+                                playerEffectDisplay.style.borderRadius = '10px';
+                                playerEffectDisplay.style.border = '2px solid rgba(255, 170, 0, 0.8)';
+                                playerEffectDisplay.style.whiteSpace = 'nowrap';
+                                playerEffectDisplay.style.zIndex = '200';
+                                playerEffectDisplay.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.6)';
+                                playerArea.style.position = 'relative';
+                                playerArea.appendChild(playerEffectDisplay);
                             }
                         }
                         if (playerEffectDisplay) {
@@ -1512,7 +1653,7 @@
                                     const stackDisplay = (e.stacks && e.stacks > 1) ? `×${e.stacks}` : '';
                                     return `<span title="${e.type.toUpperCase()}${stackDisplay}">${icon}${stackDisplay}</span>`;
                                 }).join(' ');
-                                playerEffectDisplay.innerHTML = `Status: ${icons}`;
+                                playerEffectDisplay.innerHTML = icons;
                                 playerEffectDisplay.style.display = 'block';
                             } else {
                                 playerEffectDisplay.style.display = 'none';
@@ -1859,13 +2000,27 @@
                                     if (selectedAttackId) attackObj = attacks.find(a=>a.id === selectedAttackId) || finalList[0] || null;
                                     else attackObj = finalList[0] || attacks[0] || null;
                                     if (!attackObj) attackObj = { name: 'slap', strMultiplier: 1, magicMultiplier: 0, itemName: null };
+                                    
+                                    // Check if this is an AOE attack
+                                    const isAOE = attackObj.aoe === true;
+                                    const targetEnemies = isAOE ? Array.from(getEnemyWrappers()).filter(e => Number(e.dataset.hp) > 0) : [enemyWrap];
+                                    
+                                    // Get equipped abilities once before loop
+                                    const equippedAbilities = getEquippedAbilities(memberKey);
+                                    
+                                    if (isAOE) {
+                                        logCombat(`💥 ${attackObj.name} - AOE ATTACK hits all enemies!`);
+                                    }
+                                    
+                                    // Loop through all target enemies (single for normal attacks, all for AOE)
+                                    targetEnemies.forEach((currentEnemyWrap, targetIndex) => {
 
-                                    const enemyDefense = Number( (ENEMY_BASE_STATS[enemyWrap.querySelector('img').alt] && ENEMY_BASE_STATS[enemyWrap.querySelector('img').alt].defense) || 0 );
+                                    const enemyDefense = Number( (ENEMY_BASE_STATS[currentEnemyWrap.querySelector('img').alt] && ENEMY_BASE_STATS[currentEnemyWrap.querySelector('img').alt].defense) || 0 );
                                     const attacker = PARTY_STATS[getActiveBattleMember()];
                                     
-                                    // Check for attack-specific abilities (10: MultiStrike, 19: Enhance)
-                                    const attackSourceItem = getItemFromAttack(attackObj);
-                                    const attackAbility = attackSourceItem ? attackSourceItem.ability : 0;
+                                    // Check for attack-specific abilities (10: MultiStrike, 19: Enhance) - only on first target for AOE
+                                    const attackSourceItem = targetIndex === 0 ? getItemFromAttack(attackObj) : null;
+                                    const attackAbility = (targetIndex === 0 && attackSourceItem) ? attackSourceItem.ability : 0;
                                     console.log(`[Attack Ability] Attack: ${attackObj.name}, ItemName: ${attackObj.itemName}, SourceItem:`, attackSourceItem, `Ability: ${attackAbility}`);
                                     
                                     // Ability 19: Enhance - Each attack enhances stats with decaying multiplier (100%, 90%, 81%, etc.)
@@ -1927,29 +2082,39 @@
                                     const magMult = Number(attackObj.magicMultiplier||0);
                                     
                                     // Get enemy index for status tracking
-                                    const enemyIndex = Array.from(getEnemyWrappers()).indexOf(enemyWrap);
+                                    const enemyIndex = Array.from(getEnemyWrappers()).indexOf(currentEnemyWrap);
                                     
                     // Apply bleed multiplier if present
                     const bleedMult = getBleedMultiplier('enemy', enemyIndex);
                     
                     // Calculate base damage before defense
-                    const baseDmg = (mag * magMult + str * strMult) * bleedMult;
+                    let baseDmg = (mag * magMult + str * strMult) * bleedMult;
                     
-                    // Apply defense with diminishing returns: damage reduction = def / (def + 100)
-                    // This ensures attacks always deal at least some damage (max 95% reduction)
-                    // and defense has better scaling without hard cutoffs
-                    const defenseReduction = enemyDefense / (enemyDefense + 100);
-                    const damageAfterDefense = baseDmg * (1 - defenseReduction * 0.95); // Max 95% reduction
+                    // Apply chill effect BEFORE defense: 25% damage reduction if enemy is chilled
+                    const enemyEffects = enemyStatusEffects[enemyIndex];
+                    if (enemyEffects && enemyEffects.find(e => e.type === 'chill')) {
+                        baseDmg = baseDmg * 0.75;
+                        logCombat(`❄️ Enemy chilled: -25% damage output`);
+                    }
                     
-                    let dmg = Math.max(1, Math.round(Math.max(damageAfterDefense, baseDmg * 0.05)));
-                    if (isNaN(dmg)) dmg = 1;                                    // ===== ITEM ABILITIES =====
-                                    // Get all equipped abilities for the active member
-                                    const equippedAbilities = getEquippedAbilities(memberKey);
+                    // Apply defense with inverted logarithmic scaling (higher multiplier at low defense)
+                    // Damage Reduction = Defense * (1.0 - log10(Defense + 1) * 0.05)
+                    // This gives very strong early defense that gradually becomes less efficient
+                    const defenseMultiplier = Math.max(0.5, 1.0 - (Math.log10(enemyDefense + 1) * 0.05));
+                    const damageReduction = enemyDefense * defenseMultiplier;
+                    const damageAfterDefense = baseDmg - damageReduction;
+                    
+                    // Ensure minimum 10% of base damage always gets through
+                    const minimumDamage = Math.ceil(baseDmg * 0.1);
+                    let dmg = Math.max(minimumDamage, Math.round(damageAfterDefense));
+                    if (isNaN(dmg)) dmg = minimumDamage || 1;                                    // ===== ITEM ABILITIES =====
+                                    // Abilities already loaded before forEach loop
                                     console.log(`[Abilities] Member ${memberKey} equipped abilities:`, equippedAbilities);
                                     
-                                    // Ability 13: Pixel Combo - Reduce damage to 50%, with mini-game for extra attacks
+                                    // Ability 13: Pixel Combo - ONLY applies to "Combo" attack from Pixel Sword
                                     let pixelComboMultiplier = 1.0;
-                                    if (equippedAbilities.includes(13)) {
+                                    const isComboAttack = attackObj.name === 'Combo' || (attackObj.itemName && attackObj.itemName === 'Pixel Sword');
+                                    if (equippedAbilities.includes(13) && isComboAttack) {
                                         pixelComboMultiplier = pixelComboCount >= 8 ? 1.0 : 0.5;
                                     }
                                     dmg = Math.round(dmg * pixelComboMultiplier);
@@ -1997,17 +2162,60 @@
                                             console.log(`[Perfectly Timed] No crit. Roll: ${critRoll.toFixed(3)} >= 0.5`);
                                         }
                                     }
-
-                                    logCombat(`Player uses ${attackObj.name} on ${enemyWrap.querySelector('img').alt} and deals ${dmg} damage${bleedMult > 1 ? ' (BLEED +' + Math.round((bleedMult - 1) * 100) + '%)' : ''}`);
                                     
-                                    // Apply status effect from attack
-                                    if (attackObj.status && attackObj.status !== 'none') {
-                                        applyStatusEffect(enemyWrap, 'enemy', enemyIndex, attackObj.status, dmg);
+                                    // Special Attack: Plague Strike - Bonus damage per status effect on target
+                                    if (attackObj.statusBonus === true) {
+                                        const targetEffects = enemyStatusEffects[enemyIndex] || [];
+                                        const statusCount = targetEffects.length;
+                                        if (statusCount > 0) {
+                                            const plagueBonus = Math.round(dmg * 0.3 * statusCount); // 30% per status
+                                            dmg += plagueBonus;
+                                            logCombat(`☠️ Plague Strike: +${plagueBonus} damage (${statusCount} status effects)`);
+                                        }
+                                    }
+                                    
+                                    // Special Attack: Soul Reaper - Bonus damage per dead ally
+                                    if (attackObj.deadAllyBonus === true) {
+                                        const totalAllies = 5;
+                                        const aliveAllies = countAlivePartyMembers();
+                                        const deadAllies = totalAllies - aliveAllies;
+                                        if (deadAllies > 0) {
+                                            const reaperBonus = Math.round(dmg * 0.5 * deadAllies); // 50% per dead ally
+                                            dmg += reaperBonus;
+                                            logCombat(`💀 Soul Reaper: +${reaperBonus} damage (${deadAllies} fallen allies)`);
+                                        }
+                                    }
+
+                                    logCombat(`Player uses ${attackObj.name} on ${currentEnemyWrap.querySelector('img').alt} and deals ${dmg} damage${bleedMult > 1 ? ' (BLEED +' + Math.round((bleedMult - 1) * 100) + '%)' : ''}`);
+                                    
+                                    // Special Attack: Venomous Barrage - Multi-hit attack
+                                    if (attackObj.multiHit && attackObj.multiHit > 1) {
+                                        const additionalHits = attackObj.multiHit - 1; // First hit already dealt
+                                        for (let i = 0; i < additionalHits; i++) {
+                                            // Each additional hit deals damage and applies status
+                                            const hitDmg = Math.round(dmg * 0.8); // 80% damage per additional hit
+                                            currentEnemyWrap.dataset.hp = Math.max(0, Number(currentEnemyWrap.dataset.hp) - hitDmg);
+                                            updateEnemyBar(currentEnemyWrap);
+                                            logCombat(`🐍 Venomous Barrage hit ${i + 2}: ${hitDmg} damage`);
+                                            
+                                            // Apply status effect for each hit
+                                            const attackStatus = attackObj.statusEffect || attackObj.status;
+                                            if (attackStatus && attackStatus !== 'none') {
+                                                applyStatusEffect(currentEnemyWrap, 'enemy', enemyIndex, attackStatus, baseDmg);
+                                            }
+                                        }
+                                    }
+                                    
+                                    // Apply status effect from attack (use baseDmg for burn to bypass defense)
+                                    // Check both 'status' (from ATTACK_STATS) and 'statusEffect' (from SPECIAL_ATTACKS)
+                                    const attackStatus = attackObj.statusEffect || attackObj.status;
+                                    if (attackStatus && attackStatus !== 'none') {
+                                        applyStatusEffect(currentEnemyWrap, 'enemy', enemyIndex, attackStatus, baseDmg);
                                     }
                                     
                                     // Ability 1: Bleed - Each attack gives bleed status (can stack with attack's bleed)
                                     if (equippedAbilities.includes(1)) {
-                                        applyStatusEffect(enemyWrap, 'enemy', enemyIndex, 'bleed', dmg);
+                                        applyStatusEffect(currentEnemyWrap, 'enemy', enemyIndex, 'bleed', baseDmg);
                                         logCombat('🩸 Bleed ability activated!');
                                     }
                                     
@@ -2015,7 +2223,7 @@
                                     if (equippedAbilities.includes(5)) {
                                         const plasmaStatuses = ['burn', 'leech', 'bleed', 'grim', 'chill'];
                                         const randomStatus = plasmaStatuses[Math.floor(Math.random() * plasmaStatuses.length)];
-                                        applyStatusEffect(enemyWrap, 'enemy', enemyIndex, randomStatus, dmg);
+                                        applyStatusEffect(currentEnemyWrap, 'enemy', enemyIndex, randomStatus, baseDmg);
                                         logCombat(`⚡ Plasma: Applied ${randomStatus}!`);
                                     }
                                     
@@ -2043,12 +2251,13 @@
                                     // Decrement bleed duration
                                     decrementBleed('enemy', enemyIndex);
                                     
-                                    const curHp = Number(enemyWrap.dataset.hp) - dmg;
-                                    enemyWrap.dataset.hp = Math.max(0, curHp);
-                                    updateEnemyBar(enemyWrap);
+                                    const curHp = Number(currentEnemyWrap.dataset.hp) - dmg;
+                                    currentEnemyWrap.dataset.hp = Math.max(0, curHp);
+                                    updateEnemyBar(currentEnemyWrap);
                                     
-                                    // Ability 10: MultiStrike - Attack twice with this attack
-                                    if (attackAbility === 10 && Number(enemyWrap.dataset.hp) > 0) {
+                                    // Ability 10: MultiStrike - Attack twice ONLY with this specific attack
+                                    const isMultiStrikeAttack = attackAbility === 10 && attackSourceItem;
+                                    if (isMultiStrikeAttack && Number(currentEnemyWrap.dataset.hp) > 0) {
                                         // Recalculate damage for second strike (same formula)
                                         const str2 = Number(attacker.STRENGTH||0) * carriedMult;
                                         const mag2 = Number(attacker.MAGIC||0) * carriedMult;
@@ -2056,20 +2265,21 @@
                                         let dmg2 = Math.round((mag2 * magMult + str2 * strMult - enemyDefense) * bleedMult2);
                                         if (isNaN(dmg2) || dmg2 < 1) dmg2 = 1;
                                         
-                                        const curHp2 = Number(enemyWrap.dataset.hp) - dmg2;
-                                        enemyWrap.dataset.hp = Math.max(0, curHp2);
-                                        updateEnemyBar(enemyWrap);
+                                        const curHp2 = Number(currentEnemyWrap.dataset.hp) - dmg2;
+                                        currentEnemyWrap.dataset.hp = Math.max(0, curHp2);
+                                        updateEnemyBar(currentEnemyWrap);
                                         logCombat(`⚔️⚔️ MultiStrike: Second hit deals ${dmg2} damage!`);
                                         
                                         // Apply attack status on second hit too
-                                        if (attackObj.status && attackObj.status !== 'none') {
-                                            applyStatusEffect(enemyWrap, 'enemy', enemyIndex, attackObj.status, dmg2);
+                                        const attackStatus = attackObj.statusEffect || attackObj.status;
+                                        if (attackStatus && attackStatus !== 'none') {
+                                            applyStatusEffect(currentEnemyWrap, 'enemy', enemyIndex, attackStatus, dmg2);
                                         }
                                     }
 
                                                 // Play hit animation on the enemy image
                                                 try {
-                                                    const img = enemyWrap.querySelector('img');
+                                                    const img = currentEnemyWrap.querySelector('img');
                                                     if (img) {
                                                         img.classList.remove('hit-animation');
                                                         // Force reflow to restart animation
@@ -2079,31 +2289,18 @@
                                                     }
                                                 } catch(e){}
 
-                                                  // Ability 13: Pixel Combo mini-game
-                                                  if (equippedAbilities.includes(13)) {
-                                                      showPixelComboMiniGame(enemyWrap);
-                                                      return; // Wait for mini-game to complete
-                                                  }
-
-                                                  // After attacking, clear selectedAttackId so player must re-select an attack next time
-                                                  selectedAttackId = null;
-                                                  // After attacking, consume selection and reset waiting flag to resume queue
-                                                  playerCanAct = false;
-                                                  playerWaiting = false;
-                                                  waitingForPlayerAction = false;
-
                                     // Check if this enemy dies
-                                    if (Number(enemyWrap.dataset.hp) <= 0) {
-                                        const enemyName = enemyWrap.querySelector('img') ? enemyWrap.querySelector('img').alt : '';
-                                        const enemyKey = enemyWrap.dataset.key || enemyName;
+                                    if (Number(currentEnemyWrap.dataset.hp) <= 0) {
+                                        const enemyName = currentEnemyWrap.querySelector('img') ? currentEnemyWrap.querySelector('img').alt : '';
+                                        const enemyKey = currentEnemyWrap.dataset.key || enemyName;
                                         
                                         // Check if this is Divine King (phase 1) - transform to phase 2
                                         const isDivineKing = enemyName.toLowerCase().includes('divineking') || 
-                                                           (enemyWrap.dataset.key && enemyWrap.dataset.key.toLowerCase() === 'divineking');
+                                                           (currentEnemyWrap.dataset.key && currentEnemyWrap.dataset.key.toLowerCase() === 'divineking');
                                         
                                         // Check if this is a crawler with two lives
                                         const isCrawler = enemyKey.toLowerCase().includes('crawler');
-                                        const crawlerFirstLife = !enemyWrap.dataset.crawlerSecondForm;
+                                        const crawlerFirstLife = !currentEnemyWrap.dataset.crawlerSecondForm;
                                         
                                         // Crawler mechanic: Transform to second form on first death
                                         if (isCrawler && crawlerFirstLife) {
@@ -2116,24 +2313,24 @@
                                                 const scaleMultiplier = baseScale;
                                                 
                                                 const secondForm = crawlerStats.secondForm;
-                                                enemyWrap.dataset.hp = Math.max(1, Math.round(secondForm.health * scaleMultiplier));
-                                                enemyWrap.dataset.maxHp = enemyWrap.dataset.hp;
-                                                enemyWrap.dataset.str = Math.round(secondForm.strength * scaleMultiplier);
-                                                enemyWrap.dataset.mag = Math.round(secondForm.magic * scaleMultiplier);
-                                                enemyWrap.dataset.speed = Math.round(secondForm.speed * scaleMultiplier);
-                                                enemyWrap.dataset.def = 0; // No defense in second form
-                                                enemyWrap.dataset.crawlerSecondForm = 'true';
+                                                currentEnemyWrap.dataset.hp = Math.max(1, Math.round(secondForm.health * scaleMultiplier));
+                                                currentEnemyWrap.dataset.maxHp = currentEnemyWrap.dataset.hp;
+                                                currentEnemyWrap.dataset.str = Math.round(secondForm.strength * scaleMultiplier);
+                                                currentEnemyWrap.dataset.mag = Math.round(secondForm.magic * scaleMultiplier);
+                                                currentEnemyWrap.dataset.speed = Math.round(secondForm.speed * scaleMultiplier);
+                                                currentEnemyWrap.dataset.def = 0; // No defense in second form
+                                                currentEnemyWrap.dataset.crawlerSecondForm = 'true';
                                                 
-                                                updateEnemyBar(enemyWrap);
+                                                updateEnemyBar(currentEnemyWrap);
                                                 recalculateActionQueue();
                                                 
                                                 logCombat('Crawler is now fragile but extremely fast!');
-                                                return true;
+                                                return;
                                             }
                                         }
                                         
                                         // Only transform if not already transformed (check for phase flag)
-                                        const alreadyTransformed = enemyWrap.dataset.transformed === 'true';
+                                        const alreadyTransformed = currentEnemyWrap.dataset.transformed === 'true';
                                         
                                         if (isDivineKing && !alreadyTransformed) {
                                             logCombat('⚡ Divine King transforms into Demon King! ⚡');
@@ -2145,30 +2342,30 @@
                                             const scaleMultiplier = baseScale * 1.3; // Boss on boss tile
                                             
                                             // Update enemy to demon king
-                                            enemyWrap.dataset.hp = Math.max(1, Math.round(demonKingStats.health * scaleMultiplier));
-                                            enemyWrap.dataset.maxHp = enemyWrap.dataset.hp;
-                                            enemyWrap.dataset.str = Math.round(demonKingStats.strength * scaleMultiplier);
-                                            enemyWrap.dataset.mag = Math.round(demonKingStats.magic * scaleMultiplier);
-                                            enemyWrap.dataset.speed = Math.round(demonKingStats.speed * scaleMultiplier);
-                                            enemyWrap.dataset.def = Math.round((demonKingStats.defense || 0) * scaleMultiplier);
-                                            enemyWrap.dataset.key = 'demonKing';
-                                            enemyWrap.dataset.transformed = 'true'; // Mark as transformed to prevent re-triggering
+                                            currentEnemyWrap.dataset.hp = Math.max(1, Math.round(demonKingStats.health * scaleMultiplier));
+                                            currentEnemyWrap.dataset.maxHp = currentEnemyWrap.dataset.hp;
+                                            currentEnemyWrap.dataset.str = Math.round(demonKingStats.strength * scaleMultiplier);
+                                            currentEnemyWrap.dataset.mag = Math.round(demonKingStats.magic * scaleMultiplier);
+                                            currentEnemyWrap.dataset.speed = Math.round(demonKingStats.speed * scaleMultiplier);
+                                            currentEnemyWrap.dataset.def = Math.round((demonKingStats.defense || 0) * scaleMultiplier);
+                                            currentEnemyWrap.dataset.key = 'demonKing';
+                                            currentEnemyWrap.dataset.transformed = 'true'; // Mark as transformed to prevent re-triggering
                                             
                                             // Update image
-                                            const img = enemyWrap.querySelector('img');
+                                            const img = currentEnemyWrap.querySelector('img');
                                             if (img) {
                                                 img.src = 'Enemies/demonKing.png';
                                                 img.alt = 'demonKing';
                                             }
                                             
                                             // Update name display
-                                            const nameH = enemyWrap.querySelector('h3');
+                                            const nameH = currentEnemyWrap.querySelector('h3');
                                             if (nameH) {
                                                 nameH.textContent = `Demon King (Lv ${level})`;
                                             }
                                             
                                             // Update health bar
-                                            updateEnemyBar(enemyWrap);
+                                            updateEnemyBar(currentEnemyWrap);
                                             
                                             // Clear status effects for transformation
                                             delete enemyStatusEffects[enemyIndex];
@@ -2177,14 +2374,31 @@
                                             recalculateActionQueue();
                                             
                                         logCombat('Phase 2 begins! The Demon King rises!');
-                                        return true;
+                                        return;
                                     }
                                     
                                     logCombat('Enemy defeated!');
                                     
                                     // Use centralized enemy defeat handler for necromancer resurrection and cleanup
-                                    return handleEnemyDefeat(enemyWrap, enemyIndex);
+                                    handleEnemyDefeat(currentEnemyWrap, enemyIndex);
                                 }
+                                    
+                                }); // End forEach for targetEnemies
+                                
+                                // After attacking all targets, handle post-attack logic
+                                // Ability 13: Pixel Combo mini-game
+                                if (equippedAbilities.includes(13)) {
+                                    showPixelComboMiniGame(enemyWrap);
+                                    return true; // Wait for mini-game to complete
+                                }
+
+                                // After attacking, clear selectedAttackId so player must re-select an attack next time
+                                selectedAttackId = null;
+                                // After attacking, consume selection and reset waiting flag to resume queue
+                                playerCanAct = false;
+                                playerWaiting = false;
+                                waitingForPlayerAction = false;
+                                
                                 return true;
                             }                                    // Expose attack performer so click handlers outside can call it when appropriate
                                     try{ window.playerPerformAttackOn = playerPerformAttackOn; } catch(e){}
@@ -2298,9 +2512,9 @@
                             
                             // Handle different effect types
                             if (effectType === 'burn') {
-                                // Burn: 20% of damage dealt, 3 turns, stacks
-                                effectsArray.push({ type: 'burn', turnsLeft: 3, damagePerTurn: Math.round(baseDamage * 0.2) });
-                                logCombat(`Applied BURN (${Math.round(baseDamage * 0.2)} dmg/turn for 3 turns)`);
+                                // Burn: 40% of pre-defense damage, 3 turns, stacks, bypasses defense
+                                effectsArray.push({ type: 'burn', turnsLeft: 3, damagePerTurn: Math.round(baseDamage * 0.4) });
+                                logCombat(`Applied BURN (${Math.round(baseDamage * 0.4)} dmg/turn for 3 turns)`);
                             } else if (effectType === 'leech') {
                                 // Leech: 10% of damage dealt to enemy, heals player, 3 turns, stacks
                                 effectsArray.push({ type: 'leech', turnsLeft: 3, damagePerTurn: Math.round(baseDamage * 0.1) });
@@ -2332,6 +2546,17 @@
                                 const randomEffects = ['burn', 'leech', 'bleed'];
                                 const chosen = randomEffects[Math.floor(Math.random() * randomEffects.length)];
                                 applyStatusEffect(target, targetType, targetKey, chosen, baseDamage);
+                            } else if (effectType === 'chaos') {
+                                // Chaos: Apply 2-4 random different status effects
+                                const allStatuses = ['burn', 'leech', 'bleed', 'grim', 'chill'];
+                                const numEffects = Math.floor(Math.random() * 3) + 2; // 2-4 effects
+                                const shuffled = allStatuses.sort(() => Math.random() - 0.5);
+                                const selectedEffects = shuffled.slice(0, numEffects);
+                                
+                                selectedEffects.forEach(effect => {
+                                    applyStatusEffect(target, targetType, targetKey, effect, baseDamage);
+                                });
+                                logCombat(`🌀 Chaos applied ${numEffects} status effects!`);
                             }
                         }
                         
@@ -2344,24 +2569,46 @@
                             
                             effectsArray.forEach((effect, idx) => {
                                 if (effect.type === 'burn') {
-                                    // Deal fire damage
-                                    const dmg = effect.damagePerTurn || 0;
+                                    // Apply defense to burn damage
+                                    const baseBurnDmg = effect.damagePerTurn || 0;
+                                    let dmg = baseBurnDmg;
+                                    
                                     if (targetType === 'enemy') {
+                                        // Apply enemy defense with inverted logarithmic scaling
+                                        const enemyDefense = Number(target.dataset.def) || 0;
+                                        const defenseMultiplier = Math.max(0.5, 1.0 - (Math.log10(enemyDefense + 1) * 0.05));
+                                        const damageReduction = enemyDefense * defenseMultiplier;
+                                        dmg = Math.max(1, Math.round(baseBurnDmg - damageReduction));
+                                        
                                         const curHp = Number(target.dataset.hp) - dmg;
                                         target.dataset.hp = Math.max(0, curHp);
                                         updateEnemyBar(target);
-                                        logCombat(`BURN deals ${dmg} damage to enemy`);
+                                        logCombat(`BURN deals ${dmg} damage to enemy (${baseBurnDmg} base - ${Math.round(damageReduction)} def reduction)`);
                                     } else {
+                                        // Apply player defense with inverted logarithmic scaling
+                                        const playerDefense = Number(target.DEFENSE) || 0;
+                                        const defenseMultiplier = Math.max(0.5, 1.0 - (Math.log10(playerDefense + 1) * 0.05));
+                                        const damageReduction = playerDefense * defenseMultiplier;
+                                        dmg = Math.max(1, Math.round(baseBurnDmg - damageReduction));
+                                        
                                         target.HEALTH = Math.max(0, Number(target.HEALTH) - dmg);
                                         updatePlayerArea();
-                                        logCombat(`BURN deals ${dmg} damage to ${target.NAME}`);
+                                        logCombat(`BURN deals ${dmg} damage to ${target.NAME} (${baseBurnDmg} base - ${Math.round(damageReduction)} def reduction)`);
                                     }
                                     effect.turnsLeft--;
                                     if (effect.turnsLeft <= 0) toRemove.push(idx);
                                 } else if (effect.type === 'leech') {
-                                    // Deal damage to enemy and heal player
-                                    const dmg = effect.damagePerTurn || 0;
+                                    // Apply defense to leech damage
+                                    const baseLeechDmg = effect.damagePerTurn || 0;
+                                    let dmg = baseLeechDmg;
+                                    
                                     if (targetType === 'enemy') {
+                                        // Apply enemy defense with inverted logarithmic scaling
+                                        const enemyDefense = Number(target.dataset.def) || 0;
+                                        const defenseMultiplier = Math.max(0.5, 1.0 - (Math.log10(enemyDefense + 1) * 0.05));
+                                        const damageReduction = enemyDefense * defenseMultiplier;
+                                        dmg = Math.max(1, Math.round(baseLeechDmg - damageReduction));
+                                        
                                         const curHp = Number(target.dataset.hp) - dmg;
                                         target.dataset.hp = Math.max(0, curHp);
                                         updateEnemyBar(target);
@@ -2371,7 +2618,7 @@
                                             activeMember.HEALTH = Math.min(Number(activeMember.MAX_HEALTH), Number(activeMember.HEALTH) + dmg);
                                             updatePlayerArea();
                                         }
-                                        logCombat(`LEECH deals ${dmg} damage and heals player ${dmg} HP`);
+                                        logCombat(`LEECH deals ${dmg} damage and heals player ${dmg} HP (${baseLeechDmg} base - ${Math.round(damageReduction)} def reduction)`);
                                     }
                                     effect.turnsLeft--;
                                     if (effect.turnsLeft <= 0) toRemove.push(idx);
@@ -2618,27 +2865,38 @@
                                 const attackStat = enemyStr >= enemyMag ? enemyStr : enemyMag;
                                 logCombat(`${enemyName} #${enemyIndex + 1} (${attackType}:${attackStat}, SPD:${enemySpeed}) attacking — queue pos: ${queueIndex}/${actionQueue.length}`);
                             } catch(e){}
-                            const defense = Number(target.DEFENSE || 0);
+                            let defense = Number(target.DEFENSE || 0);
                             
-                            // Calculate base damage before defense
-                            const baseDmg = enemyMag * atk.magicMultiplier + enemyStr * atk.strMultiplier;
-                            
-                            // Apply defense with diminishing returns: damage reduction = def / (def + 100)
-                            // This ensures attacks always deal at least 5% damage (max 95% reduction)
-                            const defenseReduction = defense / (defense + 100);
-                            const damageAfterDefense = baseDmg * (1 - defenseReduction * 0.95); // Max 95% reduction
-                            
-                            let dmg = Math.max(1, Math.round(Math.max(damageAfterDefense, baseDmg * 0.05)));
-                            if (isNaN(dmg)) dmg = 1;
-                            
-                            // Apply chill effect: 25% damage reduction if enemy is chilled
-                            const enemyEffects = enemyStatusEffects[enemyIndex];
-                            if (enemyEffects && enemyEffects.find(e => e.type === 'chill')) {
-                                dmg = Math.max(1, Math.round(dmg * 0.75));
-                                logCombat(`❄️ Chill reduces damage by 25%`);
+                            // Ability 20: Spell Shield - Add 25% of magic stat to defense
+                            const activeMemberKey = getActiveBattleMember();
+                            const activeAbilities = getEquippedAbilities(activeMemberKey);
+                            if (activeAbilities.includes(20)) {
+                                const magicStat = Number(target.MAGIC || 0);
+                                const magicDefenseBonus = Math.round(magicStat * 0.25);
+                                defense += magicDefenseBonus;
+                                logCombat(`🛡️ Spell Shield: +${magicDefenseBonus} defense from magic (${magicStat} × 0.25)`);
                             }
                             
-                            // Store original damage and check if this was a magic attack
+                            // Calculate base damage before defense
+                            let baseDmg = enemyMag * atk.magicMultiplier + enemyStr * atk.strMultiplier;
+                            
+                            // Apply chill effect BEFORE defense: 25% damage reduction if enemy is chilled
+                            const enemyEffects = enemyStatusEffects[enemyIndex];
+                            if (enemyEffects && enemyEffects.find(e => e.type === 'chill')) {
+                                baseDmg = baseDmg * 0.75;
+                                logCombat(`❄️ Enemy chilled: -25% damage output`);
+                            }
+                            
+                            // Apply defense with inverted logarithmic scaling (higher multiplier at low defense)
+                            // Damage Reduction = Defense * (1.0 - log10(Defense + 1) * 0.05)
+                            const defenseMultiplier = Math.max(0.5, 1.0 - (Math.log10(defense + 1) * 0.05));
+                            const damageReduction = defense * defenseMultiplier;
+                            const damageAfterDefense = baseDmg - damageReduction;
+                            
+                            // Ensure minimum 10% of base damage always gets through
+                            const minimumDamage = Math.ceil(baseDmg * 0.1);
+                            let dmg = Math.max(minimumDamage, Math.round(damageAfterDefense));
+                            if (isNaN(dmg)) dmg = minimumDamage || 1;                            // Store original damage and check if this was a magic attack
                             const originalDmg = dmg;
                             const isMagicAttack = atk.magicMultiplier > 0;
                             
@@ -3152,18 +3410,18 @@
                     const isFirstClear = !progression.clearedLevels.includes(level);
                     const numItems = isFirstClear ? 3 : 1;
                     
-                    // Check if this is a boss tile - if so, guarantee mythic rarity
+                    // Boss tiles grant bonus loot but use normal rarity distribution
                     const isBossTile = battleData.isBossTile || false;
                     const items = [];
                     
                     for (let i = 0; i < numItems; i++) {
                         let item;
-                        if (isBossTile) {
-                            // Boss tile: force mythic rarity
-                            item = window.generateRandomItem(level, 'mythic');
-                            if (i === 0) logCombat('🎁 BOSS REWARD: Mythic item guaranteed!');
+                        if (isBossTile && level >= 40) {
+                            // Boss tile at high level: force legendary rarity
+                            item = window.generateRandomItem(level, 'legendary');
+                            if (i === 0) logCombat('🎁 BOSS REWARD: Legendary item guaranteed!');
                         } else {
-                            // Regular tile: random item
+                            // Regular tile or low-level boss: use normal rarity system
                             item = window.generateRandomItem(level);
                         }
                         if (item) items.push(item);
