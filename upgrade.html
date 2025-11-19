@@ -767,7 +767,7 @@
             const itemLevel = item.level || 1;
             const baseGemCost = getRarityGemCost(item.rarity);
             const gemCost = Math.ceil((baseGemCost * (1 + itemLevel * 0.5)) / 4);
-            const currentGems = PARTY_STATS.GEMS || 0;
+            const currentGems = typeof GEMS !== 'undefined' ? GEMS : 0;
             const canAfford = currentGems >= gemCost;
             
             html += `
@@ -981,7 +981,7 @@
             const itemLevel = item.level || 1;
             const baseGemCost = getRarityGemCost(item.rarity);
             const gemCost = Math.ceil((baseGemCost * (1 + itemLevel * 0.5)) / 4);
-            const currentGems = PARTY_STATS.GEMS || 0;
+            const currentGems = typeof GEMS !== 'undefined' ? GEMS : 0;
             
             if (currentGems < gemCost) {
                 alert(`Not enough gems! You need ${gemCost} gems but only have ${currentGems}.`);
@@ -1017,7 +1017,7 @@
             }
             
             // Deduct gems
-            PARTY_STATS.GEMS -= gemCost;
+            GEMS -= gemCost;
             
             // Update item stats to match new level
             item.level = newLevel;
@@ -1095,7 +1095,7 @@
             const gemDisplay = document.getElementById('craft-gem-count');
             if (!grid) return;
             
-            const currentGems = PARTY_STATS.GEMS || 0;
+            const currentGems = typeof GEMS !== 'undefined' ? GEMS : 0;
             gemDisplay.textContent = currentGems;
             
             grid.innerHTML = '';
@@ -1186,7 +1186,7 @@
             }
             
             // Verify materials again
-            const currentGems = PARTY_STATS.GEMS || 0;
+            const currentGems = typeof GEMS !== 'undefined' ? GEMS : 0;
             if (currentGems < recipe.gems) {
                 alert("Not enough gems!");
                 return;
@@ -1218,7 +1218,7 @@
             
             // Consume materials
             INVENTORY.splice(requiredItemIndex, 1);
-            PARTY_STATS.GEMS -= recipe.gems;
+            GEMS -= recipe.gems;
             
             if (typeof window.removeEnchantment === 'function') {
                 window.removeEnchantment(recipe.enchantment, 1);

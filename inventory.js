@@ -131,12 +131,10 @@ function displayItemInfo(item) {
     <div style="margin-top:8px">
       <button id="equip-btn">Equip</button>
       <button id="unequip-btn">Unequip</button>
-      <button id="enchant-btn" style="background: #ff8c00; color: #000; font-weight: bold;">Apply Enchantment</button>
     </div>
   `;
   const equipBtn = document.getElementById('equip-btn');
   const unequipBtn = document.getElementById('unequip-btn');
-  const enchantBtn = document.getElementById('enchant-btn');
   
   // Determine equipped state: check item.equipped flag AND verify it's actually in a slot
   let isEquipped = item.equipped;
@@ -170,11 +168,6 @@ function displayItemInfo(item) {
   };
   unequipBtn.onclick = () => {
     unequipItemFromMember(item, memberKey);
-  };
-  
-  // Add Enchantment button functionality
-  enchantBtn.onclick = () => {
-    showEnchantmentModal(item);
   };
   
   // Add Delete button

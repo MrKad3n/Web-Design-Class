@@ -2325,7 +2325,7 @@
                                     
                                     // Check for Lifesteal enchantment on equipped items
                                     let hasLifesteal = false;
-                                    const memberKey = getActiveBattleMember();
+                                    // memberKey already defined in outer scope
                                     const member = PARTY_STATS[memberKey];
                                     if (member) {
                                         const slots = ['HELMET', 'CHEST', 'LEGS', 'BOOTS', 'MAINHAND', 'OFFHAND'];
@@ -2616,22 +2616,54 @@
                                 return true; // Enemy was resurrected
                             }
                             
-                            // If this is a necromancer dying, kill all corpses
-                            const isNecromancer = defeatedKey.toLowerCase().includes('necromancer');
-                            if (isNecromancer) {
-                                logCombat('💀 Necromancer defeated! All corpses crumble to dust...');
-                                allEnemies.forEach(w => {
-                                    if (w.dataset.corpse === 'true') {
-                                        w.dataset.hp = 0;
-                                        w.remove();
-                                    }
-                                });
-                            }
-                            
-                            // Hide the defeated enemy completely (remove from DOM)
-                            enemyWrap.remove();
-                            
-                            // Clear status effects for defeated enemy
+            // If this is a necromancer dying, kill all corpses
+            const isNecromancer = defeatedKey.toLowerCase().includes('necromancer');
+            if (isNecromancer) {
+                logCombat('💀 Necromancer defeated! All corpses crumble to dust...');
+                allEnemies.forEach(w => {
+                    if (w.dataset.corpse === 'true') {
+                        w.dataset.hp = 0;
+                        w.remove();
+                    }
+                });
+            }
+            
+            // Piranha death attack ability
+            if (defeatedKey.toLowerCase() === 'piranha') {
+                const target = PARTY_STATS[getActiveBattleMember()];
+                const memberKey = getActiveBattleMember();
+                const piranhaStr = Number(enemyWrap.dataset.str) || 1;
+                const deathBiteDamage = Math.round(piranhaStr * 1.2); // 120% strength as final attack
+                
+                // Apply defense
+                let defense = Number(target.DEFENSE || 0);
+                const defenseMultiplier = Math.max(0.5, 1.0 - (Math.log10(defense + 1) * 0.05));
+                const damageReduction = defense * defenseMultiplier;
+                const damageAfterDefense = deathBiteDamage - damageReduction;
+                const minimumDamage = Math.ceil(deathBiteDamage * 0.1);
+                let finalDmg = Math.max(minimumDamage, Math.round(damageAfterDefense));
+                
+                target.CURRENT_HEALTH -= finalDmg;
+                target.CURRENT_HEALTH = Math.max(0, target.CURRENT_HEALTH);
+                updatePlayerBars();
+                logCombat(`🐟 Death Bite: Piranha's final attack deals ${finalDmg} damage!`);
+                
+                // Check if player died
+                if (target.CURRENT_HEALTH <= 0) {
+                    logCombat(`☠️ ${target.NAME} has been defeated!`);
+                    // Switch to next alive party member
+                    const nextMember = switchToNextAliveMember();
+                    if (!nextMember) {
+                        // All party members dead - game over
+                        combatRunning = false;
+                        showGameOver();
+                        return true;
+                    }
+                }
+            }
+            
+            // Hide the defeated enemy completely (remove from DOM)
+            enemyWrap.remove();                            // Clear status effects for defeated enemy
                             delete enemyStatusEffects[enemyIndex];
                             
                             // Update turn order display to remove dead enemy's turn boxes
@@ -3020,16 +3052,35 @@
                                 return;
                             }
                             
-                            // Enemy attack: use whichever stat is higher (strength or magic)
-                            const enemyStr = Number(enemyWrap.dataset.str) || 1;
-                            const enemyMag = Number(enemyWrap.dataset.mag) || 0;
-                            
-                            // Determine which stat is stronger and build attack accordingly
-                            const atk = enemyStr >= enemyMag 
-                                ? { strMultiplier: 1, magicMultiplier: 0 } 
-                                : { strMultiplier: 0, magicMultiplier: 1 };
-                            
-                            const target = PARTY_STATS[getActiveBattleMember()];
+            // Enemy attack: use whichever stat is higher (strength or magic)
+            const enemyStr = Number(enemyWrap.dataset.str) || 1;
+            const enemyMag = Number(enemyWrap.dataset.mag) || 0;
+            
+            // Shark: Blood Frenzy - gain 15% strength per bleeding player
+            const currentEnemyKey = enemyWrap.dataset.key || (enemyWrap.querySelector('img') ? enemyWrap.querySelector('img').alt : '');
+            let sharkStrBonus = 0;
+            if (currentEnemyKey.toLowerCase() === 'shark') {
+                // Count bleeding party members
+                let bleedingCount = 0;
+                for (const pKey in playerStatusEffects) {
+                    const effects = playerStatusEffects[pKey];
+                    if (effects && effects.find(e => e.type === 'bleed')) {
+                        bleedingCount++;
+                    }
+                }
+                if (bleedingCount > 0) {
+                    sharkStrBonus = Math.round(enemyStr * 0.15 * bleedingCount);
+                    logCombat(`🦈 Blood Frenzy: Shark gains +${sharkStrBonus} STR (${bleedingCount} bleeding targets)!`);
+                }
+            }
+            
+            // Apply shark bonus to strength
+            const finalEnemyStr = enemyStr + sharkStrBonus;
+            
+            // Determine which stat is stronger and build attack accordingly
+            const atk = finalEnemyStr >= enemyMag 
+                ? { strMultiplier: 1, magicMultiplier: 0 } 
+                : { strMultiplier: 0, magicMultiplier: 1 };                            const target = PARTY_STATS[getActiveBattleMember()];
                             // Count the current active member as participant when they get attacked
                             try { battleParticipants.add(getActiveBattleMember()); } catch(e) {}
                             // Debug: log queue position, speed info, and enemy name before enemy attacks
@@ -3052,10 +3103,8 @@
                                 logCombat(`🛡️ Spell Shield: +${magicDefenseBonus} defense from magic (${magicStat} × 0.25)`);
                             }
                             
-                            // Calculate base damage before defense
-                            let baseDmg = enemyMag * atk.magicMultiplier + enemyStr * atk.strMultiplier;
-                            
-                            // Apply chill effect BEFORE defense: 25% damage reduction if enemy is chilled
+            // Calculate base damage before defense
+            let baseDmg = enemyMag * atk.magicMultiplier + finalEnemyStr * atk.strMultiplier;                            // Apply chill effect BEFORE defense: 25% damage reduction if enemy is chilled
                             const enemyEffects = enemyStatusEffects[enemyIndex];
                             if (enemyEffects && enemyEffects.find(e => e.type === 'chill')) {
                                 baseDmg = baseDmg * 0.75;
@@ -3135,6 +3184,11 @@
                 if (enemyBaseStats.attackStatus === 'chill') {
                     applyStatusEffect(target, 'player', memberKey, 'chill', dmg);
                     logCombat(`❄️ Frozen Touch: ${target.NAME} has been chilled! (25% damage reduction for 3 turns)`);
+                }
+                // Dragon applies burn on attack
+                if (enemyBaseStats.attackStatus === 'burn') {
+                    applyStatusEffect(target, 'player', memberKey, 'burn', dmg);
+                    logCombat(`🐉 Dragon's Inferno: ${target.NAME} has been burned! (3% max HP damage per turn)`);
                 }
             }
             
@@ -3223,6 +3277,28 @@
                     logCombat(`👑 Royal Command: King summoned King's Guard and gained ${(statBoost * 100).toFixed(0)}% stats (${kingsGuardCount} guards alive)!`);
                 } else {
                     logCombat(`👑 Royal Command: King summoned a King's Guard (Lv ${spawnLevel})!`);
+                }
+            }
+            
+            // Shark: Blood Frenzy - gain 15% strength for each bleeding enemy
+            if (enemyKey === 'shark') {
+                const allEnemies = getEnemyWrappers();
+                let bleedingCount = 0;
+                
+                // Count bleeding players
+                for (const memberKey in playerStatusEffects) {
+                    const effects = playerStatusEffects[memberKey] || [];
+                    if (effects.some(e => e.type === 'bleed')) {
+                        bleedingCount++;
+                    }
+                }
+                
+                if (bleedingCount > 0) {
+                    const frenzyBoost = 0.15 * bleedingCount;
+                    const baseStr = Number(enemyWrap.dataset.str) || 0;
+                    const boostedStr = Math.round(baseStr * (1 + frenzyBoost));
+                    enemyWrap.dataset.str = boostedStr;
+                    logCombat(`🦈 Blood Frenzy: Shark gains ${(frenzyBoost * 100).toFixed(0)}% strength from ${bleedingCount} bleeding target(s)!`);
                 }
             }                            // Update player health UI
                             updatePlayerArea();

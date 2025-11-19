@@ -20,8 +20,8 @@ const SPECIAL_ATTACKS = {
     name: "Flame Burst",
     description: "Blast all enemies with fire, applying burn status",
     cost: 50,
-    strMultiplier: 0.8,
-    magicMultiplier: 1.2,
+    strMultiplier: 0.4,
+    magicMultiplier: 0.65,
     aoe: true,
     statusEffect: "burn",
     icon: "🔥"
@@ -30,8 +30,8 @@ const SPECIAL_ATTACKS = {
     name: "Frost Nova",
     description: "Freeze all enemies, reducing their damage by 25%",
     cost: 75,
-    strMultiplier: 0.6,
-    magicMultiplier: 1.0,
+    strMultiplier: 0.3,
+    magicMultiplier: 0.55,
     aoe: true,
     statusEffect: "chill",
     icon: "❄️"
@@ -50,8 +50,8 @@ const SPECIAL_ATTACKS = {
     name: "Thunder Clap",
     description: "AOE lightning damage with high magic scaling",
     cost: 100,
-    strMultiplier: 0.3,
-    magicMultiplier: 1.8,
+    strMultiplier: 0.15,
+    magicMultiplier: 0.9,
     aoe: true,
     statusEffect: null,
     icon: "⚡"
@@ -81,8 +81,8 @@ const SPECIAL_ATTACKS = {
     name: "Chaos Burst",
     description: "Randomly applies 2-4 different status effects to all enemies",
     cost: 120,
-    strMultiplier: 0.7,
-    magicMultiplier: 0.7,
+    strMultiplier: 0.35,
+    magicMultiplier: 0.4,
     aoe: true,
     statusEffect: "chaos", // Special chaos effect
     icon: "🌀"
@@ -1482,6 +1482,19 @@ const ENEMY_BASE_STATS = {
     image:"Enemies/shadow.png",
     tier:5,
   },
+  //Creature Type Enemy Stats
+  'dragon': {
+    health:24,
+    strength:4,
+    magic:5,
+    speed:3.5,
+    defense:8,
+    hBars:1,
+    image:"Enemies/dragon.png",
+    tier:5,
+    specialEffect: "BOSS: Dragon's Inferno - All attacks apply burn status (3% max HP damage per turn)",
+    attackStatus: "burn"
+  },
   //Zombie Type Enemy Stats
   'corspe': {
     health:9,
@@ -1534,6 +1547,17 @@ const ENEMY_BASE_STATS = {
     image:"Enemies/necromancer.png",
     tier:4,
     specialEffect: "Resurrection: While alive, dead allies resurrect as zombies"
+  },
+  'mutant': {
+    health:22,
+    strength:5,
+    magic:1,
+    speed:5,
+    defense:4,
+    hBars:1,
+    image:"Enemies/mutant.png",
+    tier:5,
+    specialEffect: "BOSS: Mutated Strength - Fast and powerful zombie with high strength and speed"
   },
   //Forest Type Enemy Stats
   'Sapling': {
@@ -1643,6 +1667,40 @@ const ENEMY_BASE_STATS = {
     image:"Enemies/king.png",
     tier:5,
     specialEffect: "BOSS: Royal Command - Summons King's Guard (15 lvls lower) + gains 10% stats per guard alive"
+  },
+  //Ocean Type Enemy Stats
+  'piranha': {
+    health:10,
+    strength:4,
+    magic:0,
+    speed:3,
+    defense:2,
+    hBars:1,
+    image:"Enemies/piranha.png",
+    tier:2,
+    specialEffect: "Death Bite: Fast first strike, performs one final attack when defeated"
+  },
+  'coralMonster': {
+    health:13,
+    strength:4,
+    magic:1,
+    speed:1.5,
+    defense:5,
+    hBars:1,
+    image:"Enemies/coralMonster.png",
+    tier:3,
+    specialEffect: "Coral Armor: Big tanky enemy with high defense and coral-enhanced durability"
+  },
+  'shark': {
+    health:15,
+    strength:5,
+    magic:0,
+    speed:3.5,
+    defense:6,
+    hBars:1,
+    image:"Enemies/shark.png",
+    tier:4,
+    specialEffect: "Blood Frenzy: Gains 15% strength for each bleeding enemy (stacks)"
   },
   //Final Boss Enemy Stats
   'divineKing': {
