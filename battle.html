@@ -24,7 +24,7 @@
             /* Main arena container */
             #battle-container {
                 display: grid;
-                grid-template-columns: 15% 1fr 15%;
+                grid-template-columns: 15% 1fr 20%;
                 grid-template-rows: auto auto 1fr auto;
                 gap: 0.5rem;
                 flex: 1;
@@ -36,15 +36,15 @@
             
             /* Central arena area with dark semi-transparent overlay to highlight battle space */
             .arena {
-                grid-column: 1 / -1;
+                grid-column: 1 / 3;
                 grid-row: 3;
                 background: rgba(0, 0, 0, 0.3);
                 border: 3px solid rgba(255, 215, 0, 0.5);
                 border-radius: 10px;
-                padding: 1rem;
+                padding: 0.5rem;
                 display: grid;
-                grid-template-columns: 1fr 1fr 1fr;
-                gap: 1rem;
+                grid-template-columns: 0.8fr 1.4fr 0.8fr;
+                gap: 0.4rem;
                 align-items: stretch;
                 box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 215, 0, 0.3);
                 min-height: 0;
@@ -68,7 +68,7 @@
             
             /* Player stats display */
             #player-stats-display {
-                grid-column: 1 / -1;
+                grid-column: 1 / 3;
                 grid-row: 2;
                 background: rgba(0, 0, 0, 0.7);
                 border: 2px solid rgba(255, 215, 0, 0.6);
@@ -99,11 +99,22 @@
                 font-weight: bold;
             }
             
+            /* Right sidebar for turn order and actions */
+            #right-sidebar {
+                grid-column: 3;
+                grid-row: 1 / 4;
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+                background: rgba(0, 0, 0, 0.5);
+                border: 2px solid rgba(255, 255, 255, 0.3);
+                border-radius: 8px;
+                padding: 1rem;
+                overflow-y: auto;
+            }
+            
             /* Leave Battle Button */
             #leave-battle-btn {
-                grid-column: 3;
-                grid-row: 1;
-                align-self: start;
                 padding: 0.5rem 1rem;
                 background: rgba(220, 53, 69, 0.8);
                 color: white;
@@ -296,6 +307,20 @@
                 text-align: center;
             }
             
+            .turn-box .player-number {
+                position: absolute;
+                bottom: -2px;
+                right: -2px;
+                background: rgba(0, 120, 255, 0.9);
+                color: white;
+                font-size: 12px;
+                font-weight: bold;
+                padding: 2px 5px;
+                border-radius: 3px;
+                min-width: 16px;
+                text-align: center;
+            }
+            
             /* Enemy tooltip */
             .enemy-tooltip {
                 position: fixed;
@@ -376,6 +401,9 @@
             .health-bar div, .mana-bar div {
                 height: 100%;
                 transition: width 0.3s ease;
+                color: black;
+                font-weight: bold;
+                text-shadow: 0 0 2px white;
             }
             
             #player {
@@ -657,56 +685,114 @@
         </div>
         
         <!--Leave Battle Button - top right-->
-        <div style="display:flex;gap:8px;justify-content:flex-end;align-items:center;">
+        <div style="grid-column:2;grid-row:1;display:flex;gap:8px;justify-content:flex-end;align-items:center;">
             <button id="leave-battle-btn" onclick="leaveBattle()">Leave Battle</button>
             <button id="start-combat-btn" onclick="startCombat()" style="background:rgba(40,167,69,0.85);color:white;border:2px solid rgba(40,167,69,1);padding:0.5rem 1rem;border-radius:5px;cursor:pointer;">Start Combat</button>
         </div>
         
-        <!--Turn Order Queue Display-->
-        <div id="turn-order-display" style="margin-top:1rem;padding:0.5rem;background:rgba(0,0,0,0.3);border-radius:8px;border:1px solid rgba(255,255,255,0.1);max-width:600px;">
-            <h3 style="margin:0 0 0.5rem 0;font-size:14px;text-align:center;color:#ffaa00;">Turn Order</h3>
-            <div id="turn-order-queue" style="display:flex;gap:8px;justify-content:flex-start;align-items:center;overflow-x:auto;padding:4px;">
-                <!-- Turn order boxes will be inserted here -->
+        <!--Right Sidebar - Turn Order and Actions-->
+        <div id="right-sidebar">
+            <!--Turn Order Queue Display-->
+            <div id="turn-order-display" style="padding:0.5rem;background:rgba(0,0,0,0.3);border-radius:8px;border:1px solid rgba(255,255,255,0.1);">
+                <h3 style="margin:0 0 0.5rem 0;font-size:14px;text-align:center;color:#ffaa00;">Turn Order</h3>
+                <div id="turn-order-queue" style="display:flex;gap:8px;justify-content:flex-start;align-items:center;overflow-x:auto;padding:4px;flex-wrap:wrap;">
+                    <!-- Turn order boxes will be inserted here -->
+                </div>
+            </div>
+            
+            <!--Rest Button-->
+            <div style="text-align:center;">
+                <button id="rest-button" style="width:100%;padding:0.75rem 1rem;font-size:1em;font-weight:bold;background:linear-gradient(135deg,#4a90e2,#357abd);color:white;border:2px solid #2c5f8d;border-radius:8px;cursor:pointer;box-shadow:0 4px 8px rgba(0,0,0,0.3);transition:all 0.2s;" onmouseover="this.style.background='linear-gradient(135deg,#5aa0f2,#4080bd)';this.style.boxShadow='0 6px 12px rgba(0,0,0,0.4)';" onmouseout="this.style.background='linear-gradient(135deg,#4a90e2,#357abd)';this.style.boxShadow='0 4px 8px rgba(0,0,0,0.3)';">
+                    💤 Rest<br><span style="font-size:0.8em;">(Restore 60% Mana)</span>
+                </button>
             </div>
         </div>
         
-        <!--Player Stats Display-->
+        <!--Player Stats Display - Now shows both players-->
         <div id="player-stats-display">
-            <div class="stat-item">
-                <span class="stat-label">HP</span>
-                <span class="stat-value" id="stat-hp">100/100</span>
+            <div style="flex: 1; padding: 0.5rem; border-right: 2px solid rgba(255, 215, 0, 0.3);">
+                <div style="text-align: center; color: #ffaa00; font-weight: bold; margin-bottom: 0.3rem;">Player 1</div>
+                <div style="display: flex; gap: 1rem; justify-content: center;">
+                    <div class="stat-item">
+                        <span class="stat-label">HP</span>
+                        <span class="stat-value" id="stat-hp-p1">100/100</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">STR</span>
+                        <span class="stat-value" id="stat-strength-p1">10</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">MAG</span>
+                        <span class="stat-value" id="stat-magic-p1">10</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">SPD</span>
+                        <span class="stat-value" id="stat-speed-p1">10</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">DEF</span>
+                        <span class="stat-value" id="stat-defense-p1">5</span>
+                    </div>
+                </div>
             </div>
-            <div class="stat-item">
-                <span class="stat-label">Strength</span>
-                <span class="stat-value" id="stat-strength">10</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-label">Magic</span>
-                <span class="stat-value" id="stat-magic">10</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-label">Speed</span>
-                <span class="stat-value" id="stat-speed">10</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-label">Defense</span>
-                <span class="stat-value" id="stat-defense">5</span>
+            <div style="flex: 1; padding: 0.5rem;">
+                <div style="text-align: center; color: #ffaa00; font-weight: bold; margin-bottom: 0.3rem;">Player 2</div>
+                <div style="display: flex; gap: 1rem; justify-content: center;">
+                    <div class="stat-item">
+                        <span class="stat-label">HP</span>
+                        <span class="stat-value" id="stat-hp-p2">100/100</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">STR</span>
+                        <span class="stat-value" id="stat-strength-p2">10</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">MAG</span>
+                        <span class="stat-value" id="stat-magic-p2">10</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">SPD</span>
+                        <span class="stat-value" id="stat-speed-p2">10</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">DEF</span>
+                        <span class="stat-value" id="stat-defense-p2">5</span>
+                    </div>
+                </div>
             </div>
         </div>
         
         <!--Central Arena-->
         <div class="arena">
-            <!--Player area - left side of arena-->
-            <div id="player-area">
-                <div class="player-bars">
-                    <div class="health-bar w3-light-grey">
-                        <div class="w3-green" style="width:50%; height:100%">HP #</div>
+            <!--Player area - left side of arena - now shows 2 players-->
+            <div id="player-area" style="display: flex; flex-direction: row; gap: 1rem; align-items: center; justify-content: space-around; width: 100%; height: 100%;">
+                <!-- Player 1 -->
+                <div id="player-1-wrapper" style="display: flex; flex-direction: column; align-items: center; flex: 1;">
+                    <div class="player-bars" style="width: 100%;">
+                        <div class="health-bar w3-light-grey">
+                            <div class="w3-green" id="p1-health-bar" style="width:50%; height:100%">HP #</div>
+                        </div>
+                        <div class="mana-bar w3-light-grey">
+                            <div class="w3-blue" id="p1-mana-bar" style="width:50%; height:100%">mana #</div>
+                        </div>
                     </div>
-                    <div class="mana-bar w3-light-grey">
-                        <div class="w3-blue" style="width:50%; height:100%">mana #</div>
-                    </div>
+                    <img id="player-1" src="Assests/player.png" alt="Player 1" style="max-width: 80px;">
+                    <div style="color: #ffaa00; font-weight: bold; font-size: 0.9em;">Player 1</div>
                 </div>
-                <img id="player" src="Assests/player.png" alt="Player">
+                
+                <!-- Player 2 -->
+                <div id="player-2-wrapper" style="display: flex; flex-direction: column; align-items: center; flex: 1;">
+                    <div class="player-bars" style="width: 100%;">
+                        <div class="health-bar w3-light-grey">
+                            <div class="w3-green" id="p2-health-bar" style="width:50%; height:100%">HP #</div>
+                        </div>
+                        <div class="mana-bar w3-light-grey">
+                            <div class="w3-blue" id="p2-mana-bar" style="width:50%; height:100%">mana #</div>
+                        </div>
+                    </div>
+                    <img id="player-2" src="Assests/player.png" alt="Player 2" style="max-width: 80px;">
+                    <div style="color: #ffaa00; font-weight: bold; font-size: 0.9em;">Player 2</div>
+                </div>
             </div>
             
             <!--Enemy area - right side of arena-->
@@ -897,8 +983,10 @@
             const isChallenge = battleData.isChallenge || false;
             const challengeModifiers = battleData.challengeModifiers || {};
 
-            // Track active battle member and battle state
-            let activeBattleMember = 'ONE';
+            // Track active battle members (now supporting 2 players) and battle state
+            let activeBattleMember = 'ONE'; // Player 1
+            let activeBattleMember2 = 'TWO'; // Player 2
+            let currentPlayerTurn = 1; // Tracks which player's turn it is (1 or 2)
             let battleEnemyStates = {}; // Store enemy HP across member switches
             const battleParticipants = new Set(); // Track members who participated this battle
             
@@ -928,15 +1016,56 @@
                     logCombat(`${member.NAME} is still KO'd and cannot be switched to.`);
                     return false;
                 }
-
-                activeBattleMember = memberKey;
-                // DO NOT mark as participant just for switching - only when dealing/taking damage
-                logCombat(`Switched to ${member.NAME}!`);
+                
+                // For emergency switches, determine which player died and replace them
+                if (isEmergencySwitch) {
+                    const member1 = PARTY_STATS[activeBattleMember];
+                    const member2 = PARTY_STATS[activeBattleMember2];
+                    
+                    if (member1 && Number(member1.HEALTH) <= 0) {
+                        // Player 1 died, replace them
+                        if (memberKey === activeBattleMember2) {
+                            logCombat("Cannot switch to Player 2's active member!");
+                            return false;
+                        }
+                        activeBattleMember = memberKey;
+                        logCombat(`Player 1 switched to ${member.NAME} (emergency)!`);
+                    } else if (member2 && Number(member2.HEALTH) <= 0) {
+                        // Player 2 died, replace them
+                        if (memberKey === activeBattleMember) {
+                            logCombat("Cannot switch to Player 1's active member!");
+                            return false;
+                        }
+                        activeBattleMember2 = memberKey;
+                        logCombat(`Player 2 switched to ${member.NAME} (emergency)!`);
+                    } else {
+                        logCombat("Emergency switch failed: no dead player found");
+                        return false;
+                    }
+                } else {
+                    // Normal switching during turn
+                    if (currentPlayerTurn === 1) {
+                        if (memberKey === activeBattleMember2) {
+                            logCombat("Cannot switch to Player 2's active member!");
+                            return false;
+                        }
+                        activeBattleMember = memberKey;
+                        logCombat(`Player 1 switched to ${member.NAME}!`);
+                    } else if (currentPlayerTurn === 2) {
+                        if (memberKey === activeBattleMember) {
+                            logCombat("Cannot switch to Player 1's active member!");
+                            return false;
+                        }
+                        activeBattleMember2 = memberKey;
+                        logCombat(`Player 2 switched to ${member.NAME}!`);
+                    }
+                }
+                
                 updatePlayerArea();
                 renderAttacksForPlayer();
                 enableAttackSelection();
-                // Recalculate attack ratio based on new member's speed
-                recalculateActionQueue();
+                // Update queue to reflect new member's speed WITHOUT resetting queueIndex
+                updateActionQueueForSwitch();
                 // Highlight the selected party slot
                 updatePartySlotHighlight();
                 return true;
@@ -949,9 +1078,13 @@
                     const slot = document.getElementById(`slot-${id}`);
                     if (slot) {
                         const key = ['ONE','TWO','THREE','FOUR','FIVE'][idx];
+                        // Highlight both active players with different colors
                         if (key === activeBattleMember) {
                             slot.style.background = 'rgba(255, 215, 0, 0.3)';
                             slot.style.border = '2px solid rgba(255, 215, 0, 1)';
+                        } else if (key === activeBattleMember2) {
+                            slot.style.background = 'rgba(0, 191, 255, 0.3)';
+                            slot.style.border = '2px solid rgba(0, 191, 255, 1)';
                         } else {
                             slot.style.background = 'rgba(255, 255, 255, 0.05)';
                             slot.style.border = '1px solid transparent';
@@ -973,6 +1106,9 @@
                 }
                 // Set full health for all party members at battle start
                 member.HEALTH = Number(member.MAX_HEALTH);
+                // Reset mana to full at battle start
+                if (typeof member.MAX_MANA === 'undefined') member.MAX_MANA = 100;
+                member.MANA = Number(member.MAX_MANA);
             }
 
             // Update party sidebar and player stats
@@ -985,81 +1121,135 @@
                     const span = slot.querySelector('span');
                     if (member){
                         span.textContent = `${member.NAME} lv${member.LEVEL||1}`;
+                        // Add click handler for switching
+                        slot.onclick = () => switchBattleMember(key);
+                        slot.style.cursor = 'pointer';
                     } else {
                         span.textContent = `P${i} lv#`;
+                        slot.onclick = null;
+                        slot.style.cursor = 'default';
                     }
                 }
                 updatePlayerStatsDisplay();
+                updatePartySlotHighlight(); // Highlight both active players
             }
             
-            // Update player stats display at top
+            // Update player stats display at top - now shows both players
             function updatePlayerStatsDisplay(){
-                const member = (typeof PARTY_STATS !== 'undefined' && PARTY_STATS[getActiveBattleMember()]) ? PARTY_STATS[getActiveBattleMember()] : null;
-                if (!member) return;
-                
-                // Update stat values
-                const hpEl = document.getElementById('stat-hp');
-                const strEl = document.getElementById('stat-strength');
-                const magEl = document.getElementById('stat-magic');
-                const spdEl = document.getElementById('stat-speed');
-                const defEl = document.getElementById('stat-defense');
-                
-                if (hpEl) {
-                    const cur = Number(member.HEALTH || 0);
-                    const max = Number(member.MAX_HEALTH || 1);
-                    hpEl.textContent = `${cur}/${max}`;
+                // Player 1
+                const member1 = (typeof PARTY_STATS !== 'undefined' && PARTY_STATS[activeBattleMember]) ? PARTY_STATS[activeBattleMember] : null;
+                if (member1) {
+                    const hpEl = document.getElementById('stat-hp-p1');
+                    const strEl = document.getElementById('stat-strength-p1');
+                    const magEl = document.getElementById('stat-magic-p1');
+                    const spdEl = document.getElementById('stat-speed-p1');
+                    const defEl = document.getElementById('stat-defense-p1');
+                    
+                    if (hpEl) {
+                        const cur = Number(member1.HEALTH || 0);
+                        const max = Number(member1.MAX_HEALTH || 1);
+                        hpEl.textContent = `${cur}/${max}`;
+                    }
+                    if (strEl) strEl.textContent = Number(member1.STRENGTH || 0);
+                    if (magEl) magEl.textContent = Number(member1.MAGIC || 0);
+                    if (spdEl) spdEl.textContent = Number(member1.SPEED || 0);
+                    if (defEl) defEl.textContent = Number(member1.DEFENSE || 0);
                 }
-                if (strEl) strEl.textContent = Number(member.STRENGTH || 0);
-                if (magEl) magEl.textContent = Number(member.MAGIC || 0);
-                if (spdEl) spdEl.textContent = Number(member.SPEED || 0);
-                if (defEl) defEl.textContent = Number(member.DEFENSE || 0);
+                
+                // Player 2
+                const member2 = (typeof PARTY_STATS !== 'undefined' && PARTY_STATS[activeBattleMember2]) ? PARTY_STATS[activeBattleMember2] : null;
+                if (member2) {
+                    const hpEl = document.getElementById('stat-hp-p2');
+                    const strEl = document.getElementById('stat-strength-p2');
+                    const magEl = document.getElementById('stat-magic-p2');
+                    const spdEl = document.getElementById('stat-speed-p2');
+                    const defEl = document.getElementById('stat-defense-p2');
+                    
+                    if (hpEl) {
+                        const cur = Number(member2.HEALTH || 0);
+                        const max = Number(member2.MAX_HEALTH || 1);
+                        hpEl.textContent = `${cur}/${max}`;
+                    }
+                    if (strEl) strEl.textContent = Number(member2.STRENGTH || 0);
+                    if (magEl) magEl.textContent = Number(member2.MAGIC || 0);
+                    if (spdEl) spdEl.textContent = Number(member2.SPEED || 0);
+                    if (defEl) defEl.textContent = Number(member2.DEFENSE || 0);
+                }
             }
 
             // Main player area uses active battle member
             function updatePlayerArea(){
-                const member = (typeof PARTY_STATS !== 'undefined' && PARTY_STATS[getActiveBattleMember()]) ? PARTY_STATS[getActiveBattleMember()] : null;
-                if (!member) return;
-                // Ensure mana fields
-                if (typeof member.MAX_MANA === 'undefined') member.MAX_MANA = 100;
-                if (typeof member.MANA === 'undefined') member.MANA = 75;
+                // Update both players
+                const member1 = (typeof PARTY_STATS !== 'undefined' && PARTY_STATS[activeBattleMember]) ? PARTY_STATS[activeBattleMember] : null;
+                const member2 = (typeof PARTY_STATS !== 'undefined' && PARTY_STATS[activeBattleMember2]) ? PARTY_STATS[activeBattleMember2] : null;
+                
+                // Player 1
+                if (member1) {
+                    if (typeof member1.MAX_MANA === 'undefined') member1.MAX_MANA = 100;
+                    if (typeof member1.MANA === 'undefined') member1.MANA = member1.MAX_MANA;
+                    if (typeof member1.MAX_HEALTH === 'undefined') member1.MAX_HEALTH = 10;
+                    if (typeof member1.HEALTH === 'undefined') member1.HEALTH = Number(member1.MAX_HEALTH);
 
-                // Don't call updateStats() during battle - it recalculates from equipment and overwrites enhanced stats
-                // Ensure numeric health values exist, but don't modify them
-                if (typeof member.MAX_HEALTH === 'undefined') member.MAX_HEALTH = 10;
-                if (typeof member.HEALTH === 'undefined') member.HEALTH = Number(member.MAX_HEALTH);
+                    const healthBar1 = document.getElementById('p1-health-bar');
+                    const manaBar1 = document.getElementById('p1-mana-bar');
+                    if (healthBar1) {
+                        const cur = Number(member1.HEALTH || 0);
+                        const max = Number(member1.MAX_HEALTH || 1);
+                        const safeMax = max > 0 ? max : 1;
+                        let pct = Math.round((cur / safeMax) * 100);
+                        if (pct > 100) pct = 100;
+                        if (pct < 0) pct = 0;
+                        healthBar1.style.width = pct + '%';
+                        healthBar1.textContent = `HP ${cur}/${safeMax}`;
+                    }
+                    if (manaBar1) {
+                        const curM = Number(member1.MANA || 0);
+                        const maxM = Number(member1.MAX_MANA || 100);
+                        const safeMaxM = maxM > 0 ? maxM : 100;
+                        let mpct = Math.round((curM / safeMaxM) * 100);
+                        if (mpct > 100) mpct = 100;
+                        if (mpct < 0) mpct = 0;
+                        manaBar1.style.width = mpct + '%';
+                        manaBar1.textContent = `MP ${curM}/${safeMaxM}`;
+                    }
+                }
+                
+                // Player 2
+                if (member2) {
+                    if (typeof member2.MAX_MANA === 'undefined') member2.MAX_MANA = 100;
+                    if (typeof member2.MANA === 'undefined') member2.MANA = member2.MAX_MANA;
+                    if (typeof member2.MAX_HEALTH === 'undefined') member2.MAX_HEALTH = 10;
+                    if (typeof member2.HEALTH === 'undefined') member2.HEALTH = Number(member2.MAX_HEALTH);
 
-                        const healthBar = document.querySelector('.health-bar div');
-                        const manaBar = document.querySelector('.mana-bar div');
-                        if (healthBar) {
-                            // Ensure numeric values
-                            const cur = Number(member.HEALTH || 0);
-                            const max = Number(member.MAX_HEALTH || 1);
-                            // If max is zero or invalid, treat as 1 to avoid division by zero
-                            const safeMax = max > 0 ? max : 1;
-                            // Compute percentage as ratio of current to max
-                            let pct = Math.round((cur / safeMax) * 100);
-                            if (pct > 100) pct = 100;
-                            if (pct < 0) pct = 0;
-                            healthBar.style.width = pct + '%';
-                            // Show fractional HP (current/max) so small max values make sense
-                            healthBar.textContent = `HP ${cur}/${safeMax}`;
-                        }
-                        if (manaBar) {
-                            const curM = Number(member.MANA || 0);
-                            const maxM = Number(member.MAX_MANA || 100);
-                            const safeMaxM = maxM > 0 ? maxM : 100;
-                            let mpct = Math.round((curM / safeMaxM) * 100);
-                            if (mpct > 100) mpct = 100;
-                            if (mpct < 0) mpct = 0;
-                            manaBar.style.width = mpct + '%';
-                            manaBar.textContent = `MP ${curM}/${safeMaxM}`;
-                        }
+                    const healthBar2 = document.getElementById('p2-health-bar');
+                    const manaBar2 = document.getElementById('p2-mana-bar');
+                    if (healthBar2) {
+                        const cur = Number(member2.HEALTH || 0);
+                        const max = Number(member2.MAX_HEALTH || 1);
+                        const safeMax = max > 0 ? max : 1;
+                        let pct = Math.round((cur / safeMax) * 100);
+                        if (pct > 100) pct = 100;
+                        if (pct < 0) pct = 0;
+                        healthBar2.style.width = pct + '%';
+                        healthBar2.textContent = `HP ${cur}/${safeMax}`;
+                    }
+                    if (manaBar2) {
+                        const curM = Number(member2.MANA || 0);
+                        const maxM = Number(member2.MAX_MANA || 100);
+                        const safeMaxM = maxM > 0 ? maxM : 100;
+                        let mpct = Math.round((curM / safeMaxM) * 100);
+                        if (mpct > 100) mpct = 100;
+                        if (mpct < 0) mpct = 0;
+                        manaBar2.style.width = mpct + '%';
+                        manaBar2.textContent = `MP ${curM}/${safeMaxM}`;
+                    }
+                }
                         
-                        // Update stats display at top
-                        updatePlayerStatsDisplay();
+                // Update stats display at top
+                updatePlayerStatsDisplay();
                         
-                        // Update status effect display
-                        updateStatusEffectDisplay();
+                // Update status effect display
+                updateStatusEffectDisplay();
             }
 
             // Helper to map image filename to enemy key
@@ -1104,13 +1294,28 @@
                 barWrap.className = 'enemy-health-bar w3-light-grey';
                 barWrap.style.width = '80%';
                 barWrap.style.height = '12px';
-                barWrap.style.marginBottom = '6px';
+                barWrap.style.marginBottom = '4px';
                 const inner = document.createElement('div');
                 inner.className = 'w3-green';
                 inner.style.width = '100%';
                 inner.style.height = '100%';
                 inner.textContent = `HP ${scaled.health}`;
                 barWrap.appendChild(inner);
+                
+                // Add mana bar for enemy
+                const manaBarWrap = document.createElement('div');
+                manaBarWrap.className = 'enemy-mana-bar w3-light-grey';
+                manaBarWrap.style.width = '80%';
+                manaBarWrap.style.height = '10px';
+                manaBarWrap.style.marginBottom = '6px';
+                const manaInner = document.createElement('div');
+                manaInner.className = 'w3-blue';
+                manaInner.style.width = '100%';
+                manaInner.style.height = '100%';
+                manaInner.style.fontSize = '0.7em';
+                const enemyManaDisplay = 50 + (scaled.magic * 10);
+                manaInner.textContent = `MP ${enemyManaDisplay}`;
+                manaBarWrap.appendChild(manaInner);
                 
                 const img = document.createElement('img');
                 img.src = base.image || `Enemies/${enemyKey}.png`;
@@ -1121,7 +1326,25 @@
                 
                 wrap.appendChild(nameH);
                 wrap.appendChild(barWrap);
+                wrap.appendChild(manaBarWrap);
                 wrap.appendChild(img);
+                
+                // Calculate enemy mana - base 50, +10 per magic stat
+                const enemyMana = 50 + (scaled.magic * 10);
+                // All enemy attacks cost 10 mana
+                const enemyManaCost = 10;
+                
+                // Ability 28: Gravity Well - Reduce all enemy speed by 30% at battle start
+                const player1Abilities = getEquippedAbilities(activeBattleMember);
+                const player2Abilities = getEquippedAbilities(activeBattleMember2);
+                const hasGravityWell = player1Abilities.includes(28) || player2Abilities.includes(28);
+                if (hasGravityWell) {
+                    scaled.speed = Math.round(scaled.speed * 0.7); // 30% reduction
+                    wrap.dataset.speed = scaled.speed;
+                    if (idx === 0) { // Log only once
+                        logCombat(`🌀 Gravity Well: All enemy speed reduced by 30%!`);
+                    }
+                }
                 
                 // Store stats
                 wrap.dataset.hp = scaled.health;
@@ -1132,6 +1355,9 @@
                 wrap.dataset.def = scaled.defense;
                 wrap.dataset.key = enemyKey;
                 wrap.dataset.transformed = 'false';
+                wrap.dataset.mana = enemyMana;
+                wrap.dataset.maxMana = enemyMana;
+                wrap.dataset.manaCost = enemyManaCost;
                 
                 // Add hover tooltip functionality
                 let tooltip = document.getElementById('enemy-tooltip');
@@ -1327,13 +1553,28 @@
                     barWrap.className = 'enemy-health-bar w3-light-grey';
                     barWrap.style.width = '80%';
                     barWrap.style.height = '12px';
-                    barWrap.style.marginBottom = '6px';
+                    barWrap.style.marginBottom = '4px';
                     const inner = document.createElement('div');
                     inner.className = 'w3-green';
                     inner.style.width = '100%';
                     inner.style.height = '100%';
                     inner.textContent = `HP ${scaled.health}`;
                     barWrap.appendChild(inner);
+                    
+                    // Add mana bar for spawned enemy
+                    const manaBarWrap = document.createElement('div');
+                    manaBarWrap.className = 'enemy-mana-bar w3-light-grey';
+                    manaBarWrap.style.width = '80%';
+                    manaBarWrap.style.height = '10px';
+                    manaBarWrap.style.marginBottom = '6px';
+                    const manaInner = document.createElement('div');
+                    manaInner.className = 'w3-blue';
+                    manaInner.style.width = '100%';
+                    manaInner.style.height = '100%';
+                    manaInner.style.fontSize = '0.7em';
+                    const spawnManaDisplay = 50 + (scaled.magic * 10);
+                    manaInner.textContent = `MP ${spawnManaDisplay}`;
+                    manaBarWrap.appendChild(manaInner);
 
                     const img = document.createElement('img');
                     img.src = imgPath || (`Enemies/${key.toLowerCase()}.png`);
@@ -1344,6 +1585,7 @@
 
                     wrap.appendChild(nameH);
                     wrap.appendChild(barWrap);
+                    wrap.appendChild(manaBarWrap);
                     wrap.appendChild(img);
 
                     // Store scaled stats on element for later (if needed)
@@ -1355,6 +1597,9 @@
                     wrap.dataset.def = scaled.defense || base.defense || 0;
                     wrap.dataset.key = key;
                     wrap.dataset.transformed = 'false'; // Track transformation state for Divine King
+                    wrap.dataset.mana = spawnManaDisplay;
+                    wrap.dataset.maxMana = spawnManaDisplay;
+                    wrap.dataset.manaCost = 10; // All enemy attacks cost 10 mana
 
                     // Add hover tooltip functionality
                     let tooltip = document.getElementById('enemy-tooltip');
@@ -1466,7 +1711,8 @@
                 const atkArea = document.getElementById('Attacks');
                 if (!atkArea) return;
                 atkArea.innerHTML = '';
-                const memberKey = getActiveBattleMember();
+                // Use currentPlayerTurn to determine which player's attacks to show
+                const memberKey = (typeof currentPlayerTurn !== 'undefined' && currentPlayerTurn === 2) ? activeBattleMember2 : activeBattleMember;
                 const attacks = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_INVENTORY : [];
                 const equipped = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_EQUIPPED : new Set();
                 // Show up to 5 attack slots, mark equipped ones first
@@ -1476,7 +1722,9 @@
                 finalList.forEach(a=>{
                     const slot = document.createElement('div');
                     slot.className = 'attack-slot';
-                    slot.innerHTML = `<img src="${(ITEM_TABLE && ITEM_TABLE[a.itemName] && ITEM_TABLE[a.itemName].image) || 'Assests/empty-slot.png'}" alt="${a.name}"><span>${a.name}</span>`;
+                    // Use special icon for Rest, otherwise use item image
+                    const attackIcon = a.isRest ? 'Assests/empty-slot.png' : ((ITEM_TABLE && ITEM_TABLE[a.itemName] && ITEM_TABLE[a.itemName].image) || 'Assests/empty-slot.png');
+                    slot.innerHTML = `<img src="${attackIcon}" alt="${a.name}"><span>${a.name}</span>`;
                     
                     // Add tooltip functionality
                     slot.addEventListener('mouseenter', (e) => showAttackTooltip(e, a));
@@ -1492,8 +1740,8 @@
                 const tooltip = document.getElementById('attack-tooltip');
                 if (!tooltip) return;
                 
-                // Get current member's stats
-                const memberKey = getActiveBattleMember();
+                // Get current member's stats based on whose turn it is
+                const memberKey = (typeof currentPlayerTurn !== 'undefined' && currentPlayerTurn === 2) ? activeBattleMember2 : activeBattleMember;
                 const attacker = PARTY_STATS[memberKey];
                 if (!attacker) return;
                 
@@ -1502,6 +1750,14 @@
                 
                 // Build tooltip content
                 let content = `<div class="tooltip-header">${attackObj.name}</div>`;
+                
+                // Show mana cost
+                const manaCost = attackObj.manaCost || 0;
+                if (manaCost > 0) {
+                    content += `<div class="tooltip-mana">💧 Mana Cost: ${manaCost}</div>`;
+                } else if (attackObj.isRest) {
+                    content += `<div class="tooltip-special">💤 Restores 30% Max Mana</div>`;
+                }
                 
                 // Calculate base damage from stats
                 const strMult = attackObj.strMultiplier || attackObj.strMult || 0;
@@ -1639,7 +1895,8 @@
                                 // find index of slot among children
                                 const idx = Array.prototype.indexOf.call(atkArea.children, slot);
                                 // selectedAttackId will map to the attack objects displayed order
-                                const memberKey = getActiveBattleMember();
+                                // Use currentPlayerTurn to get the correct player's attacks
+                                const memberKey = (typeof currentPlayerTurn !== 'undefined' && currentPlayerTurn === 2) ? activeBattleMember2 : activeBattleMember;
                                 const attacks = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_INVENTORY : [];
                                 const equipped = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_EQUIPPED : new Set();
                                 const equippedList = attacks.filter(a=>equipped.has(a.id));
@@ -1654,6 +1911,62 @@
                         });
                     }
                     enableAttackSelection();
+                    
+                    // Helper function to enable/disable Rest button
+                    function updateRestButton(enabled) {
+                        const restButton = document.getElementById('rest-button');
+                        if (restButton) {
+                            restButton.disabled = !enabled;
+                            restButton.style.opacity = enabled ? '1' : '0.5';
+                            restButton.style.cursor = enabled ? 'pointer' : 'not-allowed';
+                        }
+                    }
+                    
+                    // Disable Rest button initially
+                    updateRestButton(false);
+                    
+                    // Add Rest button handler
+                    const restButton = document.getElementById('rest-button');
+                    if (restButton) {
+                        restButton.onclick = () => {
+                            // Only allow resting during player's turn
+                            if (!playerCanAct || !playerWaiting) {
+                                logCombat("❌ It's not your turn to rest!");
+                                return;
+                            }
+                            
+                            // Determine which player is acting
+                            const memberKey = (typeof currentPlayerTurn !== 'undefined' && currentPlayerTurn === 2) ? activeBattleMember2 : activeBattleMember;
+                            const attacker = PARTY_STATS[memberKey];
+                            
+                            if (!attacker) {
+                                logCombat("❌ No active player found!");
+                                return;
+                            }
+                            
+                            // Restore 60% of max mana
+                            const manaRestore = Math.round(Number(attacker.MAX_MANA || 100) * 0.6);
+                            attacker.MANA = Math.min(Number(attacker.MAX_MANA || 100), Number(attacker.MANA || 0) + manaRestore);
+                            logCombat(`💤 ${attacker.NAME} rests and restores ${manaRestore} mana! (${attacker.MANA}/${attacker.MAX_MANA})`);
+                            updatePlayerArea();
+                            
+                            // Disable Rest button after use
+                            updateRestButton(false);
+                            
+                            // Clear attack selection
+                            const atkArea = document.getElementById('Attacks');
+                            if (atkArea) {
+                                atkArea.querySelectorAll('.attack-slot').forEach(s=>s.style.outline='');
+                            }
+                            
+                            // Clear waiting flags - combat system will continue automatically
+                            playerCanAct = false;
+                            playerWaiting = false;
+                            waitingForPlayerAction = false;
+                            selectedAttackId = null;
+                            selectedTarget = null;
+                        };
+                    }
 
                     // Helper to update enemy bar visuals when hp changes
                     function updateEnemyBar(wrap){
@@ -1664,6 +1977,16 @@
                         const pct = Math.max(0, Math.min(100, Math.round((cur/max)*100)));
                         bar.style.width = pct + '%';
                         bar.textContent = `HP ${Math.max(0,cur)}/${max}`;
+                        
+                        // Update mana bar
+                        const manaBar = wrap.querySelector('.enemy-mana-bar .w3-blue');
+                        if (manaBar) {
+                            const curMana = Number(wrap.dataset.mana) || 0;
+                            const maxMana = Number(wrap.dataset.maxMana) || 1;
+                            const manaPct = Math.max(0, Math.min(100, Math.round((curMana/maxMana)*100)));
+                            manaBar.style.width = manaPct + '%';
+                            manaBar.textContent = `MP ${Math.max(0,curMana)}`;
+                        }
                         
                         // Update status effect display after health update
                         updateStatusEffectDisplay();
@@ -1724,6 +2047,7 @@
                             let playerCanAct = false;
                             let playerWaiting = false; // avoids re-prompting repeatedly
                             let selectedTarget = null;
+                            let waitingForPlayerAction = false; // Flag to pause queue until player acts
 
                     // Combat scheduler using speed-based attack ratios (GCD method)
                     // Helper: compute GCD for ratio simplification
@@ -1764,13 +2088,19 @@
                             const box = document.createElement('div');
                             box.className = 'turn-box';
                             
-                            if (action === 'p') {
+                            if (action.type === 'p') {
                                 // Player turn
                                 box.classList.add('player-turn');
                                 const img = document.createElement('img');
                                 img.src = 'Assests/player.png';
-                                img.alt = 'Player';
+                                img.alt = `Player ${action.playerNum}`;
                                 box.appendChild(img);
+                                
+                                // Add player number label
+                                const numLabel = document.createElement('div');
+                                numLabel.className = 'player-number';
+                                numLabel.textContent = action.playerNum;
+                                box.appendChild(numLabel);
                             } else if (action.type === 'e') {
                                 // Enemy turn - check if enemy is still alive
                                 box.classList.add('enemy-turn');
@@ -1806,17 +2136,20 @@
 
                     // Recalculate action queue based on current active member speed and ALL enemy speeds
                     function recalculateActionQueue() {
-                        const member = PARTY_STATS[getActiveBattleMember()];
-                        if (!member) return;
+                        const member1 = PARTY_STATS[activeBattleMember];
+                        const member2 = PARTY_STATS[activeBattleMember2];
+                        if (!member1 || !member2) return;
                         const enemies = getEnemyWrappers();
                         if (enemies.length === 0) return;
 
-                        // Get player speed (chill shown for display only, doesn't affect actual speed)
-                        const memberKey = getActiveBattleMember();
-                        const basePlayerSpeed = Math.max(1, Number(member.SPEED) || 1);
-                        const pSpeed = getEffectiveSpeed('player', memberKey, basePlayerSpeed);
+                        // Get both players' speeds
+                        const basePlayer1Speed = Math.max(1, Number(member1.SPEED) || 1);
+                        const pSpeed1 = getEffectiveSpeed('player', activeBattleMember, basePlayer1Speed);
+                        
+                        const basePlayer2Speed = Math.max(1, Number(member2.SPEED) || 1);
+                        const pSpeed2 = getEffectiveSpeed('player', activeBattleMember2, basePlayer2Speed);
 
-                        // Collect all enemy speeds (chill shown for display only, doesn't affect actual speed)
+                        // Collect all enemy speeds
                         const enemySpeeds = enemies.map((wrap, idx) => {
                             const baseSpeed = Math.max(1, Number(wrap.dataset.speed) || Number(wrap.dataset.str) || 1);
                             const effectiveSpeed = getEffectiveSpeed('enemy', idx, baseSpeed);
@@ -1825,22 +2158,25 @@
 
                         if (enemySpeeds.length === 0) return;
 
-                        // Find GCD of all speeds (player + all enemies)
-                        let allSpeeds = [Math.round(pSpeed), ...enemySpeeds.map(e => Math.round(e.speed))];
+                        // Find GCD of all speeds (both players + all enemies)
+                        let allSpeeds = [Math.round(pSpeed1), Math.round(pSpeed2), ...enemySpeeds.map(e => Math.round(e.speed))];
                         let g = allSpeeds[0];
                         for (let i = 1; i < allSpeeds.length; i++) {
                             g = gcd(g, allSpeeds[i]);
                         }
 
-                        // Calculate attacks per cycle for player
-                        playerAttacksPerCycle = Math.round(pSpeed) / g;
+                        // Calculate attacks per cycle for both players
+                        playerAttacksPerCycle = Math.round(pSpeed1) / g;
+                        const player2AttacksPerCycle = Math.round(pSpeed2) / g;
 
-                        // Create action queue: 'p' for player, {type:'e', index:N, enemyId:name} for each enemy
+                        // Create action queue: {type:'p', playerNum:1|2} for players, {type:'e', index:N, enemyId:name} for enemies
                         actionQueue = [];
-                        const playerActions = [];
+                        const player1Actions = [];
+                        const player2Actions = [];
                         const enemyActionsByEnemy = {}; // Track actions per individual enemy
                         
-                        for (let i = 0; i < playerAttacksPerCycle; i++) playerActions.push('p');
+                        for (let i = 0; i < playerAttacksPerCycle; i++) player1Actions.push({type:'p', playerNum:1});
+                        for (let i = 0; i < player2AttacksPerCycle; i++) player2Actions.push({type:'p', playerNum:2});
                         
                         // Add actions for each enemy based on their individual speed
                         let totalEnemyActions = 0;
@@ -1858,13 +2194,13 @@
                             }
                         });
                         
-                        // Interleave player and all enemy actions evenly
-                        // Strategy: distribute actions proportionally across the cycle
-                        const totalActions = playerActions.length + totalEnemyActions;
+                        // Interleave both players and all enemy actions evenly
+                        const totalActions = player1Actions.length + player2Actions.length + totalEnemyActions;
                         
                         // Create sorted list of all action sources with their counts
                         const actionSources = [
-                            { type: 'player', actions: playerActions, remaining: playerActions.length, ratio: playerActions.length / totalActions }
+                            { type: 'player1', actions: player1Actions, remaining: player1Actions.length, ratio: player1Actions.length / totalActions },
+                            { type: 'player2', actions: player2Actions, remaining: player2Actions.length, ratio: player2Actions.length / totalActions }
                         ];
                         
                         Object.keys(enemyActionsByEnemy).forEach(enemyIdx => {
@@ -1879,7 +2215,7 @@
                             });
                         });
                         
-                        // Always start with player
+                        // Always start with player 1
                         if (actionSources[0].remaining > 0) {
                             actionQueue.push(actionSources[0].actions.shift());
                             actionSources[0].remaining--;
@@ -1890,7 +2226,8 @@
                             // Calculate how much each source has contributed relative to their target
                             actionSources.forEach(source => {
                                 const currentCount = actionQueue.filter(a => {
-                                    if (source.type === 'player') return a === 'p';
+                                    if (source.type === 'player1') return a.type === 'p' && a.playerNum === 1;
+                                    if (source.type === 'player2') return a.type === 'p' && a.playerNum === 2;
                                     return a.type === 'e' && a.index === source.enemyIndex;
                                 }).length;
                                 source.deficit = (source.ratio * actionQueue.length) - currentCount;
@@ -1911,10 +2248,21 @@
                         queueIndex = 0;
                         
                         const totalEnemyAttacks = actionQueue.filter(a => typeof a === 'object' && a.type === 'e').length;
-                        logCombat(`Action queue recalculated: Player ${playerAttacksPerCycle}/cycle, Total Enemy attacks ${totalEnemyAttacks}/cycle (${enemySpeeds.length} enemies)`);
+                        logCombat(`Action queue recalculated: Player1 ${playerAttacksPerCycle}/cycle, Player2 ${player2AttacksPerCycle}/cycle, Total Enemy attacks ${totalEnemyAttacks}/cycle (${enemySpeeds.length} enemies)`);
                         
                         // Update turn order display
                         updateTurnOrderDisplay();
+                    }
+
+                    // Update queue when switching members WITHOUT resetting queueIndex
+                    function updateActionQueueForSwitch() {
+                        // Simply rebuild the queue but preserve the current position
+                        const savedIndex = queueIndex;
+                        recalculateActionQueue();
+                        // Restore position, but ensure it's valid
+                        queueIndex = Math.min(savedIndex, actionQueue.length - 1);
+                        if (queueIndex < 0) queueIndex = 0;
+                        logCombat(`Queue updated for switch (position preserved: ${queueIndex}/${actionQueue.length})`);
                     }
 
                     function startCombatLoop(){
@@ -1941,8 +2289,8 @@
                             // Update turn order display to show new queue position
                             updateTurnOrderDisplay();
                             
-                            // action is either 'p' or {type:'e', index:N}
-                            if (action === 'p') return { type: 'player' };
+                            // action is either {type:'p', playerNum:1|2} or {type:'e', index:N}
+                            if (action.type === 'p') return { type: 'player', playerNum: action.playerNum };
                             if (action.type === 'e') return { type: 'enemy', enemyIndex: action.index };
                             return { type: 'enemy', enemyIndex: 0 }; // fallback
                         }
@@ -2049,12 +2397,16 @@
                                 // Perform a player attack on a specific enemy wrapper (called when player clicks an enemy)
                                 function playerPerformAttackOn(enemyWrap){
                                     if (!enemyWrap) return false;
-                                                                            // Ensure current member is counted as participant
-                                                                            try { battleParticipants.add(getActiveBattleMember()); } catch(e) {}
-                                      const atkArea = document.getElementById('Attacks');
-                                      const memberKey = getActiveBattleMember();
-                                      const attacks = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_INVENTORY : [];
-                                      const equipped = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_EQUIPPED : new Set();
+                                    
+                                    // Determine which player is acting based on turn
+                                    const memberKey = currentPlayerTurn === 1 ? activeBattleMember : activeBattleMember2;
+                                    
+                                    // Ensure current member is counted as participant
+                                    try { battleParticipants.add(memberKey); } catch(e) {}
+                                    
+                                    const atkArea = document.getElementById('Attacks');
+                                    const attacks = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_INVENTORY : [];
+                                    const equipped = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_EQUIPPED : new Set();
                                     const equippedList = attacks.filter(a=>equipped.has(a.id));
                                     const invList = attacks.filter(a=>!equipped.has(a.id));
                                     const finalList = equippedList.concat(invList).slice(0,5);
@@ -2062,7 +2414,37 @@
                                     let attackObj = null;
                                     if (selectedAttackId) attackObj = attacks.find(a=>a.id === selectedAttackId) || finalList[0] || null;
                                     else attackObj = finalList[0] || attacks[0] || null;
-                                    if (!attackObj) attackObj = { name: 'slap', strMultiplier: 1, magicMultiplier: 0, itemName: null };
+                                    if (!attackObj) attackObj = { name: 'slap', strMultiplier: 1, magicMultiplier: 0, itemName: null, manaCost: 0 };
+                                    
+                                    const attacker = PARTY_STATS[memberKey];
+                                    
+                                    // Handle Rest action
+                                    if (attackObj.isRest || attackObj.name === 'Rest') {
+                                        const manaRestore = Math.round(Number(attacker.MAX_MANA || 100) * 0.6);
+                                        attacker.MANA = Math.min(Number(attacker.MAX_MANA || 100), Number(attacker.MANA || 0) + manaRestore);
+                                        logCombat(`💤 ${attacker.NAME} rests and restores ${manaRestore} mana! (${attacker.MANA}/${attacker.MAX_MANA})`);
+                                        updatePlayerArea();
+                                        
+                                        // Clear waiting flags
+                                        playerCanAct = false;
+                                        playerWaiting = false;
+                                        waitingForPlayerAction = false;
+                                        return true;
+                                    }
+                                    
+                                    // Check mana cost
+                                    const manaCost = attackObj.manaCost || 0;
+                                    const currentMana = Number(attacker.MANA || 0);
+                                    if (manaCost > currentMana) {
+                                        logCombat(`❌ Not enough mana! ${attackObj.name} costs ${manaCost} mana (you have ${currentMana})`);
+                                        return false;
+                                    }
+                                    
+                                    // Deduct mana cost
+                                    if (manaCost > 0) {
+                                        attacker.MANA = currentMana - manaCost;
+                                        updatePlayerArea();
+                                    }
                                     
                                     // Check if this is an AOE attack
                                     const isAOE = attackObj.aoe === true;
@@ -2079,7 +2461,7 @@
                                     targetEnemies.forEach((currentEnemyWrap, targetIndex) => {
 
                                     const enemyDefense = Number( (ENEMY_BASE_STATS[currentEnemyWrap.querySelector('img').alt] && ENEMY_BASE_STATS[currentEnemyWrap.querySelector('img').alt].defense) || 0 );
-                                    const attacker = PARTY_STATS[getActiveBattleMember()];
+                                    const attacker = PARTY_STATS[memberKey];
                                     
                                     // Check for attack-specific abilities (10: MultiStrike, 19: Enhance) - only on first target for AOE
                                     const attackSourceItem = targetIndex === 0 ? getItemFromAttack(attackObj) : null;
@@ -2139,8 +2521,45 @@
                                     
                                     // Apply Carried multiplier (ability 6) to stats
                                     const carriedMult = getCarriedMultiplier(memberKey);
-                                    const str = Number(attacker.STRENGTH||0) * carriedMult;
-                                    const mag = Number(attacker.MAGIC||0) * carriedMult;
+                                    let str = Number(attacker.STRENGTH||0) * carriedMult;
+                                    let mag = Number(attacker.MAGIC||0) * carriedMult;
+                                    let spd = Number(attacker.SPEED||0) * carriedMult;
+                                    let def = Number(attacker.DEFENSE||0) * carriedMult;
+                                    
+                                    // Ally support stat buffs
+                                    const allyKey = memberKey === activeBattleMember ? activeBattleMember2 : activeBattleMember;
+                                    const ally = PARTY_STATS[allyKey];
+                                    const allyAbilities = ally && Number(ally.HEALTH) > 0 ? getEquippedAbilities(allyKey) : [];
+                                    
+                                    // Ability 52: Precognition - Grant ally +10% damage and +10% defense
+                                    if (allyAbilities.includes(52)) {
+                                        str = str * 1.1;
+                                        mag = mag * 1.1;
+                                        def = def * 1.1;
+                                        if (targetIndex === 0) logCombat(`🔮 Precognition: +10% damage & defense from ally!`);
+                                    }
+                                    
+                                    // Ability 49: Versatility - Share 15% of ally's highest stat
+                                    if (allyAbilities.includes(49) && ally) {
+                                        const allyStats = [
+                                            Number(ally.STRENGTH||0),
+                                            Number(ally.MAGIC||0),
+                                            Number(ally.SPEED||0),
+                                            Number(ally.DEFENSE||0)
+                                        ];
+                                        const highestStat = Math.max(...allyStats);
+                                        const sharedBonus = Math.round(highestStat * 0.15);
+                                        str += sharedBonus;
+                                        mag += sharedBonus;
+                                        if (targetIndex === 0) logCombat(`📚 Versatility: +${sharedBonus} stats shared from ally!`);
+                                    }
+                                    
+                                    // Ability 51: Balance - Grant both players +20% speed
+                                    if (equippedAbilities.includes(51) || allyAbilities.includes(51)) {
+                                        spd = spd * 1.2;
+                                        if (targetIndex === 0) logCombat(`⚖️ Balance: +20% speed!`);
+                                    }
+                                    
                                     const strMult = Number(attackObj.strMultiplier||0);
                                     const magMult = Number(attackObj.magicMultiplier||0);
                                     
@@ -2229,6 +2648,71 @@
                                         } else {
                                             console.log(`[Perfectly Timed] No crit. Roll: ${critRoll.toFixed(3)} >= 0.5`);
                                         }
+                                    }
+                                    
+                                    // ===== NEW SET 2 ABILITIES (22-46) =====
+                                    
+                                    // Ability 22: Fury - Deal +10% damage per 10% HP missing (max +90% at 10% HP)
+                                    if (equippedAbilities.includes(22)) {
+                                        const hpPercent = Number(attacker.HEALTH || 0) / Number(attacker.MAX_HEALTH || 1);
+                                        const hpMissing = Math.max(0, 1.0 - hpPercent);
+                                        const furyBonus = Math.min(0.9, hpMissing * 0.9); // 10% per 10% missing, max 90%
+                                        if (furyBonus > 0) {
+                                            const bonusDmg = Math.round(dmg * furyBonus);
+                                            dmg += bonusDmg;
+                                            logCombat(`😡 Fury: +${bonusDmg} damage (${Math.round(furyBonus * 100)}% at ${Math.round(hpPercent * 100)}% HP)`);
+                                        }
+                                    }
+                                    
+                                    // Ability 24: Execute - Deal 300% damage to enemies below 25% HP
+                                    const enemyHpPercent = Number(currentEnemyWrap.dataset.hp) / Number(currentEnemyWrap.dataset.maxHp || 1);
+                                    if (equippedAbilities.includes(24) && enemyHpPercent < 0.25) {
+                                        const executeBonus = Math.round(dmg * 2.0); // 200% bonus = 300% total
+                                        dmg += executeBonus;
+                                        logCombat(`⚡ EXECUTE! +${executeBonus} damage (enemy below 25% HP)`);
+                                    }
+                                    
+                                    // Ability 29: Corruption - Deal +50% damage to enemies with status effects
+                                    const targetEffects2 = enemyStatusEffects[enemyIndex] || [];
+                                    if (equippedAbilities.includes(29) && targetEffects2.length > 0) {
+                                        const corruptionBonus = Math.round(dmg * 0.5);
+                                        dmg += corruptionBonus;
+                                        logCombat(`☠️ Corruption: +${corruptionBonus} damage (${targetEffects2.length} status effects)`);
+                                    }
+                                    
+                                    // Ability 32: Berserker - Gain +5% damage per consecutive attack (max +50%)
+                                    if (equippedAbilities.includes(32)) {
+                                        if (!window.berserkerStacks) window.berserkerStacks = {};
+                                        if (!window.berserkerStacks[memberKey]) window.berserkerStacks[memberKey] = 0;
+                                        
+                                        window.berserkerStacks[memberKey] = Math.min(10, window.berserkerStacks[memberKey] + 1);
+                                        const berserkerBonus = window.berserkerStacks[memberKey] * 0.05; // 5% per stack, max 50%
+                                        if (berserkerBonus > 0) {
+                                            const bonusDmg = Math.round(dmg * berserkerBonus);
+                                            dmg += bonusDmg;
+                                            logCombat(`🔥 Berserker: +${bonusDmg} damage (${window.berserkerStacks[memberKey]} stacks, ${Math.round(berserkerBonus * 100)}%)`);
+                                        }
+                                    }
+                                    
+                                    // Ability 40: Critical Mass - Every 5th attack deals 400% damage
+                                    if (equippedAbilities.includes(40)) {
+                                        if (!window.criticalMassCount) window.criticalMassCount = {};
+                                        if (!window.criticalMassCount[memberKey]) window.criticalMassCount[memberKey] = 0;
+                                        
+                                        window.criticalMassCount[memberKey]++;
+                                        if (window.criticalMassCount[memberKey] >= 5) {
+                                            const massBonus = Math.round(dmg * 3.0); // 300% bonus = 400% total
+                                            dmg += massBonus;
+                                            logCombat(`💥 CRITICAL MASS! +${massBonus} damage (5th attack!)`);
+                                            window.criticalMassCount[memberKey] = 0;
+                                        }
+                                    }
+                                    
+                                    // Ability 44: Reaper - Deal bonus damage equal to 5% of enemy max HP
+                                    if (equippedAbilities.includes(44)) {
+                                        const reaperBonus = Math.round(Number(currentEnemyWrap.dataset.maxHp || 0) * 0.05);
+                                        dmg += reaperBonus;
+                                        logCombat(`💀 Reaper: +${reaperBonus} damage (5% enemy max HP)`);
                                     }
                                     
                                     // Special Attack: Plague Strike - Bonus damage per status effect on target
@@ -2350,6 +2834,112 @@
                                         attacker.HEALTH = newHealth;
                                         updatePlayerArea();
                                         logCombat(`💉 Lifesteal: Healed ${healAmount} HP (${newHealth}/${maxHealth})`);
+                                    }
+                                    
+                                    // Ability 31: Life Drain - Heal 20% of damage dealt
+                                    if (equippedAbilities.includes(31)) {
+                                        const drainAmount = Math.ceil(dmg * 0.2);
+                                        const currentHealth = Number(attacker.HEALTH || 0);
+                                        const maxHealth = Number(attacker.MAX_HEALTH || 1);
+                                        const newHealth = Math.min(maxHealth, currentHealth + drainAmount);
+                                        attacker.HEALTH = newHealth;
+                                        updatePlayerArea();
+                                        logCombat(`🩸 Life Drain: Healed ${drainAmount} HP (${newHealth}/${maxHealth})`);
+                                    }
+                                    
+                                    // Ability 33: Arcane Surge - Casting magic restores 10% of mana cost
+                                    if (equippedAbilities.includes(33) && magMult > 0 && manaCost > 0) {
+                                        const manaRestore = Math.ceil(manaCost * 0.1);
+                                        attacker.MANA = Math.min(Number(attacker.MAX_MANA || 100), Number(attacker.MANA || 0) + manaRestore);
+                                        updatePlayerArea();
+                                        logCombat(`🔮 Arcane Surge: Restored ${manaRestore} mana`);
+                                    }
+                                    
+                                    // Ability 35: Frozen Heart - 40% chance to freeze enemies hit for 1 turn
+                                    if (equippedAbilities.includes(35) && Math.random() < 0.4) {
+                                        applyStatusEffect(currentEnemyWrap, 'enemy', enemyIndex, 'chill', baseDmg);
+                                        logCombat(`❄️ Frozen Heart: Enemy frozen!`);
+                                    }
+                                    
+                                    // Ability 39: Mana Burn - Physical attacks drain 20% of enemy max mana
+                                    if (equippedAbilities.includes(39) && strMult > 0) {
+                                        const manaBurn = Math.ceil(Number(currentEnemyWrap.dataset.maxMana || 100) * 0.2);
+                                        currentEnemyWrap.dataset.mana = Math.max(0, Number(currentEnemyWrap.dataset.mana || 0) - manaBurn);
+                                        logCombat(`🔥 Mana Burn: Drained ${manaBurn} enemy mana`);
+                                    }
+                                    
+                                    // Ability 43: Elemental Chaos - Attacks randomly deal fire, ice, or lightning damage (+30%)
+                                    if (equippedAbilities.includes(43)) {
+                                        const elements = ['burn', 'chill', 'bleed'];
+                                        const randomElement = elements[Math.floor(Math.random() * elements.length)];
+                                        const chaosBonus = Math.round(dmg * 0.3);
+                                        dmg += chaosBonus;
+                                        applyStatusEffect(currentEnemyWrap, 'enemy', enemyIndex, randomElement, baseDmg);
+                                        const elementNames = {burn: '🔥 Fire', chill: '❄️ Ice', bleed: '⚡ Lightning'};
+                                        logCombat(`🌀 Elemental Chaos: ${elementNames[randomElement]} +${chaosBonus} damage!`);
+                                    }
+                                    
+                                    // Ability 25: Meteor Strike - 20% chance to deal 200% AOE damage to all enemies
+                                    if (equippedAbilities.includes(25) && Math.random() < 0.2 && !isAOE) {
+                                        logCombat(`☄️ METEOR STRIKE! AOE explosion hits all enemies!`);
+                                        const allEnemies = Array.from(getEnemyWrappers()).filter(e => Number(e.dataset.hp) > 0);
+                                        allEnemies.forEach((meteEnemy) => {
+                                            if (meteEnemy !== currentEnemyWrap) {
+                                                const meteorDmg = Math.round(dmg * 2.0); // 200% of original damage
+                                                const meteHp = Number(meteEnemy.dataset.hp);
+                                                meteEnemy.dataset.hp = Math.max(0, meteHp - meteorDmg);
+                                                updateEnemyBar(meteEnemy);
+                                                logCombat(`☄️ Meteor hits for ${meteorDmg} damage!`);
+                                            }
+                                        });
+                                    }
+                                    
+                                    // Ability 36: Thunder God - Lightning attacks chain to 2 random enemies for 50% damage
+                                    if (equippedAbilities.includes(36) && magMult > 0 && !isAOE) {
+                                        const allEnemies = Array.from(getEnemyWrappers()).filter(e => 
+                                            Number(e.dataset.hp) > 0 && e !== currentEnemyWrap
+                                        );
+                                        const chainTargets = allEnemies.sort(() => Math.random() - 0.5).slice(0, 2);
+                                        chainTargets.forEach((chainEnemy) => {
+                                            const chainDmg = Math.round(dmg * 0.5);
+                                            const chainHp = Number(chainEnemy.dataset.hp);
+                                            chainEnemy.dataset.hp = Math.max(0, chainHp - chainDmg);
+                                            updateEnemyBar(chainEnemy);
+                                            logCombat(`⚡ Thunder chain: ${chainDmg} damage!`);
+                                        });
+                                    }
+                                    
+                                    // Ability 23: Temporal Shift - 30% chance to take two turns in a row
+                                    if (equippedAbilities.includes(23) && Math.random() < 0.3) {
+                                        if (!window.temporalShiftActive) window.temporalShiftActive = {};
+                                        window.temporalShiftActive[memberKey] = true;
+                                        logCombat(`⏰ TEMPORAL SHIFT: ${attacker.NAME} will attack again!`);
+                                    }
+                                    
+                                    // Ability 41: Time Warp - Reduce all cooldowns by 1 turn when attacking
+                                    if (equippedAbilities.includes(41)) {
+                                        if (afterShockCooldown > 0) {
+                                            afterShockCooldown = Math.max(0, afterShockCooldown - 1);
+                                            logCombat(`⌛ Time Warp: Cooldowns reduced!`);
+                                        }
+                                    }
+                                    
+                                    // Ability 46: Apocalypse - Deal 150% damage to all enemies when HP drops below 20%
+                                    const playerHpPercent = Number(attacker.HEALTH || 0) / Number(attacker.MAX_HEALTH || 1);
+                                    if (equippedAbilities.includes(46) && playerHpPercent < 0.2 && !isAOE) {
+                                        if (!window.apocalypseTriggered) window.apocalypseTriggered = {};
+                                        if (!window.apocalypseTriggered[memberKey]) {
+                                            window.apocalypseTriggered[memberKey] = true;
+                                            logCombat(`💀 APOCALYPSE ACTIVATED!`);
+                                            const allEnemies = Array.from(getEnemyWrappers()).filter(e => Number(e.dataset.hp) > 0);
+                                            allEnemies.forEach((apoEnemy) => {
+                                                const apoDmg = Math.round(dmg * 1.5);
+                                                const apoHp = Number(apoEnemy.dataset.hp);
+                                                apoEnemy.dataset.hp = Math.max(0, apoHp - apoDmg);
+                                                updateEnemyBar(apoEnemy);
+                                                logCombat(`💀 Apocalypse: ${apoDmg} damage to all enemies!`);
+                                            });
+                                        }
                                     }
                                     
                                     // Tree People multi-hit: Attacks once per alive party member (plus multistrike bonus)
@@ -2536,6 +3126,50 @@
                                     }
                                     
                                     logCombat('Enemy defeated!');
+                                    
+                                    // ===== ON-KILL ABILITIES =====
+                                    
+                                    // Ability 26: Death's Touch - Instantly kill enemies below 15% HP
+                                    if (equippedAbilities.includes(26) && enemyHpPercent > 0 && enemyHpPercent < 0.15) {
+                                        logCombat(`☠️ DEATH'S TOUCH! Enemy executed instantly!`);
+                                    }
+                                    
+                                    // Ability 27: Annihilation - Each kill permanently increases all stats by +5%
+                                    if (equippedAbilities.includes(27)) {
+                                        const statBoost = 1.05;
+                                        attacker.STRENGTH = Number(attacker.STRENGTH || 0) * statBoost;
+                                        attacker.MAGIC = Number(attacker.MAGIC || 0) * statBoost;
+                                        attacker.SPEED = Number(attacker.SPEED || 0) * statBoost;
+                                        attacker.DEFENSE = Number(attacker.DEFENSE || 0) * statBoost;
+                                        attacker.MAX_HEALTH = Number(attacker.MAX_HEALTH || 0) * statBoost;
+                                        updatePlayerStatsDisplay();
+                                        updatePlayerArea();
+                                        logCombat(`💥 Annihilation: All stats increased by 5%!`);
+                                    }
+                                    
+                                    // Ability 37: Vampiric - Heal 15% max HP on kill
+                                    if (equippedAbilities.includes(37)) {
+                                        const vampiricHeal = Math.ceil(Number(attacker.MAX_HEALTH || 100) * 0.15);
+                                        attacker.HEALTH = Math.min(Number(attacker.MAX_HEALTH || 100), Number(attacker.HEALTH || 0) + vampiricHeal);
+                                        updatePlayerArea();
+                                        logCombat(`🧛 Vampiric: Healed ${vampiricHeal} HP on kill!`);
+                                    }
+                                    
+                                    // Ability 42: Soul Harvest - Gain +10 max HP permanently per kill
+                                    if (equippedAbilities.includes(42)) {
+                                        attacker.MAX_HEALTH = Number(attacker.MAX_HEALTH || 0) + 10;
+                                        attacker.HEALTH = Number(attacker.HEALTH || 0) + 10;
+                                        updatePlayerStatsDisplay();
+                                        updatePlayerArea();
+                                        logCombat(`💚 Soul Harvest: +10 Max HP (now ${Math.round(attacker.MAX_HEALTH)})`);
+                                    }
+                                    
+                                    // Ability 50: Godslayer - Heal to full HP on kill
+                                    if (equippedAbilities.includes(50)) {
+                                        attacker.HEALTH = Number(attacker.MAX_HEALTH || 100);
+                                        updatePlayerArea();
+                                        logCombat(`⚡ GODSLAYER: Healed to full HP (${Math.round(attacker.HEALTH)}/${Math.round(attacker.MAX_HEALTH)})!`);
+                                    }
                                     
                                     // Use centralized enemy defeat handler for necromancer resurrection and cleanup
                                     handleEnemyDefeat(currentEnemyWrap, enemyIndex);
@@ -2764,6 +3398,37 @@
                                     applyStatusEffect(target, targetType, targetKey, effect, baseDamage);
                                 });
                                 logCombat(`🌀 Chaos applied ${numEffects} status effects!`);
+                            }
+                        }
+                        
+                        // Process ally support abilities at start of turn
+                        function processAllySupportAbilities(memberKey) {
+                            const player = PARTY_STATS[memberKey];
+                            const allyKey = memberKey === activeBattleMember ? activeBattleMember2 : activeBattleMember;
+                            const ally = PARTY_STATS[allyKey];
+                            
+                            if (!player || !ally || Number(ally.HEALTH) <= 0) return; // Ally must be alive
+                            
+                            const abilities = getEquippedAbilities(memberKey);
+                            
+                            // Ability 47: Sage's Wisdom - Restore 5% max mana to both players per turn
+                            if (abilities.includes(47)) {
+                                const playerManaRestore = Math.ceil(Number(player.MAX_MANA || 100) * 0.05);
+                                const allyManaRestore = Math.ceil(Number(ally.MAX_MANA || 100) * 0.05);
+                                player.MANA = Math.min(Number(player.MAX_MANA || 100), Number(player.MANA || 0) + playerManaRestore);
+                                ally.MANA = Math.min(Number(ally.MAX_MANA || 100), Number(ally.MANA || 0) + allyManaRestore);
+                                updatePlayerArea();
+                                logCombat(`📖 Sage's Wisdom: Restored ${playerManaRestore}/${allyManaRestore} mana to both players!`);
+                            }
+                            
+                            // Ability 53: Regeneration - Restore 3% max HP to both players per turn
+                            if (abilities.includes(53)) {
+                                const playerHeal = Math.ceil(Number(player.MAX_HEALTH || 100) * 0.03);
+                                const allyHeal = Math.ceil(Number(ally.MAX_HEALTH || 100) * 0.03);
+                                player.HEALTH = Math.min(Number(player.MAX_HEALTH || 100), Number(player.HEALTH || 0) + playerHeal);
+                                ally.HEALTH = Math.min(Number(ally.MAX_HEALTH || 100), Number(ally.HEALTH || 0) + allyHeal);
+                                updatePlayerArea();
+                                logCombat(`💚 Regeneration: Healed ${playerHeal}/${allyHeal} HP to both players!`);
                             }
                         }
                         
@@ -3012,14 +3677,19 @@
                             document.body.appendChild(overlay);
                         }
 
-                        function performPlayerAction(){
+                        function performPlayerAction(playerNum){
                             // Called by the scheduler when it's the player's turn. We set flags so the UI can accept a target click.
                             if (playerWaiting) return; // already waiting for the player's click
                             
-                            // Process status effects on player at start of their turn
-                            const memberKey = getActiveBattleMember();
+                            // Determine which player is acting
+                            const memberKey = playerNum === 1 ? activeBattleMember : activeBattleMember2;
                             const target = PARTY_STATS[memberKey];
+                            
+                            // Process status effects on player at start of their turn
                             processStatusEffects(target, 'player', memberKey);
+                            
+                            // Process ally support abilities at start of turn
+                            processAllySupportAbilities(memberKey);
                             
                             // Check if player died from status effects
                             if (Number(target.HEALTH) <= 0) {
@@ -3030,7 +3700,18 @@
                             
                             playerCanAct = true;
                             playerWaiting = true;
-                            logCombat('Player turn: select an attack then click an enemy to perform the action.');
+                            currentPlayerTurn = playerNum; // Store which player's turn it is
+                            
+                            // Update attack list to show current player's attacks
+                            renderAttacksForPlayer();
+                            enableAttackSelection();
+                            
+                            // Enable Rest button
+                            if (typeof updateRestButton === 'function') {
+                                updateRestButton(true);
+                            }
+                            
+                            logCombat(`Player ${playerNum} turn: select an attack then click an enemy to perform the action.`);
                         }
 
                         function performEnemyAction(enemyIndex){
@@ -3051,6 +3732,25 @@
                                 handleEnemyDefeat(enemyWrap, enemyIndex);
                                 return;
                             }
+                            
+                            // Enemy mana system - check if enemy needs to rest
+                            const enemyMana = Number(enemyWrap.dataset.mana || 0);
+                            const enemyMaxMana = Number(enemyWrap.dataset.maxMana || 50);
+                            const enemyManaCost = Number(enemyWrap.dataset.manaCost || 10);
+                            
+                            if (enemyMana < enemyManaCost) {
+                                // Enemy must rest to restore mana
+                                const manaRestore = Math.round(enemyMaxMana * 0.4); // Enemies restore 40%
+                                enemyWrap.dataset.mana = Math.min(enemyMaxMana, enemyMana + manaRestore);
+                                updateEnemyBar(enemyWrap); // Update mana bar immediately
+                                const enemyName = enemyWrap.querySelector('img') ? enemyWrap.querySelector('img').alt : 'Enemy';
+                                logCombat(`💤 ${enemyName} #${enemyIndex + 1} rests and restores ${manaRestore} mana!`);
+                                return;
+                            }
+                            
+                            // Deduct mana for enemy attack
+                            enemyWrap.dataset.mana = enemyMana - enemyManaCost;
+                            updateEnemyBar(enemyWrap); // Update mana bar immediately after deduction
                             
             // Enemy attack: use whichever stat is higher (strength or magic)
             const enemyStr = Number(enemyWrap.dataset.str) || 1;
@@ -3080,22 +3780,66 @@
             // Determine which stat is stronger and build attack accordingly
             const atk = finalEnemyStr >= enemyMag 
                 ? { strMultiplier: 1, magicMultiplier: 0 } 
-                : { strMultiplier: 0, magicMultiplier: 1 };                            const target = PARTY_STATS[getActiveBattleMember()];
-                            // Count the current active member as participant when they get attacked
-                            try { battleParticipants.add(getActiveBattleMember()); } catch(e) {}
+                : { strMultiplier: 0, magicMultiplier: 1 };
+            
+            // Smart targeting: choose between both players
+            const player1 = PARTY_STATS[activeBattleMember];
+            const player2 = PARTY_STATS[activeBattleMember2];
+            let target = null;
+            let targetKey = null;
+            
+            // Check if both players are alive
+            const p1Alive = player1 && Number(player1.HEALTH) > 0;
+            const p2Alive = player2 && Number(player2.HEALTH) > 0;
+            
+            if (p1Alive && p2Alive) {
+                // Both alive - calculate HP percentages
+                const p1HpPercent = Number(player1.HEALTH) / Number(player1.MAX_HEALTH || 1);
+                const p2HpPercent = Number(player2.HEALTH) / Number(player2.MAX_HEALTH || 1);
+                
+                // If one player is below 40% HP, 80% chance to target them
+                if (p1HpPercent < 0.4 && Math.random() < 0.8) {
+                    target = player1;
+                    targetKey = activeBattleMember;
+                } else if (p2HpPercent < 0.4 && Math.random() < 0.8) {
+                    target = player2;
+                    targetKey = activeBattleMember2;
+                } else {
+                    // Otherwise random targeting
+                    if (Math.random() < 0.5) {
+                        target = player1;
+                        targetKey = activeBattleMember;
+                    } else {
+                        target = player2;
+                        targetKey = activeBattleMember2;
+                    }
+                }
+            } else if (p1Alive) {
+                target = player1;
+                targetKey = activeBattleMember;
+            } else if (p2Alive) {
+                target = player2;
+                targetKey = activeBattleMember2;
+            } else {
+                // Both dead, skip attack
+                return;
+            }
+            
+            // Count the targeted member as participant when they get attacked
+            try { battleParticipants.add(targetKey); } catch(e) {}
                             // Debug: log queue position, speed info, and enemy name before enemy attacks
                             try {
                                 const enemyName = enemyWrap.querySelector('img') ? enemyWrap.querySelector('img').alt : 'Unknown Enemy';
                                 const enemySpeed = getEffectiveSpeed('enemy', enemyIndex, Number(enemyWrap.dataset.speed) || 1);
                                 const attackType = enemyStr >= enemyMag ? 'STR' : 'MAG';
                                 const attackStat = enemyStr >= enemyMag ? enemyStr : enemyMag;
-                                logCombat(`${enemyName} #${enemyIndex + 1} (${attackType}:${attackStat}, SPD:${enemySpeed}) attacking — queue pos: ${queueIndex}/${actionQueue.length}`);
+                                const targetName = target.NAME || 'Player';
+                                logCombat(`${enemyName} #${enemyIndex + 1} (${attackType}:${attackStat}, SPD:${enemySpeed}) attacking ${targetName} — queue pos: ${queueIndex}/${actionQueue.length}`);
                             } catch(e){}
                             let defense = Number(target.DEFENSE || 0);
                             
                             // Ability 20: Spell Shield - Add 25% of magic stat to defense
-                            const activeMemberKey = getActiveBattleMember();
-                            const activeAbilities = getEquippedAbilities(activeMemberKey);
+                            const activeAbilities = getEquippedAbilities(targetKey);
                             if (activeAbilities.includes(20)) {
                                 const magicStat = Number(target.MAGIC || 0);
                                 const magicDefenseBonus = Math.round(magicStat * 0.25);
@@ -3109,6 +3853,17 @@
                             if (enemyEffects && enemyEffects.find(e => e.type === 'chill')) {
                                 baseDmg = baseDmg * 0.75;
                                 logCombat(`❄️ Enemy chilled: -25% damage output`);
+                            }
+                            
+                            // Apply ally support: Protective Aura (ability 48) - 15% damage reduction
+                            const allyKey = targetKey === activeBattleMember ? activeBattleMember2 : activeBattleMember;
+                            const ally = PARTY_STATS[allyKey];
+                            if (ally && ally.HEALTH > 0) {
+                                const allyAbilities = getEquippedAbilities(allyKey);
+                                if (allyAbilities.includes(48)) {
+                                    baseDmg = baseDmg * 0.85;
+                                    logCombat('🛡️ Protective Aura: Ally reduces damage by 15%!');
+                                }
                             }
                             
                             // Apply defense with inverted logarithmic scaling (higher multiplier at low defense)
@@ -3146,7 +3901,51 @@
             // Decrement player lightning cooldown
             if (typeof playerLightningCooldown !== 'undefined' && playerLightningCooldown > 0) {
                 playerLightningCooldown--;
-            }                            // Apply burn ground damage to this enemy
+            }
+            
+            // ===== DEFENSIVE ABILITIES (BEFORE DAMAGE) =====
+            
+            // Ability 30: Ethereal - 25% chance to dodge all damage
+            if (activeAbilities.includes(30) && Math.random() < 0.25) {
+                logCombat(`👻 Ethereal: ${target.NAME} dodged the attack!`);
+                dmg = 0;
+            }
+            
+            // Ability 38: Shield Bash - Counter physical attacks with 30% defense as damage
+            if (activeAbilities.includes(38) && atk.strMultiplier > 0 && dmg > 0) {
+                const bashDmg = Math.round(defense * 0.3);
+                const enemyHp = Number(enemyWrap.dataset.hp);
+                enemyWrap.dataset.hp = Math.max(0, enemyHp - bashDmg);
+                updateEnemyBar(enemyWrap);
+                logCombat(`🛡️ Shield Bash: Countered with ${bashDmg} damage!`);
+            }
+            
+            // Ability 34: Phoenix - Revive once per battle at 30% HP when killed
+            if (activeAbilities.includes(34) && dmg >= Number(target.HEALTH || 0)) {
+                if (!window.phoenixUsed) window.phoenixUsed = {};
+                if (!window.phoenixUsed[targetKey]) {
+                    const reviveHp = Math.ceil(Number(target.MAX_HEALTH || 100) * 0.3);
+                    target.HEALTH = reviveHp;
+                    window.phoenixUsed[targetKey] = true;
+                    updatePlayerArea();
+                    logCombat(`🔥 PHOENIX: ${target.NAME} revived at 30% HP!`);
+                    dmg = 0; // Cancel the killing blow
+                }
+            }
+            
+            // Ability 45: Divine Intervention - Survive lethal damage once per battle at 1 HP
+            if (activeAbilities.includes(45) && dmg >= Number(target.HEALTH || 0)) {
+                if (!window.divineUsed) window.divineUsed = {};
+                if (!window.divineUsed[targetKey]) {
+                    target.HEALTH = 1;
+                    window.divineUsed[targetKey] = true;
+                    updatePlayerArea();
+                    logCombat(`✨ DIVINE INTERVENTION: ${target.NAME} survives at 1 HP!`);
+                    dmg = 0;
+                }
+            }
+            
+                            // Apply burn ground damage to this enemy
                             if (burnGroundEffects[enemyIndex]) {
                                 const burn = burnGroundEffects[enemyIndex];
                                 const burnDmg = burn.damage;
@@ -3172,22 +3971,19 @@
                                 updateEnemyBar(enemyWrap);
                                 logCombat(`🩸 Vampiric: Enemy heals ${healAmount} HP from attack!`);
                             }
-                            
-            // Get the active member key for status effects
-            const memberKey = getActiveBattleMember();
             
-            // Apply special enemy status effects
+            // Apply special enemy status effects using the targeted player's key
             const enemyKey = enemyWrap.dataset.key || (enemyWrap.querySelector('img') ? enemyWrap.querySelector('img').alt : '');
             const enemyBaseStats = ENEMY_BASE_STATS[enemyKey];
             if (enemyBaseStats && enemyBaseStats.attackStatus) {
                 // Frozen corpse applies chill on attack
                 if (enemyBaseStats.attackStatus === 'chill') {
-                    applyStatusEffect(target, 'player', memberKey, 'chill', dmg);
+                    applyStatusEffect(target, 'player', targetKey, 'chill', dmg);
                     logCombat(`❄️ Frozen Touch: ${target.NAME} has been chilled! (25% damage reduction for 3 turns)`);
                 }
                 // Dragon applies burn on attack
                 if (enemyBaseStats.attackStatus === 'burn') {
-                    applyStatusEffect(target, 'player', memberKey, 'burn', dmg);
+                    applyStatusEffect(target, 'player', targetKey, 'burn', dmg);
                     logCombat(`🐉 Dragon's Inferno: ${target.NAME} has been burned! (3% max HP damage per turn)`);
                 }
             }
@@ -3196,25 +3992,25 @@
             if (enemyKey === 'Mage') {
                 const randomStatuses = ['burn', 'bleed', 'chill'];
                 const chosenStatus = randomStatuses[Math.floor(Math.random() * randomStatuses.length)];
-                applyStatusEffect(target, 'player', memberKey, chosenStatus, dmg);
+                applyStatusEffect(target, 'player', targetKey, chosenStatus, dmg);
                 logCombat(`🔮 Arcane Curse: Mage applied ${chosenStatus.toUpperCase()}!`);
             }
             
             // Alien: Apply burn status effect
             if (enemyKey === 'alien') {
-                applyStatusEffect(target, 'player', memberKey, 'burn', dmg);
+                applyStatusEffect(target, 'player', targetKey, 'burn', dmg);
                 logCombat(`👽 Alien Fire: Applied BURN!`);
             }
             
             // Crawler: Apply bleed status effect
             if (enemyKey === 'crawler') {
-                applyStatusEffect(target, 'player', memberKey, 'bleed', dmg);
+                applyStatusEffect(target, 'player', targetKey, 'bleed', dmg);
                 logCombat(`🦂 Venomous Bite: Applied BLEED!`);
             }
             
             // Vine Lasher: Apply leech status effect
             if (enemyKey === 'vineLasher') {
-                applyStatusEffect(target, 'player', memberKey, 'leech', dmg);
+                applyStatusEffect(target, 'player', targetKey, 'leech', dmg);
                 logCombat(`🌿 Draining Vines: Applied LEECH!`);
             }
             
@@ -3304,7 +4100,9 @@
                             updatePlayerArea();
                                         // Play hit animation on player image
                                         try {
-                                            const pimg = document.getElementById('player');
+                                            // Determine which player image to animate based on target
+                                            const playerImgId = (targetKey === activeBattleMember2) ? 'player-2' : 'player-1';
+                                            const pimg = document.getElementById(playerImgId);
                                             if (pimg) {
                                                 pimg.classList.remove('hit-animation');
                                                 void pimg.offsetWidth;
@@ -3316,7 +4114,7 @@
                                         // ===== DEFENSIVE ITEM ABILITIES =====
                                         // Check if player survived to trigger defensive abilities
                                         const playerSurvived = Number(target.HEALTH) > 0;
-                                        const equippedAbilities = getEquippedAbilities(memberKey);
+                                        const equippedAbilities = getEquippedAbilities(targetKey);
                                         
                                         // Ability 3: Magi Reflect - Reflect 10% of holder's magic damage if survived magic attack
                                         if (playerSurvived && isMagicAttack && equippedAbilities.includes(3)) {
@@ -3454,7 +4252,6 @@
                         }
 
                         const COMBAT_TICK_MS = 900; // slower tick so actions are visible
-                        let waitingForPlayerAction = false; // Flag to pause queue until player acts
 
                         // Loop tick
                         function combatTick(){
@@ -3476,7 +4273,7 @@
                             if (actor.type === 'player'){
                                 // Prompt player to act and set flag to pause queue
                                 waitingForPlayerAction = true;
-                                performPlayerAction();
+                                performPlayerAction(actor.playerNum);
                             } else {
                                 // Reset consecutive attack counters when enemy interrupts player's turn
                                 consecutiveAttacks = 0;

@@ -148,6 +148,8 @@ function initializeGameMode() {
     // Set pathLength based on mode
     if (currentGameMode === 'hard') {
         pathLength = 50; // Hard mode is levels 100-150, so 50 tiles
+    } else if (currentGameMode === 'hell') {
+        pathLength = 50; // Hell mode is levels 150-200, so 50 tiles
     } else {
         pathLength = 100; // Normal mode is levels 1-100
     }
@@ -306,7 +308,16 @@ function generateAndSaveDungeon() {
     const list = [];
     for (const key in ENEMY_BASE_STATS) {
       const e = ENEMY_BASE_STATS[key];
-      if (e && Number(e.tier) === Number(tier) && e.image) list.push(e.image);
+      if (!e || !e.image) continue;
+      
+      // Handle both numeric tiers and string tiers (like 'unknown')
+      const tierMatch = (typeof tier === 'string' && tier === 'unknown') 
+        ? e.tier === 'unknown'
+        : Number(e.tier) === Number(tier);
+      
+      if (tierMatch) {
+        list.push(e.image);
+      }
     }
     return list;
   }
@@ -330,7 +341,14 @@ function generateAndSaveDungeon() {
     
     // Calculate actual level based on game mode
     const tileIndex = index + 1;
-    const level = currentGameMode === 'hard' ? (100 + tileIndex) : tileIndex;
+    let level;
+    if (currentGameMode === 'hard') {
+      level = 100 + tileIndex;
+    } else if (currentGameMode === 'hell') {
+      level = 150 + tileIndex;
+    } else {
+      level = tileIndex;
+    }
     
     const tile = { level };
 
@@ -394,6 +412,123 @@ function generateAndSaveDungeon() {
         tile.enemyThree = picks[2] || null;
         tile.enemyFour = picks[3] || null;
         tile.enemyFive = picks[4] || null;
+      }
+    }
+    // Hell Mode specific logic
+    else if (currentGameMode === 'hell') {
+      const hellLevel = level;
+      const tileIndex = index + 1;
+      const actualLevel = 150 + tileIndex; // Hell mode is levels 151-200
+      
+      tile.level = actualLevel; // Override level for hell mode
+      
+      if (tileIndex === 1) {
+        // First tile of hell mode (level 151)
+        tile.title = "Hell Mode - Start";
+        tile.description = "Unknown entities await...";
+        tile.cleared = false;
+        tile.status = true; // accessible
+        const unknownPool = getEnemiesByTier('unknown');
+        const count = 2;
+        const picks = [];
+        for (let i = 0; i < count; i++) {
+          if (!unknownPool.length) break;
+          const img = unknownPool[Math.floor(Math.random() * unknownPool.length)];
+          picks.push(img);
+        }
+        tile.enemyOne = picks[0] || null;
+        tile.enemyTwo = picks[1] || null;
+        tile.enemyThree = null;
+        tile.enemyFour = null;
+        tile.enemyFive = null;
+      } else if (actualLevel === 200) {
+        // Final boss: The Overseer (tier 7)
+        tile.title = "The Overseer";
+        tile.description = "The Ancient One awaits at the pinnacle of hell.";
+        tile.cleared = false;
+        tile.status = false;
+        tile.isBossTile = true;
+        tile.enemyOne = "Enemies/overseer.png";
+        tile.enemyTwo = null;
+        tile.enemyThree = null;
+        tile.enemyFour = null;
+        tile.enemyFive = null;
+      } else if (actualLevel === 175) {
+        // Mid-boss: Monstrous Fish with minions
+        tile.title = "Abyssal Terror";
+        tile.description = "The Monstrous Fish rules this domain.";
+        tile.cleared = false;
+        tile.status = false;
+        tile.isBossTile = true;
+        tile.enemyOne = "Enemies/monstruousFish.png";
+        // Add some minions (uncommon/rare enemies for tier 6 boss fight)
+        const minionPool = getEnemiesByTier(2).concat(getEnemiesByTier(3));
+        tile.enemyTwo = minionPool.length ? minionPool[Math.floor(Math.random() * minionPool.length)] : null;
+        tile.enemyThree = minionPool.length ? minionPool[Math.floor(Math.random() * minionPool.length)] : null;
+        tile.enemyFour = null;
+        tile.enemyFive = null;
+      } else {
+        // Regular hell mode tiles: mix of unknown enemies and buffed lower-tier enemies
+        tile.title = "Hell Mode";
+        tile.description = "Reality distorts around mysterious foes.";
+        tile.cleared = false;
+        tile.status = false;
+        
+        // Build pool: unknown enemies + all tiers 2-5
+        let unknownPool = getEnemiesByTier('unknown');
+        
+        // Exclude monstrous fish until after level 175
+        if (actualLevel <= 175) {
+          unknownPool = unknownPool.filter(img => img !== "Enemies/monstruousFish.png");
+        }
+        
+        const tier2Pool = getEnemiesByTier(2);
+        const tier3Pool = getEnemiesByTier(3);
+        const tier4Pool = getEnemiesByTier(4);
+        const tier5Pool = getEnemiesByTier(5);
+        
+        // Weighted pool - favor unknown enemies (5x weight)
+        let pool = [];
+        for (let i = 0; i < 5; i++) pool = pool.concat(unknownPool); // 5x weight for unknown
+        pool = pool.concat(tier2Pool, tier3Pool, tier4Pool, tier5Pool);
+        
+        // Enemy count: Fixed ranges to ensure variety
+        // Fewer enemies = higher individual power (handled by battle stat multipliers)
+        // More enemies = lower individual power but more total threat
+        let minEnemies, maxEnemies;
+        if (actualLevel <= 160) {
+          minEnemies = 2;
+          maxEnemies = 4; // 2-4 enemies
+        } else if (actualLevel <= 170) {
+          minEnemies = 3;
+          maxEnemies = 5; // 3-5 enemies
+        } else if (actualLevel <= 180) {
+          minEnemies = 3;
+          maxEnemies = 6; // 3-6 enemies
+        } else if (actualLevel <= 190) {
+          minEnemies = 4;
+          maxEnemies = 7; // 4-7 enemies
+        } else {
+          minEnemies = 5;
+          maxEnemies = 7; // 5-7 enemies
+        }
+        
+        const count = minEnemies + Math.floor(Math.random() * (maxEnemies - minEnemies + 1));
+        
+        const picks = [];
+        for (let i = 0; i < count; i++) {
+          if (!pool.length) break;
+          const img = pool[Math.floor(Math.random() * pool.length)];
+          picks.push(img);
+        }
+        
+        tile.enemyOne = picks[0] || null;
+        tile.enemyTwo = picks[1] || null;
+        tile.enemyThree = picks[2] || null;
+        tile.enemyFour = picks[3] || null;
+        tile.enemyFive = picks[4] || null;
+        tile.enemySix = picks[5] || null;
+        tile.enemySeven = picks[6] || null;
       }
     }
     // Normal Mode logic
@@ -500,11 +635,25 @@ function renderGrid() {
         cell.style.opacity = data.status ? 1 : 0.5;
         cell.style.borderColor = data.cleared ? "green" : "black";
         cell.textContent = `Lvl ${data.level}`;
-        // Boss marker styling for levels 25, 50, 75, 100
-        if (data.level === 25 || data.level === 50 || data.level === 75 || data.level === 100) {
-          cell.classList.add('boss-cell');
+        
+        // Define specific mini-boss levels (excluding Hell Mode)
+        const miniBossLevels = [25, 50, 75, 105, 110, 115, 120, 125, 130, 135, 140, 145];
+        const isFinalBoss = data.level === 100 || data.level === 150 || data.level === 200;
+        const isMidBoss = data.level === 175; // Monstrous Fish
+        const isMiniBoss = miniBossLevels.includes(data.level);
+        
+        // Apply appropriate class
+        if (isFinalBoss) {
+          cell.classList.add('final-boss-cell');
+          cell.classList.remove('mini-boss-cell', 'mid-boss-cell');
+        } else if (isMidBoss) {
+          cell.classList.add('mid-boss-cell');
+          cell.classList.remove('final-boss-cell', 'mini-boss-cell');
+        } else if (isMiniBoss) {
+          cell.classList.add('mini-boss-cell');
+          cell.classList.remove('final-boss-cell', 'mid-boss-cell');
         } else {
-          cell.classList.remove('boss-cell');
+          cell.classList.remove('mini-boss-cell', 'final-boss-cell', 'mid-boss-cell');
         }
       } else {
         cell.style.visibility = "hidden";
@@ -512,6 +661,30 @@ function renderGrid() {
       map.appendChild(cell);
     }
   }
+}
+
+// Helper function to check if a tile has tier 5 enemies
+function checkForTier5Enemies(tileData) {
+  if (!tileData) return false;
+  
+  const enemyImages = [
+    tileData.enemyOne,
+    tileData.enemyTwo,
+    tileData.enemyThree,
+    tileData.enemyFour,
+    tileData.enemyFive
+  ].filter(e => e);
+  
+  // Check each enemy image against ENEMY_BASE_STATS
+  for (const enemyImg of enemyImages) {
+    for (const key in ENEMY_BASE_STATS) {
+      const enemy = ENEMY_BASE_STATS[key];
+      if (enemy && enemy.image === enemyImg && enemy.tier === 5) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 // Event listener for the entire map container
@@ -528,7 +701,11 @@ map.addEventListener("click", (e) => {
       const enemies = [
         data.enemyOne,
         data.enemyTwo,
-        data.enemyThree
+        data.enemyThree,
+        data.enemyFour,
+        data.enemyFive,
+        data.enemySix,
+        data.enemySeven
       ].filter(enemy => enemy);
 
       const enemiesHTML = enemies.map(enemy =>
@@ -808,18 +985,11 @@ function getRarityColor(rarity) {
 window.getRarityColor = getRarityColor;
 
 const ITEM_TABLE = {
-  "Wooden Sword": {
-    slot: "Weapon",
-    rarity: "Common",
-    strength: 3,
-    speed: 1,
-    magic: 0,
-    defense: 1,
-    health: 2,
-    attack: "stap",
-    ability: 1,
-    image: "Items/woodenSword.png",
-  },
+  // ========================================
+  // SET 1 ITEMS - Rebalanced for Specialists
+  // ========================================
+  
+  // BASE
   "Stick": {
     slot: "Weapon",
     rarity: "Base",
@@ -828,69 +998,38 @@ const ITEM_TABLE = {
     magic: 1,
     defense: 0,
     health: 0,
+    mana: 5,
     attack: "poke",
     ability: 0,
     image: "Items/stick.png",
   },
+  
+  // COMMON - Early balanced items
+  "Wooden Sword": {
+    slot: "Weapon",
+    rarity: "Common",
+    strength: 4,
+    speed: 1,
+    magic: 0,
+    defense: 0,
+    health: 2,
+    mana: 0,
+    attack: "stap",
+    ability: 1,
+    image: "Items/woodenSword.png",
+  },
   "Grass Staff": {
     slot: "Weapon",
     rarity: "Common",
-    strength: 1,
+    strength: 0,
     speed: 1,
-    magic: 3,
-    defense: 1,
+    magic: 4,
+    defense: 0,
     health: 2,
+    mana: 10,
     attack: "leaf impale",
     ability: 1,
     image: "Items/grassStaff.png",
-  },
-  "Coral Dagger": {
-    slot: "Weapon",
-    rarity: "Uncommon",
-    strength: 3,
-    speed: 2,
-    magic: 1,
-    defense: 1,
-    health: 3,
-    attack: "coral leech",
-    ability: null,
-    image: "Items/coralDagger.png",
-  },
-  "Spell Shield": {
-    slot: "Offhand",
-    rarity: "Epic",
-    strength: 1,
-    speed: 1,
-    magic: 5,
-    defense: 6,
-    health: 6,
-    attack: null,
-    ability: 20,
-    image: "Items/spellShield.png",
-  },
-  "Sea Crystal": {
-    slot: "Offhand",
-    rarity: "Uncommon",
-    strength: 1,
-    speed: 1,
-    magic: 3,
-    defense: 1,
-    health: 3,
-    attack: "sea shield",
-    ability: 21,
-    image: "Items/seaCrystal.png",
-  },
-  "Shell": {
-    slot: "Offhand",
-    rarity: "Uncommon",
-    strength: 2,
-    speed: 0,
-    magic: 0,
-    defense: 6,
-    health: 3,
-    attack: "none",
-    ability: 0,
-    image: "Items/shell.png",
   },
   "Iron Helmet": {
     slot: "Helmet",
@@ -898,8 +1037,9 @@ const ITEM_TABLE = {
     strength: 0,
     speed: 0,
     magic: 0,
-    defense: 2,
-    health: 2,
+    defense: 3,
+    health: 3,
+    mana: 0,
     attack: "none",
     ability: 0,
     image: "Items/ironHelmet.png",
@@ -910,8 +1050,9 @@ const ITEM_TABLE = {
     strength: 0,
     speed: 0,
     magic: 0,
-    defense: 3,
-    health: 3,
+    defense: 4,
+    health: 4,
+    mana: 0,
     attack: "none",
     ability: 0,
     image: "Items/ironChest.png",
@@ -922,8 +1063,9 @@ const ITEM_TABLE = {
     strength: 0,
     speed: 0,
     magic: 0,
-    defense: 2,
-    health: 2,
+    defense: 3,
+    health: 3,
+    mana: 0,
     attack: "none",
     ability: 0,
     image: "Items/ironPants.png",
@@ -932,22 +1074,79 @@ const ITEM_TABLE = {
     slot: "Boot",
     rarity: "Common",
     strength: 0,
-    speed: 1,
+    speed: 2,
     magic: 0,
     defense: 1,
     health: 1,
+    mana: 0,
     attack: "none",
     ability: 0,
     image: "Items/ironBoots.png",
   },
+  
+  // UNCOMMON - Specialization begins
+  "Coral Dagger": {
+    slot: "Weapon",
+    rarity: "Uncommon",
+    strength: 5,
+    speed: 3,
+    magic: 0,
+    defense: 0,
+    health: 2,
+    mana: 0,
+    attack: "coral leech",
+    ability: null,
+    image: "Items/coralDagger.png",
+  },
+  "Sea Crystal": {
+    slot: "Offhand",
+    rarity: "Rare",
+    strength: 0,
+    speed: 2,
+    magic: 7,
+    defense: 3,
+    health: 5,
+    mana: 25,
+    attack: "sea shield",
+    ability: 21, // Sea Shield: Immune to leech, burn, and chill status effects
+    image: "Items/seaCrystal.png",
+  },
+  "Shell": {
+    slot: "Offhand",
+    rarity: "Uncommon",
+    strength: 0,
+    speed: 0,
+    magic: 0,
+    defense: 8,
+    health: 4,
+    mana: 0,
+    attack: "none",
+    ability: 0,
+    image: "Items/shell.png",
+  },
+  "Water Skaters": {
+    slot: "Boots",
+    rarity: "Uncommon",
+    strength: 0,
+    speed: 4,
+    magic: 0,
+    defense: 2,
+    health: 2,
+    mana: 0,
+    attack: null,
+    ability: null,
+    image: "Items/waterSkaters.png",
+  },
+  
+  // RARE - Strong specialization
   "Spiked Shield": {
     slot: "Weapon",
     rarity: "Rare",
-    strength: 4,
-    speed: 1,
-    magic: 1,
-    defense: 7,
-    health: 5,
+    strength: 6,
+    speed: 0,
+    magic: 0,
+    defense: 9,
+    health: 6,
     attack: "Charge",
     ability: 4,
     image: "Items/spikedShield.png",
@@ -955,23 +1154,35 @@ const ITEM_TABLE = {
   "Grimore": {
     slot: "Weapon",
     rarity: "Rare",
-    strength: 1,
+    strength: 0,
     speed: 2,
-    magic: 4,
-    defense: 1,
+    magic: 7,
+    defense: 0,
     health: 3,
     attack: "Plasma Blast",
     ability: 5,
     image: "Items/grimoire.png",
   },
+  "Ice Spear": {
+    slot: "Weapon",
+    rarity: "Rare",
+    strength: 7,
+    speed: 3,
+    magic: 0,
+    defense: 0,
+    health: 3,
+    attack: "plunge",
+    ability: 1,
+    image: "Items/iceSpear.png",
+  },
   "Forest Crown": {
     slot: "Helmet",
     rarity: "Rare",
-    strength: 1,
-    speed: 2,
+    strength: 0,
+    speed: 3,
     magic: 2,
     defense: 3,
-    health: 6,
+    health: 7,
     attack: "Tree People",
     ability: 0,
     image: "Items/forestCrown.png",
@@ -979,11 +1190,11 @@ const ITEM_TABLE = {
   "Frosted Helmet": {
     slot: "Helmet",
     rarity: "Rare",
-    strength: 1,
-    speed: 1,
-    magic: 1,
-    defense: 4,
-    health: 6,
+    strength: 0,
+    speed: 0,
+    magic: 2,
+    defense: 6,
+    health: 7,
     attack: "none",
     ability: 0,
     image: "Items/frostHelmet.png",
@@ -991,11 +1202,11 @@ const ITEM_TABLE = {
   "Frosted Chest": {
     slot: "Chest",
     rarity: "Rare",
-    strength: 1,
+    strength: 0,
     speed: 0,
-    magic: 2,
-    defense: 6,
-    health: 7,
+    magic: 3,
+    defense: 8,
+    health: 8,
     attack: "none",
     ability: 0,
     image: "Items/frostChest.png",
@@ -1003,11 +1214,11 @@ const ITEM_TABLE = {
   "Frosted Leg": {
     slot: "Leg",
     rarity: "Rare",
-    strength: 1,
+    strength: 0,
     speed: 1,
-    magic: 1,
-    defense: 5,
-    health: 4,
+    magic: 2,
+    defense: 7,
+    health: 5,
     attack: "none",
     ability: 0,
     image: "Items/frostPants.png",
@@ -1015,8 +1226,8 @@ const ITEM_TABLE = {
   "Frosted Boots": {
     slot: "Boot",
     rarity: "Rare",
-    strength: 1,
-    speed: 2,
+    strength: 0,
+    speed: 4,
     magic: 1,
     defense: 3,
     health: 3,
@@ -1024,25 +1235,15 @@ const ITEM_TABLE = {
     ability: 0,
     image: "Items/frostBoots.png",
   },
-  "Ice Spear": {
-    slot: "Weapon",
-    rarity: "Rare",
-    strength: 5,
-    speed: 2,
-    magic: 1,
-    defense: 1,
-    health: 3,
-    attack: "plunge",
-    ability: 1,
-    image: "Items/iceSpear.png",
-  },
+  
+  // EPIC - Heavy specialization
   "Shadow Staff": {
     slot: "Weapon",
     rarity: "Epic",
-    strength: 2,
+    strength: 0,
     speed: 2,
-    magic: 6,
-    defense: 1,
+    magic: 9,
+    defense: 0,
     health: 4,
     attack: "shadow vortex",
     ability: 7,
@@ -1051,23 +1252,35 @@ const ITEM_TABLE = {
   "Blaze Blade": {
     slot: "Weapon",
     rarity: "Epic",
-    strength: 6,
-    speed: 3,
-    magic: 3,
-    defense: 2,
+    strength: 9,
+    speed: 4,
+    magic: 0,
+    defense: 1,
     health: 4,
     attack: "Incenerate",
     ability: 8,
     image: "Items/blazeBlade.png",
   },
+  "Spell Shield": {
+    slot: "Offhand",
+    rarity: "Epic",
+    strength: 0,
+    speed: 0,
+    magic: 7,
+    defense: 8,
+    health: 6,
+    attack: null,
+    ability: 20,
+    image: "Items/spellShield.png",
+  },
   "Gem Helmet": {
     slot: "Helmet",
     rarity: "Epic",
-    strength: 2,
-    speed: 1,
-    magic: 2,
-    defense: 6,
-    health: 8,
+    strength: 1,
+    speed: 0,
+    magic: 3,
+    defense: 8,
+    health: 9,
     attack: "none",
     ability: 3,
     image: "Items/gemHelmet.png",
@@ -1075,11 +1288,11 @@ const ITEM_TABLE = {
   "Gem Chest": {
     slot: "Chest",
     rarity: "Epic",
-    strength: 3,
-    speed: 1,
-    magic: 3,
-    defense: 9,
-    health: 10,
+    strength: 2,
+    speed: 0,
+    magic: 4,
+    defense: 11,
+    health: 11,
     attack: "none",
     ability: 0,
     image: "Items/gemChest.png",
@@ -1087,11 +1300,11 @@ const ITEM_TABLE = {
   "Gem Legs": {
     slot: "Leg",
     rarity: "Epic",
-    strength: 2,
-    speed: 2,
-    magic: 2,
-    defense: 6,
-    health: 6,
+    strength: 1,
+    speed: 1,
+    magic: 3,
+    defense: 8,
+    health: 7,
     attack: "none",
     ability: 0,
     image: "Items/gemLegs.png",
@@ -1099,34 +1312,24 @@ const ITEM_TABLE = {
   "Gem Boots": {
     slot: "Boots",
     rarity: "Epic",
-    strength: 1,
-    speed: 3,
-    magic: 1,
+    strength: 0,
+    speed: 5,
+    magic: 2,
     defense: 4,
     health: 5,
     attack: "none",
     ability: 3,
     image: "Items/gemBoots.png",
   },
-  "Water Skaters": {
-    slot: "Boots",
-    rarity: "Uncommon",
-    strength: 1,
-    speed: 2,
-    magic: 1,
-    defense: 3,
-    health: 3,
-    attack: null,
-    ability: null,
-    image: "Items/waterSkaters.png",
-  },
+  
+  // LEGENDARY - Extreme specialization with some versatility
   "Energy Saber": {
     slot: "Weapon",
     rarity: "Legendary",
-    strength: 7,
-    speed: 3,
-    magic: 3,
-    defense: 3,
+    strength: 10,
+    speed: 5,
+    magic: 1,
+    defense: 2,
     health: 6,
     attack: "force strike",
     ability: 10,
@@ -1135,10 +1338,10 @@ const ITEM_TABLE = {
   "Demon Sythe": {
     slot: "Weapon",
     rarity: "Legendary",
-    strength: 8,
-    speed: 3,
-    magic: 2,
-    defense: 3,
+    strength: 11,
+    speed: 4,
+    magic: 0,
+    defense: 2,
     health: 5,
     attack: "Grim slice",
     ability: 10,
@@ -1147,10 +1350,10 @@ const ITEM_TABLE = {
   "Lightning Spear": {
     slot: "Offhand",
     rarity: "Legendary",
-    strength: 6,
-    speed: 4,
-    magic: 3,
-    defense: 3,
+    strength: 8,
+    speed: 6,
+    magic: 2,
+    defense: 2,
     health: 6,
     attack: "Thunder",
     ability: 12,
@@ -1159,10 +1362,10 @@ const ITEM_TABLE = {
   "Pixel Sword": {
     slot: "Weapon",
     rarity: "Legendary",
-    strength: 8,
-    speed: 4,
-    magic: 2,
-    defense: 3,
+    strength: 11,
+    speed: 6,
+    magic: 0,
+    defense: 2,
     health: 6,
     attack: "Combo",
     ability: 13,
@@ -1171,22 +1374,24 @@ const ITEM_TABLE = {
   "Ice Cream Gun": {
     slot: "Weapon",
     rarity: "Legendary",
-    strength: 3,
-    speed: 3,
-    magic: 7,
-    defense: 3,
+    strength: 0,
+    speed: 4,
+    magic: 10,
+    defense: 2,
     health: 5,
     attack: "Chilled Cream",
     ability: 14,
     image: "Items/iceCreamGun.png",
   },
+  
+  // MYTHICAL - Peak specialization, balanced generalist option exists
   "Running Spikes": {
     slot: "Boots",
     rarity: "Mythical",
-    strength: 3,
-    speed: 6,
-    magic: 3,
-    defense: 6,
+    strength: 1,
+    speed: 9,
+    magic: 1,
+    defense: 5,
     health: 7,
     attack: "none",
     ability: 15,
@@ -1195,10 +1400,10 @@ const ITEM_TABLE = {
   "Rulers Hand": {
     slot: "Weapon",
     rarity: "Mythical",
-    strength: 6,
-    speed: 4,
-    magic: 3,
-    defense: 5,
+    strength: 9,
+    speed: 5,
+    magic: 1,
+    defense: 4,
     health: 8,
     attack: "Arise",
     ability: 16,
@@ -1207,10 +1412,10 @@ const ITEM_TABLE = {
   "Muramasa": {
     slot: "Weapon",
     rarity: "Mythical",
-    strength: 10,
-    speed: 5,
-    magic: 3,
-    defense: 3,
+    strength: 13,
+    speed: 7,
+    magic: 0,
+    defense: 2,
     health: 6,
     attack: "Pure skill",
     ability: 17,
@@ -1219,10 +1424,10 @@ const ITEM_TABLE = {
   "Spell Blade": {
     slot: "Weapon",
     rarity: "Mythical",
-    strength: 4,
-    speed: 4,
-    magic: 9,
-    defense: 3,
+    strength: 5,
+    speed: 5,
+    magic: 11,
+    defense: 2,
     health: 6,
     attack: "spell infused",
     ability: 18,
@@ -1231,15 +1436,17 @@ const ITEM_TABLE = {
   "Enhanced Stick": {
     slot: "Weapon",
     rarity: "Mythical",
-    strength: 5,
-    speed: 3,
-    magic: 4,
-    defense: 3,
+    strength: 6,
+    speed: 4,
+    magic: 6,
+    defense: 2,
     health: 6,
     attack: "enhance",
     ability: 19,
     image: "Items/enhancedStick.png",
   },
+  
+  // ARTIFACT
   "Divine Crown": {
     slot: "Helmet",
     rarity: "Artifact",
@@ -1251,6 +1458,333 @@ const ITEM_TABLE = {
     attack: "Rulers Authority",
     ability: 20,
     image: "Items/divineCrown.png",
+  },
+  
+  // ========================================
+  // SET 2 ITEMS - Unique Specialist Items
+  // ========================================
+  
+  // COMMON SET 2
+  "Training Weights": {
+    slot: "Leg",
+    rarity: "Common",
+    strength: 3,
+    speed: 0,
+    magic: 0,
+    defense: 1,
+    health: 4,
+    attack: "none",
+    ability: 22, // Fury: Deal +10% damage per 10% HP missing
+    image: "Items/trainingWeights.png",
+  },
+  "Apprentice Robes": {
+    slot: "Chest",
+    rarity: "Common",
+    strength: 0,
+    speed: 1,
+    magic: 3,
+    defense: 1,
+    health: 3,
+    attack: "none",
+    ability: 33, // Arcane Surge: Casting magic restores 10% of mana cost
+    image: "Items/apprenticeRobes.png",
+  },
+  "Swift Gloves": {
+    slot: "Offhand",
+    rarity: "Common",
+    strength: 0,
+    speed: 3,
+    magic: 0,
+    defense: 1,
+    health: 2,
+    attack: "Quick Jab",
+    ability: 0,
+    image: "Items/swiftGloves.png",
+  },
+  
+  // UNCOMMON SET 2
+  "Berserker Axe": {
+    slot: "Weapon",
+    rarity: "Uncommon",
+    strength: 6,
+    speed: 0,
+    magic: 0,
+    defense: 0,
+    health: 5,
+    attack: "Reckless Swing",
+    ability: 32, // Berserker: Gain +5% damage per consecutive attack (max +50%)
+    image: "Items/berserkerAxe.png",
+  },
+  "Arcane Focus": {
+    slot: "Offhand",
+    rarity: "Uncommon",
+    strength: 0,
+    speed: 0,
+    magic: 6,
+    defense: 1,
+    health: 2,
+    attack: "Arcane Bolt",
+    ability: 25, // Meteor Strike: 20% chance to deal 200% AOE damage
+    image: "Items/arcaneFocus.png",
+  },
+  "Assassin's Boots": {
+    slot: "Boot",
+    rarity: "Uncommon",
+    strength: 2,
+    speed: 5,
+    magic: 0,
+    defense: 0,
+    health: 1,
+    attack: "none",
+    ability: 30, // Ethereal: 25% chance to dodge all damage
+    image: "Items/assassinBoots.png",
+  },
+  "Healer's Vestment": {
+    slot: "Chest",
+    rarity: "Uncommon",
+    strength: 0,
+    speed: 1,
+    magic: 5,
+    defense: 5,
+    health: 7,
+    mana: 20,
+    attack: "none",
+    ability: 53, // Regeneration: Restore 3% max HP to both players per turn
+    image: "Items/healerVestment.png",
+  },
+  
+  // RARE SET 2
+  "Blood Reaver": {
+    slot: "Weapon",
+    rarity: "Rare",
+    strength: 8,
+    speed: 2,
+    magic: 0,
+    defense: 0,
+    health: 4,
+    attack: "Drain Strike",
+    ability: 31, // Life Drain: Heal 20% of damage dealt
+    image: "Items/bloodReaver.png",
+  },
+  "Oracle's Vision": {
+    slot: "Helmet",
+    rarity: "Rare",
+    strength: 1,
+    speed: 3,
+    magic: 6,
+    defense: 4,
+    health: 6,
+    mana: 25,
+    attack: "Foresight",
+    ability: 52, // Precognition: Grant ally +10% damage and +10% defense
+    image: "Items/oracleVision.png",
+  },
+  "Titan Gauntlets": {
+    slot: "Offhand",
+    rarity: "Rare",
+    strength: 7,
+    speed: -1,
+    magic: 0,
+    defense: 5,
+    health: 8,
+    attack: "Ground Slam",
+    ability: 44, // Reaper: Deal bonus damage equal to 5% of enemy max HP
+    image: "Items/titanGauntlets.png",
+  },
+  "Sage's Codex": {
+    slot: "Offhand",
+    rarity: "Rare",
+    strength: 0,
+    speed: 1,
+    magic: 7,
+    defense: 2,
+    health: 4,
+    mana: 25,
+    attack: "Wisdom Beam",
+    ability: 47, // Sage's Wisdom: Restore 5% max mana to both players per turn
+    image: "Items/sagesCodex.png",
+  },
+  
+  // EPIC SET 2
+  "Executioner's Edge": {
+    slot: "Weapon",
+    rarity: "Epic",
+    strength: 11,
+    speed: 3,
+    magic: 0,
+    defense: 1,
+    health: 5,
+    attack: "Decapitate",
+    ability: 24, // Execute: Deal 300% damage to enemies below 25% HP
+    image: "Items/executionerEdge.png",
+  },
+  "Void Catalyst": {
+    slot: "Weapon",
+    rarity: "Epic",
+    strength: 0,
+    speed: 3,
+    magic: 11,
+    defense: 1,
+    health: 4,
+    attack: "Void Surge",
+    ability: 29, // Corruption: Deal +50% damage to enemies with status effects
+    image: "Items/voidCatalyst.png",
+  },
+  "Guardian's Embrace": {
+    slot: "Chest",
+    rarity: "Epic",
+    strength: 2,
+    speed: 0,
+    magic: 4,
+    defense: 10,
+    health: 12,
+    mana: 20,
+    attack: "none",
+    ability: 48, // Protective Aura: Allies (dual-player) take 15% less damage
+    image: "Items/guardianEmbrace.png",
+  },
+  "Versatile Grimoire": {
+    slot: "Offhand",
+    rarity: "Epic",
+    strength: 3,
+    speed: 2,
+    magic: 8,
+    defense: 4,
+    health: 6,
+    mana: 30,
+    attack: "Adaptive Spell",
+    ability: 49, // Versatility: Share 15% of your highest stat with ally
+    image: "Items/versatileGrimoire.png",
+  },
+  "Dragon Scale Armor": {
+    slot: "Chest",
+    rarity: "Epic",
+    strength: 3,
+    speed: -1,
+    magic: 2,
+    defense: 12,
+    health: 10,
+    attack: "none",
+    ability: 34, // Phoenix: Revive once per battle at 30% HP when killed
+    image: "Items/dragonScaleArmor.png",
+  },
+  
+  // LEGENDARY SET 2
+  "Godslayer Blade": {
+    slot: "Weapon",
+    rarity: "Legendary",
+    strength: 13,
+    speed: 6,
+    magic: 1,
+    defense: 2,
+    health: 7,
+    mana: 15,
+    attack: "Divine Rend",
+    ability: 50, // Godslayer: Heal to full HP on kill
+    image: "Items/godslayerBlade.png",
+  },
+  "Cosmic Orb": {
+    slot: "Offhand",
+    rarity: "Legendary",
+    strength: 1,
+    speed: 5,
+    magic: 12,
+    defense: 2,
+    health: 6,
+    mana: 35,
+    attack: "Supernova",
+    ability: 35, // Frozen Heart: 40% chance to freeze enemies hit for 1 turn
+    image: "Items/cosmicOrb.png",
+  },
+  "Quicksilver Daggers": {
+    slot: "Weapon",
+    rarity: "Legendary",
+    strength: 9,
+    speed: 8,
+    magic: 0,
+    defense: 1,
+    health: 5,
+    attack: "Blur",
+    ability: 43, // Elemental Chaos: Attacks randomly deal fire, ice, or lightning damage (+30%)
+    image: "Items/quicksilverDaggers.png",
+  },
+  "Harmony Treads": {
+    slot: "Boots",
+    rarity: "Legendary",
+    strength: 4,
+    speed: 8,
+    magic: 4,
+    defense: 3,
+    health: 7,
+    mana: 20,
+    attack: "none",
+    ability: 51, // Balance: Grant both players +20% speed when fighting together
+    image: "Items/harmonyTreads.png",
+  },
+  
+  // MYTHICAL SET 2
+  "Aegis Shield": {
+    slot: "Offhand",
+    rarity: "Mythical",
+    strength: 3,
+    speed: 1,
+    magic: 5,
+    defense: 13,
+    health: 12,
+    mana: 25,
+    attack: "Shield Bash",
+    ability: 45, // Divine Intervention: Survive lethal damage once per battle at 1 HP
+    image: "Items/aegisShield.png",
+  },
+  "Soul Reaper": {
+    slot: "Weapon",
+    rarity: "Mythical",
+    strength: 12,
+    speed: 6,
+    magic: 4,
+    defense: 3,
+    health: 7,
+    attack: "Soul Harvest",
+    ability: 26, // Death's Touch: Attacks instantly kill enemies below 15% HP
+    image: "Items/soulReaper.png",
+  },
+  "Archmage Vestments": {
+    slot: "Chest",
+    rarity: "Mythical",
+    strength: 1,
+    speed: 3,
+    magic: 13,
+    defense: 7,
+    health: 8,
+    attack: "none",
+    ability: 36, // Thunder God: Lightning attacks chain to 2 random enemies for 50% damage
+    image: "Items/archmageVestments.png",
+  },
+  "Celestial Treads": {
+    slot: "Boots",
+    rarity: "Mythical",
+    strength: 2,
+    speed: 10,
+    magic: 3,
+    defense: 5,
+    health: 7,
+    attack: "none",
+    ability: 39, // Mana Burn: Physical attacks drain 20% of enemy max mana
+    image: "Items/celestialTreads.png",
+  },
+  
+  // ARTIFACT SET 2
+  "World Ender": {
+    slot: "Weapon",
+    rarity: "Artifact",
+    strength: 15,
+    speed: 6,
+    magic: 6,
+    defense: 4,
+    health: 10,
+    attack: "Apocalypse",
+    ability: 46, // Apocalypse: Deal 150% damage to all enemies when HP drops below 20%
+    image: "Items/worldEnder.png",
   },
 };
 
@@ -1385,9 +1919,25 @@ function resetInventory() {
           strMultiplier: 0.5,
           magicMultiplier: 0,
           status: 'none',
+          manaCost: 0, // Free basic attack
         };
         PARTY_ATTACKS[k].ATTACK_INVENTORY.push(punchAttack);
         PARTY_ATTACKS[k].ATTACK_EQUIPPED.add(punchAttack.id);
+        
+        // Give everyone the "Rest" attack to restore mana
+        const restAttack = {
+          id: attackCounter++,
+          sourceUid: null,
+          name: 'Rest',
+          itemName: 'Rest',
+          strMultiplier: 0,
+          magicMultiplier: 0,
+          status: 'none',
+          manaCost: 0,
+          isRest: true, // Special flag for rest action
+        };
+        PARTY_ATTACKS[k].ATTACK_INVENTORY.push(restAttack);
+        PARTY_ATTACKS[k].ATTACK_EQUIPPED.add(restAttack.id);
       }
     }
     
@@ -1436,6 +1986,7 @@ const ENEMY_BASE_STATS = {
     magic:0,
     speed:2,
     defense:1.5,
+    mana:100,
     hBars:1,
     image:"Enemies/skull.png",
     tier:1,
@@ -1446,6 +1997,7 @@ const ENEMY_BASE_STATS = {
     magic:0,
     speed:1.5,
     defense:2.5,
+    mana:100,
     hBars:1,
     image:"Enemies/slime.png",
     tier:2,
@@ -1456,6 +2008,7 @@ const ENEMY_BASE_STATS = {
     magic:4,
     speed:2.5,
     defense:3,
+    mana:180,
     hBars:1,
     image:"Enemies/alien.png",
     tier:3,
@@ -1467,6 +2020,7 @@ const ENEMY_BASE_STATS = {
     magic:0,
     speed:3,
     defense:8,
+    mana:120,
     hBars:1,
     image:"Enemies/cursedKnight.png",
     tier:4,
@@ -1478,6 +2032,7 @@ const ENEMY_BASE_STATS = {
     magic:2,
     speed:6,
     defense:5,
+    mana:150,
     hBars:1,
     image:"Enemies/shadow.png",
     tier:5,
@@ -1489,6 +2044,7 @@ const ENEMY_BASE_STATS = {
     magic:5,
     speed:3.5,
     defense:8,
+    mana:220,
     hBars:1,
     image:"Enemies/dragon.png",
     tier:5,
@@ -1502,6 +2058,7 @@ const ENEMY_BASE_STATS = {
     magic:0,
     speed:1.5,
     defense:1.5,
+    mana:100,
     hBars:1,
     image:"Enemies/corspe.png",
     tier:1,
@@ -1513,6 +2070,7 @@ const ENEMY_BASE_STATS = {
     magic:0,
     speed:1,
     defense:3.5,
+    mana:110,
     hBars:2,
     image:"Enemies/crawler.png",
     tier:2,
@@ -1531,6 +2089,7 @@ const ENEMY_BASE_STATS = {
     magic:3,
     speed:1.5,
     defense:3,
+    mana:160,
     hBars:1,
     image:"Enemies/frozenCorspe.png",
     tier:3,
@@ -1543,6 +2102,7 @@ const ENEMY_BASE_STATS = {
     magic:5.5,
     speed:2,
     defense:6,
+    mana:240,
     hBars:1,
     image:"Enemies/necromancer.png",
     tier:4,
@@ -1554,6 +2114,7 @@ const ENEMY_BASE_STATS = {
     magic:1,
     speed:5,
     defense:4,
+    mana:180,
     hBars:1,
     image:"Enemies/mutant.png",
     tier:5,
@@ -1566,6 +2127,7 @@ const ENEMY_BASE_STATS = {
     magic:2.5,
     speed:1,
     defense:1.5,
+    mana:140,
     hBars:1,
     image:"Enemies/sapling.png",
     tier:1,
@@ -1576,6 +2138,7 @@ const ENEMY_BASE_STATS = {
     magic:0,
     speed:2,
     defense:2.5,
+    mana:100,
     hBars:1,
     image:"Enemies/vineLasher.png",
     tier:2,
@@ -1587,6 +2150,7 @@ const ENEMY_BASE_STATS = {
     magic:0,
     speed:1.5,
     defense:6,
+    mana:110,
     hBars:1,
     image:"Enemies/treant.png",
     tier:3,
@@ -1598,6 +2162,7 @@ const ENEMY_BASE_STATS = {
     magic:5,
     speed:2,
     defense:9,
+    mana:220,
     hBars:1,
     image:"Enemies/elderEnt.png",
     tier:4,
@@ -1609,6 +2174,7 @@ const ENEMY_BASE_STATS = {
     magic:6,
     speed:3,
     defense:7,
+    mana:260,
     hBars:1,
     image:"Enemies/worldroot.png",
     tier:5,
@@ -1621,6 +2187,7 @@ const ENEMY_BASE_STATS = {
     magic:0,
     speed:1.5,
     defense:3.5,
+    mana:100,
     hBars:1,
     image:"Enemies/knight.png",
     tier:1,
@@ -1631,6 +2198,7 @@ const ENEMY_BASE_STATS = {
     magic:0,
     speed:2.5,
     defense:2,
+    mana:100,
     hBars:1,
     image:"Enemies/archer.png",
     tier:2,
@@ -1641,6 +2209,7 @@ const ENEMY_BASE_STATS = {
     magic:4,
     speed:2.5,
     defense:2.5,
+    mana:200,
     hBars:1,
     image:"Enemies/mage.png",
     tier:3,
@@ -1652,6 +2221,7 @@ const ENEMY_BASE_STATS = {
     magic:0,
     speed:2.5,
     defense:8,
+    mana:140,
     hBars:1,
     image:"Enemies/kingsGuard.png",
     tier:4,
@@ -1663,6 +2233,7 @@ const ENEMY_BASE_STATS = {
     magic:4,
     speed:2,
     defense:9,
+    mana:240,
     hBars:1,
     image:"Enemies/king.png",
     tier:5,
@@ -1675,6 +2246,7 @@ const ENEMY_BASE_STATS = {
     magic:0,
     speed:3,
     defense:2,
+    mana:100,
     hBars:1,
     image:"Enemies/piranha.png",
     tier:2,
@@ -1686,6 +2258,7 @@ const ENEMY_BASE_STATS = {
     magic:1,
     speed:1.5,
     defense:5,
+    mana:120,
     hBars:1,
     image:"Enemies/coralMonster.png",
     tier:3,
@@ -1697,6 +2270,7 @@ const ENEMY_BASE_STATS = {
     magic:0,
     speed:3.5,
     defense:6,
+    mana:140,
     hBars:1,
     image:"Enemies/shark.png",
     tier:4,
@@ -1709,6 +2283,7 @@ const ENEMY_BASE_STATS = {
     magic:18,
     speed:4,
     defense:25,
+    mana:500,
     hBars:1,
     image:"Enemies/divineKing.png",
     tier:6,
@@ -1720,6 +2295,7 @@ const ENEMY_BASE_STATS = {
     magic:25,
     speed:5,
     defense:30,
+    mana:600,
     hBars:1,
     image:"Enemies/demonKing.png",
     tier:6,
@@ -1731,46 +2307,155 @@ const ENEMY_BASE_STATS = {
     magic:20,
     speed:6,
     defense:15,
+    mana:450,
     hBars:1,
     image:"Enemies/lightningShark.png",
     tier:6,
     specialEffect: "LEGENDARY BOSS: Lightning Shock - Gives player lightning status (ignores next attack, 2 turn cooldown)"
+  },
+  // Hell Mode - Unknown Enemies
+  'dino': {
+    health:28,
+    strength:6,
+    magic:2,
+    speed:4.5,
+    defense:10,
+    mana:180,
+    hBars:1,
+    image:"Enemies/dino.png",
+    tier:'unknown',
+    specialEffect: "UNKNOWN: Prehistoric Rampage - High defense and strength, charges with devastating force"
+  },
+  'flamelingSmall': {
+    health:18,
+    strength:4,
+    magic:6,
+    speed:5,
+    defense:4,
+    mana:250,
+    hBars:1,
+    image:"Enemies/flamelingSmall.png",
+    tier:'unknown',
+    specialEffect: "UNKNOWN: Ember Spark - Fast and agile, applies burn on every attack"
+  },
+  'flamelingMedium': {
+    health:24,
+    strength:5,
+    magic:7,
+    speed:4,
+    defense:6,
+    mana:280,
+    hBars:1,
+    image:"Enemies/flamelingMedium.png",
+    tier:'unknown',
+    specialEffect: "UNKNOWN: Flame Burst - Balanced fire elemental, burn damage scales with magic"
+  },
+  'flamelingBig': {
+    health:32,
+    strength:7,
+    magic:9,
+    speed:3,
+    defense:9,
+    mana:320,
+    hBars:2,
+    image:"Enemies/flamelingBig.png",
+    tier:'unknown',
+    specialEffect: "UNKNOWN: Inferno Titan - Massive flameling with two health bars, devastating fire magic"
+  },
+  'sotrak': {
+    health:26,
+    strength:8,
+    magic:5,
+    speed:6,
+    defense:7,
+    mana:240,
+    hBars:1,
+    image:"Enemies/sotrak.png",
+    tier:'unknown',
+    specialEffect: "UNKNOWN: Void Walker - Teleports and strikes with void energy, applies random status effects"
+  },
+  'monstruousFish': {
+    health:35,
+    strength:8,
+    magic:6,
+    speed:5.5,
+    defense:12,
+    mana:280,
+    hBars:2,
+    image:"Enemies/monstruousFish.png",
+    tier:'unknown',
+    specialEffect: "UNKNOWN: Abyssal Terror - Deadly ocean predator, gains power from bleeding enemies"
+  },
+  'overseer': {
+    health:500,
+    strength:30,
+    magic:30,
+    speed:8,
+    defense:40,
+    mana:800,
+    hBars:3,
+    image:"Enemies/overseer.png",
+    tier:7,
+    specialEffect: "ANCIENT BOSS: Omniscient Watcher - Commands reality itself, applies all status effects and summons minions"
   }
 };
 
 // attack stats multipliers and status effects
 
 const ATTACK_STATS = {
-  "punch":           { strMultiplier: 0.5,  magicMultiplier: 0,    status: "none" },
-  "poke":            { strMultiplier: 0.5,  magicMultiplier: 0.5,  status: "none" },
-  "stap":            { strMultiplier: 1,    magicMultiplier: 0,    status: "none" },
-  "slap":            { strMultiplier: 0.45, magicMultiplier: 0.45, status: "none" },
-  "leaf impale":     { strMultiplier: 0,    magicMultiplier: 1,    status: "none" },
-  "coral leech":     { strMultiplier: 1.1,  magicMultiplier: 0,    status: "leech" },
-  "reflection":      { strMultiplier: 0,    magicMultiplier: 1.2,  status: "none" },
-  "sea shield":      { strMultiplier: 0,    magicMultiplier: 1,    status: "none" },
-  "Charge":          { strMultiplier: 1.4,  magicMultiplier: 0,    status: "none" },
-  "Plasma Blast":    { strMultiplier: 0,    magicMultiplier: 1.4,  status: "none" },
-  "Tree People":     { strMultiplier: 0.3,  magicMultiplier: 0.5,  status: "leech" },
-  "plunge":          { strMultiplier: 1.5,  magicMultiplier: 0,    status: "bleed" },
-  "shadow vortex":   { strMultiplier: 0,    magicMultiplier: 1.7,  status: "none" },
-  "Incenerate":      { strMultiplier: 1.4,  magicMultiplier: 1,    status: "burn" },
-  "skater slice":    { strMultiplier: 1.6,  magicMultiplier: 0.4,  status: "bleed" },
-  "force strike":    { strMultiplier: 2.2,  magicMultiplier: 1.3,  status: "none" },
-  "Grim slice":      { strMultiplier: 3,    magicMultiplier: 0,    status: "grim" },
-  "Thunder":         { strMultiplier: 1.8,  magicMultiplier: 1.8,  status: "burn" },
-  "Combo":           { strMultiplier: 2.3,  magicMultiplier: 0,    status: "none" },
-  "Chilled Cream":   { strMultiplier: 0,    magicMultiplier: 0,    status: "chill" },
-  "Arise":           { strMultiplier: 0,    magicMultiplier: 2,    status: "none" },
-  "Pure skill":      { strMultiplier: 3.4,  magicMultiplier: 0,    status: "bleed" },
-  "spell infused":   { strMultiplier: 2,    magicMultiplier: 2.5,  status: "random" },
-  "enhance":         { strMultiplier: 0,    magicMultiplier: 0,    status: "player buff" },
-  "Rulers Authority":{ strMultiplier: 0,    magicMultiplier: 4,    status: "player buff" }
+  "punch":           { strMultiplier: 0.5,  magicMultiplier: 0,    status: "none", manaCost: 0 },
+  "poke":            { strMultiplier: 0.5,  magicMultiplier: 0.5,  status: "none", manaCost: 5 },
+  "stap":            { strMultiplier: 1,    magicMultiplier: 0,    status: "none", manaCost: 8 },
+  "slap":            { strMultiplier: 0.45, magicMultiplier: 0.45, status: "none", manaCost: 5 },
+  "leaf impale":     { strMultiplier: 0,    magicMultiplier: 1,    status: "none", manaCost: 10 },
+  "coral leech":     { strMultiplier: 1.1,  magicMultiplier: 0,    status: "leech", manaCost: 16 },
+  "reflection":      { strMultiplier: 0,    magicMultiplier: 1.2,  status: "none", manaCost: 12 },
+  "sea shield":      { strMultiplier: 0,    magicMultiplier: 1,    status: "none", manaCost: 10 },
+  "Charge":          { strMultiplier: 1.4,  magicMultiplier: 0,    status: "none", manaCost: 18 },
+  "Plasma Blast":    { strMultiplier: 0,    magicMultiplier: 1.4,  status: "none", manaCost: 18 },
+  "Tree People":     { strMultiplier: 0.3,  magicMultiplier: 0.5,  status: "leech", manaCost: 12 },
+  "plunge":          { strMultiplier: 1.5,  magicMultiplier: 0,    status: "bleed", manaCost: 20 },
+  "shadow vortex":   { strMultiplier: 0,    magicMultiplier: 1.7,  status: "none", manaCost: 22 },
+  "Incenerate":      { strMultiplier: 1.4,  magicMultiplier: 1,    status: "burn", manaCost: 25 },
+  "skater slice":    { strMultiplier: 1.6,  magicMultiplier: 0.4,  status: "bleed", manaCost: 20 },
+  "force strike":    { strMultiplier: 2.2,  magicMultiplier: 1.3,  status: "none", manaCost: 30 },
+  "Grim slice":      { strMultiplier: 3,    magicMultiplier: 0,    status: "grim", manaCost: 35 },
+  "Thunder":         { strMultiplier: 1.8,  magicMultiplier: 1.8,  status: "burn", manaCost: 38 },
+  "Combo":           { strMultiplier: 2.3,  magicMultiplier: 0,    status: "none", manaCost: 28 },
+  "Chilled Cream":   { strMultiplier: 0,    magicMultiplier: 0,    status: "chill", manaCost: 15 },
+  "Arise":           { strMultiplier: 0,    magicMultiplier: 2,    status: "none", manaCost: 25 },
+  "Pure skill":      { strMultiplier: 3.4,  magicMultiplier: 0,    status: "bleed", manaCost: 42 },
+  "spell infused":   { strMultiplier: 2,    magicMultiplier: 2.5,  status: "random", manaCost: 45 },
+  "enhance":         { strMultiplier: 0,    magicMultiplier: 0,    status: "player buff", manaCost: 20 },
+  "Rulers Authority":{ strMultiplier: 0,    magicMultiplier: 4,    status: "player buff", manaCost: 50 },
+  "Rest":            { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, isRest: true },
+  
+  // SET 2 ATTACKS
+  "Quick Jab":       { strMultiplier: 1.2,  magicMultiplier: 0,    status: "none", manaCost: 10 },
+  "Reckless Swing":  { strMultiplier: 2.0,  magicMultiplier: 0,    status: "bleed", manaCost: 22 },
+  "Arcane Bolt":     { strMultiplier: 0,    magicMultiplier: 1.5,  status: "none", manaCost: 18 },
+  "Drain Strike":    { strMultiplier: 1.6,  magicMultiplier: 0,    status: "leech", manaCost: 20 },
+  "Time Warp":       { strMultiplier: 0,    magicMultiplier: 1.8,  status: "chill", manaCost: 25 },
+  "Ground Slam":     { strMultiplier: 2.2,  magicMultiplier: 0,    status: "none", manaCost: 28 },
+  "Psychic Blast":   { strMultiplier: 0,    magicMultiplier: 1.7,  status: "none", manaCost: 22 },
+  "Decapitate":      { strMultiplier: 2.8,  magicMultiplier: 0,    status: "bleed", manaCost: 35 },
+  "Void Surge":      { strMultiplier: 0,    magicMultiplier: 2.5,  status: "grim", manaCost: 32 },
+  "Shield Bash":     { strMultiplier: 1.3,  magicMultiplier: 0.5,  status: "none", manaCost: 15 },
+  "Divine Rend":     { strMultiplier: 3.2,  magicMultiplier: 0.5,  status: "bleed", manaCost: 40 },
+  "Supernova":       { strMultiplier: 0.5,  magicMultiplier: 3.0,  status: "burn", manaCost: 38 },
+  "Blur":            { strMultiplier: 2.4,  magicMultiplier: 0,    status: "bleed", manaCost: 30 },
+  "Tidal Crash":     { strMultiplier: 1.2,  magicMultiplier: 1.8,  status: "chill", manaCost: 28 },
+  "Reality Stone":   { strMultiplier: 1.5,  magicMultiplier: 2.2,  status: "random", manaCost: 42 },
+  "Soul Harvest":    { strMultiplier: 2.6,  magicMultiplier: 1.0,  status: "grim", manaCost: 38 },
+  "Apocalypse":      { strMultiplier: 2.0,  magicMultiplier: 2.0,  status: "burn", manaCost: 48, aoe: true },
+  "Wisdom Beam":     { strMultiplier: 0,    magicMultiplier: 1.6,  status: "none", manaCost: 20 },
+  "Adaptive Spell":  { strMultiplier: 1.0,  magicMultiplier: 1.5,  status: "none", manaCost: 22 },
+  "Foresight":       { strMultiplier: 0.5,  magicMultiplier: 1.2,  status: "none", manaCost: 15 },
 };
 
 
 // Maximum player level cap
-const MAX_PLAYER_LEVEL = 75;
+const MAX_PLAYER_LEVEL = 125;
 
 //party member stats
 const PARTY_STATS = {
@@ -1867,6 +2552,7 @@ function updateStats(){
     let equippedMagic = 0;
     let equippedDefense = 0;
     let equippedHealth = 0;
+    let equippedMana = 0;
 
     //Iterate through all equipment slots and add stat bonuses from equipped items
     const equipmentSlots = ['HELMET', 'CHEST', 'LEGS', 'BOOTS', 'MAINHAND', 'OFFHAND'];
@@ -1881,6 +2567,7 @@ function updateStats(){
       equippedMagic += item.magic;
       equippedDefense += item.defense;
       equippedHealth += item.health;
+      equippedMana += (item.mana || 0);
     }
   }
 }
@@ -1891,6 +2578,8 @@ function updateStats(){
     const totalMagic = baseMagic + equippedMagic;
     const totalDefense = baseDefense + equippedDefense;
     const totalMaxHealth = baseHealth + equippedHealth;
+    // Mana doesn't scale with level - only from equipment
+    const totalMaxMana = Math.max(50, equippedMana); // Base 50 mana minimum
 
     // 5. Update the party member's stats with the new totals
     member.MAX_HEALTH = totalMaxHealth;
@@ -1898,10 +2587,16 @@ function updateStats(){
     member.SPEED = totalSpeed;
     member.MAGIC = totalMagic;
     member.DEFENSE = totalDefense;
+    member.MAX_MANA = totalMaxMana;
     
     // Set the current HEALTH to MAX_HEALTH if it's currently null
     if (member.HEALTH === null) {
       member.HEALTH = totalMaxHealth;
+    }
+    
+    // Set current MANA to MAX_MANA if it's currently null or undefined
+    if (typeof member.MANA === 'undefined' || member.MANA === null) {
+      member.MANA = totalMaxMana;
     }
 
   }
@@ -2060,6 +2755,12 @@ function generateRandomItem(level, forceRarity = null) {
   item.magic = scaleStat('magic', item.magic);
   item.defense = scaleStat('defense', item.defense);
   item.health = scaleStat('health', item.health);
+  // Auto-generate mana if not specified: magic-focused items get mana
+  if (typeof item.mana === 'undefined') {
+    item.mana = item.magic > 0 ? Math.round(item.magic * 2) : 0;
+  } else {
+    item.mana = scaleStat('mana', item.mana);
+  }
   item.level = lvl;
 
   INVENTORY.push(item);
@@ -2094,6 +2795,7 @@ function addAttackFromItem(item, memberKey = SELECTED_MEMBER) {
     strMultiplier: attackStats.strMultiplier,
     magicMultiplier: attackStats.magicMultiplier,
     status: attackStats.status,
+    manaCost: attackStats.manaCost || 10, // Default to 10 if not specified
   };
   const attacks = PARTY_ATTACKS[memberKey].ATTACK_INVENTORY;
   const equipped = PARTY_ATTACKS[memberKey].ATTACK_EQUIPPED;

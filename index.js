@@ -207,7 +207,8 @@ function calculateItemStats(item, level) {
         magic: Math.round((item.magic || 0) * scale),
         speed: Math.round((item.speed || 0) * scale),
         defense: Math.round((item.defense || 0) * scale),
-        health: Math.round((item.health || 0) * scale)
+        health: Math.round((item.health || 0) * scale),
+        mana: item.mana || 0 // Mana doesn't scale with level
     };
 }
 
@@ -228,7 +229,39 @@ function getAbilityDescription(abilityNum) {
         17: "Perfectly Timed - 50% chance to critically strike for 150% damage",
         19: "Enhance - Each attack boosts stats by item's stats with decay (100%, 90%, 81%, ...)",
         20: "Spell Shield - Add 25% of magic stat as bonus defense",
-        21: "Sea Shield - Immune to leech, burn, and chill status effects"
+        21: "Sea Shield - Immune to leech, burn, and chill status effects",
+        22: "Fury - Deal +10% damage per 10% HP missing (max +90% at 10% HP)",
+        23: "Temporal Shift - 30% chance to take two turns in a row",
+        24: "Execute - Deal 300% damage to enemies below 25% HP",
+        25: "Meteor Strike - 20% chance to deal 200% AOE damage to all enemies",
+        26: "Death's Touch - Attacks instantly kill enemies below 15% HP",
+        27: "Annihilation - Each kill permanently increases all stats by +5%",
+        28: "Gravity Well - Reduce all enemy speed by 30% at battle start",
+        29: "Corruption - Deal +50% damage to enemies with status effects",
+        30: "Ethereal - 25% chance to dodge all damage from an attack",
+        31: "Life Drain - Heal 20% of damage dealt to enemies",
+        32: "Berserker - Gain +5% damage per consecutive attack (max +50%)",
+        33: "Arcane Surge - Casting magic restores 10% of mana cost",
+        34: "Phoenix - Revive once per battle at 30% HP when killed",
+        35: "Frozen Heart - 40% chance to freeze enemies hit for 1 turn",
+        36: "Thunder God - Lightning attacks chain to 2 random enemies for 50% damage",
+        37: "Vampiric - Heal 15% max HP on kill",
+        38: "Shield Bash - Counter physical attacks with 30% defense as damage",
+        39: "Mana Burn - Physical attacks drain 20% of enemy max mana",
+        40: "Critical Mass - Every 5th attack deals 400% damage",
+        41: "Time Warp - Reduce all cooldowns by 1 turn when attacking",
+        42: "Soul Harvest - Gain +10 max HP permanently per kill",
+        43: "Elemental Chaos - Attacks randomly deal fire, ice, or lightning damage (+30%)",
+        44: "Reaper - Deal bonus damage equal to 5% of enemy max HP",
+        45: "Divine Intervention - Survive lethal damage once per battle at 1 HP",
+        46: "Apocalypse - Deal 150% damage to all enemies when HP drops below 20%",
+        47: "Sage's Wisdom - Restore 5% max mana to both players per turn",
+        48: "Protective Aura - Allies (dual-player) take 15% less damage",
+        49: "Versatility - Share 15% of your highest stat with ally",
+        50: "Godslayer - Heal to full HP on kill",
+        51: "Balance - Grant both players +20% speed when fighting together",
+        52: "Precognition - Grant ally +10% damage and +10% defense",
+        53: "Regeneration - Restore 3% max HP to both players per turn"
     };
     return descriptions[abilityNum] || 'No special ability';
 }
@@ -347,6 +380,12 @@ function showItemDetails(itemName, collected) {
                         <td>${stats50.health}</td>
                         <td>${stats100.health}</td>
                     </tr>
+                    ${stats1.mana > 0 ? `
+                    <tr>
+                        <td><strong>Mana</strong></td>
+                        <td colspan="5">${stats1.mana}</td>
+                    </tr>
+                    ` : ''}
                 </tbody>
             </table>
         `;

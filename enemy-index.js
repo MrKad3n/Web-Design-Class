@@ -56,7 +56,7 @@ function isEnemyEncountered(enemyName) {
 }
 
 // Tier order for display
-const TIER_ORDER = [1, 2, 3, 4, 5, 6];
+const TIER_ORDER = [1, 2, 3, 4, 5, 6, 'unknown', 7];
 
 // Get tier color
 function getTierColor(tier) {
@@ -66,7 +66,9 @@ function getTierColor(tier) {
         3: '#0070dd',
         4: '#a335ee',
         5: '#ff8000',
-        6: '#e91e63'
+        6: '#e91e63',
+        'unknown': '#00ffff',
+        7: '#ff0000'
     };
     return colors[tier] || '#ffffff';
 }
@@ -78,8 +80,10 @@ function getTierName(tier) {
         2: 'Tier 2 - Uncommon',
         3: 'Tier 3 - Rare',
         4: 'Tier 4 - Elite',
-        5: 'Tier 5 - Boss',
-        6: 'Tier 6 - Legendary'
+        5: 'Tier 5 - Mini-Boss',
+        6: 'Tier 6 - Legendary',
+        'unknown': 'Unknown - Mysterious Entities',
+        7: 'Tier 7 - Ancient'
     };
     return names[tier] || `Tier ${tier}`;
 }
@@ -94,7 +98,8 @@ function calculateEnemyStats(enemy, level) {
         strength: Math.round((enemy.strength || 0) * scale),
         magic: Math.round((enemy.magic || 0) * scale),
         speed: Math.round((enemy.speed || 0) * scale),
-        defense: Math.round((enemy.defense || 0) * scale)
+        defense: Math.round((enemy.defense || 0) * scale),
+        mana: enemy.mana || 100 // Mana doesn't scale with level
     };
 }
 
@@ -325,6 +330,10 @@ function showEnemyDetails(enemyName, encountered) {
                         <td>${stats25.defense}</td>
                         <td>${stats50.defense}</td>
                         <td>${stats100.defense}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Mana</strong></td>
+                        <td colspan="5">${stats1.mana}</td>
                     </tr>
                     <tr>
                         <td><strong>Health Bars</strong></td>

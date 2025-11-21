@@ -110,7 +110,31 @@ function displayItemInfo(item) {
     17: "Perfectly Timed - 50% chance to critically strike for 150% damage",
     19: "Enhance - Each attack boosts stats by item's stats with decay (100%, 90%, 81%, ...)",
     20: "Spell Shield - Add 25% of magic stat as bonus defense",
-    21: "Sea Shield - Immune to leech, burn, and chill status effects"
+    21: "Sea Shield - Immune to leech, burn, and chill status effects",
+    22: "Fury - Deal +10% damage per 10% HP missing",
+    24: "Execute - Deal 300% damage to enemies below 25% HP",
+    25: "Meteor Strike - 20% chance to deal 200% AOE damage",
+    26: "Death's Touch - Attacks instantly kill enemies below 15% HP",
+    29: "Corruption - Deal +50% damage to enemies with status effects",
+    30: "Ethereal - 25% chance to dodge all damage",
+    31: "Life Drain - Heal 20% of damage dealt",
+    32: "Berserker - Gain +5% damage per consecutive attack (max +50%)",
+    33: "Arcane Surge - Casting magic restores 10% of mana cost",
+    34: "Phoenix - Revive once per battle at 30% HP when killed",
+    35: "Frozen Heart - 40% chance to freeze enemies hit for 1 turn",
+    36: "Thunder God - Lightning attacks chain to 2 random enemies for 50% damage",
+    39: "Mana Burn - Physical attacks drain 20% of enemy max mana",
+    43: "Elemental Chaos - Attacks randomly deal fire, ice, or lightning damage (+30%)",
+    44: "Reaper - Deal bonus damage equal to 5% of enemy max HP",
+    45: "Divine Intervention - Survive lethal damage once per battle at 1 HP",
+    46: "Apocalypse - Deal 150% damage to all enemies when HP drops below 20%",
+    47: "Sage's Wisdom - Restore 5% max mana to both players per turn",
+    48: "Protective Aura - Allies (dual-player) take 15% less damage",
+    49: "Versatility - Share 15% of your highest stat with ally",
+    50: "Godslayer - Heal to full HP on kill",
+    51: "Balance - Grant both players +20% speed when fighting together",
+    52: "Precognition - Grant ally +10% damage and +10% defense",
+    53: "Regeneration - Restore 3% max HP to both players per turn"
   };
   
   const abilityText = (item.ability && item.ability > 0 && abilityDescriptions[item.ability]) 
