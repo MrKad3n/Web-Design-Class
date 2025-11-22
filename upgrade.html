@@ -339,6 +339,50 @@
 
     <script src="script.js"></script>
     <script>
+        // Music system for upgrade page
+        let upgradeMusic = null;
+        
+        function playUpgradeMusic() {
+            const musicEnabled = localStorage.getItem('musicEnabled') === 'true';
+            if (!musicEnabled) return;
+            
+            if (upgradeMusic) {
+                upgradeMusic.pause();
+                upgradeMusic = null;
+            }
+            
+            upgradeMusic = new Audio('audio/background/swingingLevel.wav');
+            upgradeMusic.loop = true;
+            upgradeMusic.volume = 0.5;
+            
+            const playPromise = upgradeMusic.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    console.log('Upgrade music playing');
+                }).catch(err => {
+                    console.log('Autoplay prevented:', err);
+                    document.addEventListener('click', () => {
+                        upgradeMusic.play().catch(e => console.error('Failed to play music:', e));
+                    }, { once: true });
+                });
+            }
+        }
+        
+        // Start music when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            playUpgradeMusic();
+        });
+        
+        // Sound effect helper
+        function playSoundEffect(soundName) {
+            const musicEnabled = localStorage.getItem('musicEnabled') === 'true';
+            if (!musicEnabled) return;
+            
+            const audio = new Audio(`audio/soundEffects/${soundName}.wav`);
+            audio.volume = 0.5;
+            audio.play().catch(err => console.log('Could not play sound:', err));
+        }
+        
         // Enchantment definitions
         const ENCHANTMENTS = {
             "Sharpness": {
@@ -537,7 +581,7 @@
                             : `<button onclick="purchaseAttack('${attackKey}')" 
                                 style="width: 100%; padding: 15px; background: ${canAfford ? 'linear-gradient(135deg, #00c8ff 0%, #0099cc 100%)' : '#666'}; color: ${canAfford ? '#fff' : '#aaa'}; border: none; border-radius: 10px; font-size: 1.1em; font-weight: bold; cursor: ${canAfford ? 'pointer' : 'not-allowed'}; transition: all 0.3s;"
                                 ${!canAfford ? 'disabled' : ''}
-                                ${canAfford ? 'onmouseover="this.style.transform=\'translateY(-2px)\'; this.style.boxShadow=\'0 5px 15px rgba(0, 200, 255, 0.5)\';" onmouseout="this.style.transform=\'translateY(0)\'; this.style.boxShadow=\'none\';"' : ''}>
+                                ${canAfford ? `onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 5px 15px rgba(0, 200, 255, 0.5)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';"` : ''}>
                                 💎 Purchase for ${attack.cost} Gems
                             </button>`
                         }
@@ -597,6 +641,15 @@
                 GEMS -= attack.cost;
             } else {
                 window.GEMS = 0;
+            }
+            
+            // Double the cost of all remaining attacks after purchase
+            if (typeof SPECIAL_ATTACKS !== 'undefined') {
+                Object.keys(SPECIAL_ATTACKS).forEach(key => {
+                    if (SPECIAL_ATTACKS[key].cost) {
+                        SPECIAL_ATTACKS[key].cost = Math.round(SPECIAL_ATTACKS[key].cost * 2);
+                    }
+                });
             }
             
             // Add attack to ALL party members
@@ -954,6 +1007,9 @@
 
             // Update display
             renderPartyEquipment();
+            
+            // Play enchant sound
+            playSoundEffect('enchant');
             
             // Show success message and return to item view
             alert(`Successfully applied ${enchantName} to ${itemName}!`);

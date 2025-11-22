@@ -3,6 +3,16 @@ function getSelectedMember() {
   return typeof SELECTED_MEMBER !== 'undefined' ? SELECTED_MEMBER : 'ONE';
 }
 
+// Sound effect helper
+function playSoundEffect(soundName) {
+  const musicEnabled = localStorage.getItem('musicEnabled') === 'true';
+  if (!musicEnabled) return;
+  
+  const audio = new Audio(`audio/soundEffects/${soundName}.wav`);
+  audio.volume = 0.5;
+  audio.play().catch(err => console.log('Could not play sound:', err));
+}
+
 const invRows = 10;
 const invCols = 5;
 
@@ -224,6 +234,9 @@ function displayItemInfo(item) {
     renderInventory();
     if (typeof saveGameData === 'function') saveGameData();
     infoItem.innerHTML = '<p>Item deleted.</p>';
+    
+    // Play delete sound
+    playSoundEffect('delete');
   };
   
   const btnContainer = infoItem.querySelector('div[style*="margin-top"]');
@@ -295,6 +308,9 @@ function equipItemToMember(item, memberKey = getSelectedMember()) {
   updateStats();
   renderInventory();
     if (typeof saveGameData === 'function') saveGameData();
+  
+  // Play equip sound
+  playSoundEffect('confirmbeep');
 }
 
 function unequipItemFromMember(item, memberKey = getSelectedMember()) {
@@ -340,6 +356,9 @@ function unequipItemFromMember(item, memberKey = getSelectedMember()) {
   updateStats();
   renderInventory();
       if (typeof saveGameData === 'function') saveGameData();
+  
+  // Play unequip sound
+  playSoundEffect('confirmbeep');
   } else if (member[slotKey] === item.name && !item.equipped) {
     // Item with same name is equipped, but the one clicked is unequipped (duplicate case)
     // Just mark this unequipped copy as not equipped (it should already be false)

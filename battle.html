@@ -1260,6 +1260,35 @@
                 for (const k in ENEMY_BASE_STATS) if (k.toLowerCase() === name.toLowerCase()) return k;
                 return name;
             }
+            
+            // Helper function to get all equipped item abilities for a party member
+            function getEquippedAbilities(memberKey) {
+                const member = PARTY_STATS[memberKey];
+                if (!member) return [];
+                
+                const abilities = [];
+                const slots = ['HELMET', 'CHEST', 'LEGS', 'BOOTS', 'MAINHAND', 'OFFHAND'];
+                
+                for (const slot of slots) {
+                    const itemName = member[slot];
+                    if (!itemName) continue;
+                    
+                    // Look up the item from INVENTORY (equipped items) or ITEM_TABLE
+                    let itemData = null;
+                    if (typeof INVENTORY !== 'undefined') {
+                        itemData = INVENTORY.find(i => i.name === itemName && i.equipped);
+                    }
+                    if (!itemData && typeof ITEM_TABLE !== 'undefined') {
+                        itemData = ITEM_TABLE[itemName];
+                    }
+                    
+                    if (itemData && itemData.ability && itemData.ability > 0) {
+                        abilities.push(itemData.ability);
+                    }
+                }
+                
+                return abilities;
+            }
 
             // Function to spawn a new enemy during battle
             function spawnEnemy(enemyKey, enemyLevel) {
@@ -1535,6 +1564,11 @@
                             scaled.health = Math.round(scaled.health * necroBoost);
                         }
                     }
+                    
+                    // Boss tile health buff: Double health for boss-tier enemies on boss stages
+                    if (isBossTile && isBossEnemy) {
+                        scaled.health = Math.round(scaled.health * 2);
+                    }
 
                     // Create enemy visual
                     const wrap = document.createElement('div');
@@ -1715,11 +1749,9 @@
                 const memberKey = (typeof currentPlayerTurn !== 'undefined' && currentPlayerTurn === 2) ? activeBattleMember2 : activeBattleMember;
                 const attacks = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_INVENTORY : [];
                 const equipped = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_EQUIPPED : new Set();
-                // Show up to 5 attack slots, mark equipped ones first
-                const equippedList = attacks.filter(a=>equipped.has(a.id));
-                const invList = attacks.filter(a=>!equipped.has(a.id));
-                const finalList = equippedList.concat(invList).slice(0,5);
-                finalList.forEach(a=>{
+                // Show only equipped attacks (up to 5)
+                const equippedList = attacks.filter(a=>equipped.has(a.id)).slice(0, 5);
+                equippedList.forEach(a=>{
                     const slot = document.createElement('div');
                     slot.className = 'attack-slot';
                     // Use special icon for Rest, otherwise use item image
@@ -1841,6 +1873,99 @@
             renderEnemies();
             renderAttacksForPlayer();
             // DO NOT mark initial member as participant - they must deal or take damage first
+            
+            // Battle music system
+            let battleMusic = null;
+            let currentMusicTrack = null;
+            
+            function playBattleMusic() {
+                // Check if music is enabled
+                const musicEnabled = localStorage.getItem('musicEnabled') === 'true';
+                if (!musicEnabled) return;
+                
+                // Stop any existing music
+                if (battleMusic) {
+                    battleMusic.pause();
+                    battleMusic = null;
+                }
+                
+                let musicPath = null;
+                const isBoss = battleData.isBossTile || false;
+                
+                // Check for specific boss stages
+                if (level === 100) {
+                    // Divine King stage
+                    const enemies = getEnemyWrappers();
+                    const hasDemonKing = enemies.some(e => e.dataset.key === 'demonKing');
+                    
+                    if (hasDemonKing) {
+                        musicPath = 'audio/boss/revenge.mp3';
+                    } else {
+                        musicPath = 'audio/boss/bossIntroduction.mp3';
+                    }
+                } else if (level === 150) {
+                    // Lightning Shark stage
+                    musicPath = 'audio/boss/orbitalColossus.mp3';
+                } else if (level === 200) {
+                    // Overseer stage - music changes on each respawn (health bar)
+                    const enemies = getEnemyWrappers();
+                    const overseer = enemies.find(e => e.dataset.key === 'overseer');
+                    
+                    if (overseer) {
+                        const barsRemaining = Number(overseer.dataset.barsRemaining) || 3;
+                        
+                        if (barsRemaining === 3) {
+                            musicPath = 'audio/boss/big_boss_2_0.wav';
+                        } else if (barsRemaining === 2) {
+                            musicPath = 'audio/boss/blackmoonColossus.wav';
+                        } else {
+                            musicPath = 'audio/boss/juhaniJunkala.wav';
+                        }
+                    } else {
+                        musicPath = 'audio/boss/big_boss_2_0.wav';
+                    }
+                } else if (isBoss) {
+                    // Boss tiles (mini bosses and mid bosses) - random boss music selection
+                    const bossTracks = [
+                        'audio/boss/greatBoss.ogg',
+                        'audio/boss/bossBattle.wav',
+                        'audio/boss/heyBoss.mp3'
+                    ];
+                    musicPath = bossTracks[Math.floor(Math.random() * bossTracks.length)];
+                } else {
+                    // Regular battles - music based on game mode
+                    const gameMode = (typeof getCurrentGameMode === 'function') ? getCurrentGameMode() : 
+                                     localStorage.getItem('selectedGameMode') || 'normal';
+                    
+                    if (isChallenge) {
+                        // Challenge mode uses 8bitMetal
+                        musicPath = 'audio/background/8bitMetal.wav';
+                    } else if (gameMode === 'hell') {
+                        // Hell mode uses 8bitMetal
+                        musicPath = 'audio/background/8bitMetal.wav';
+                    } else if (gameMode === 'hard') {
+                        // Hard mode uses franticLevel
+                        musicPath = 'audio/background/franticLevel.wav';
+                    } else {
+                        // Normal mode uses happyLevel
+                        musicPath = 'audio/background/happyLevel.wav';
+                    }
+                }
+                
+                // Only play music if we selected a track and it's different from current
+                if (musicPath && musicPath !== currentMusicTrack) {
+                    currentMusicTrack = musicPath;
+                    battleMusic = new Audio(musicPath);
+                    battleMusic.loop = true;
+                    battleMusic.volume = 0.5;
+                    battleMusic.play().catch(err => {
+                        console.log('Could not play battle music:', err);
+                    });
+                }
+            }
+            
+            // Start battle music
+            playBattleMusic();
 
             // Make party slots clickable to switch members during battle
             function enablePartySlotSwitching(){
@@ -1899,10 +2024,8 @@
                                 const memberKey = (typeof currentPlayerTurn !== 'undefined' && currentPlayerTurn === 2) ? activeBattleMember2 : activeBattleMember;
                                 const attacks = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_INVENTORY : [];
                                 const equipped = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_EQUIPPED : new Set();
-                                const equippedList = attacks.filter(a=>equipped.has(a.id));
-                                const invList = attacks.filter(a=>!equipped.has(a.id));
-                                const finalList = equippedList.concat(invList).slice(0,5);
-                                const atk = finalList[idx];
+                                const equippedList = attacks.filter(a=>equipped.has(a.id)).slice(0, 5);
+                                const atk = equippedList[idx];
                                                         selectedAttackId = atk ? atk.id : null;
                                                         // Clear any previously selected enemy — selecting attack should not auto-attack
                                                         getEnemyWrappers().forEach(w=>w.style.outline='');
@@ -2278,21 +2401,47 @@
                         recalculateActionQueue();
 
                         function pickNextActor(){
-                            // Pick from queue; when depleted, regenerate
-                            if (queueIndex >= actionQueue.length) {
-                                queueIndex = 0;
-                                // Recalculate queue in case enemies died or speeds changed
-                                recalculateActionQueue();
+                            // Pick from queue; skip dead enemies instead of rebuilding
+                            while (queueIndex < actionQueue.length) {
+                                const action = actionQueue[queueIndex];
+                                
+                                // Check if this action is valid
+                                if (action.type === 'p') {
+                                    // Player action is always valid
+                                    queueIndex++;
+                                    updateTurnOrderDisplay();
+                                    return { type: 'player', playerNum: action.playerNum };
+                                } else if (action.type === 'e') {
+                                    // Check if enemy is still alive
+                                    const allEnemies = getEnemyWrappers();
+                                    const enemyWrap = allEnemies[action.index];
+                                    if (enemyWrap && Number(enemyWrap.dataset.hp) > 0) {
+                                        // Enemy is alive, use this turn
+                                        queueIndex++;
+                                        updateTurnOrderDisplay();
+                                        return { type: 'enemy', enemyIndex: action.index };
+                                    } else {
+                                        // Enemy is dead, skip this turn
+                                        queueIndex++;
+                                        continue;
+                                    }
+                                }
+                                
+                                // Unknown action type, skip
+                                queueIndex++;
                             }
-                            const action = actionQueue[queueIndex++];
                             
-                            // Update turn order display to show new queue position
-                            updateTurnOrderDisplay();
+                            // Queue depleted, regenerate
+                            queueIndex = 0;
+                            recalculateActionQueue();
                             
-                            // action is either {type:'p', playerNum:1|2} or {type:'e', index:N}
-                            if (action.type === 'p') return { type: 'player', playerNum: action.playerNum };
-                            if (action.type === 'e') return { type: 'enemy', enemyIndex: action.index };
-                            return { type: 'enemy', enemyIndex: 0 }; // fallback
+                            // Try again with new queue
+                            if (actionQueue.length > 0) {
+                                return pickNextActor();
+                            }
+                            
+                            // Fallback
+                            return { type: 'enemy', enemyIndex: 0 };
                         }
 
                                 function getFirstAliveEnemy(){
@@ -2322,35 +2471,6 @@
                                 
                                 // Enhance ability tracking (ability 19) - permanent stat boosts for the battle
                                 const enhancedStats = {}; // {memberKey: {strength, magic, speed, defense, health}}
-
-                                // Helper function to get all equipped item abilities for a party member
-                                function getEquippedAbilities(memberKey) {
-                                    const member = PARTY_STATS[memberKey];
-                                    if (!member) return [];
-                                    
-                                    const abilities = [];
-                                    const slots = ['HELMET', 'CHEST', 'LEGS', 'BOOTS', 'MAINHAND', 'OFFHAND'];
-                                    
-                                    for (const slot of slots) {
-                                        const itemName = member[slot];
-                                        if (!itemName) continue;
-                                        
-                                        // Look up the item from INVENTORY (equipped items) or ITEM_TABLE
-                                        let itemData = null;
-                                        if (typeof INVENTORY !== 'undefined') {
-                                            itemData = INVENTORY.find(i => i.name === itemName && i.equipped);
-                                        }
-                                        if (!itemData && typeof ITEM_TABLE !== 'undefined') {
-                                            itemData = ITEM_TABLE[itemName];
-                                        }
-                                        
-                                        if (itemData && itemData.ability && itemData.ability > 0) {
-                                            abilities.push(itemData.ability);
-                                        }
-                                    }
-                                    
-                                    return abilities;
-                                }
                                 
                                 // Helper function to get item data from attack object
                                 function getItemFromAttack(attackObj) {
@@ -2407,13 +2527,11 @@
                                     const atkArea = document.getElementById('Attacks');
                                     const attacks = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_INVENTORY : [];
                                     const equipped = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_EQUIPPED : new Set();
-                                    const equippedList = attacks.filter(a=>equipped.has(a.id));
-                                    const invList = attacks.filter(a=>!equipped.has(a.id));
-                                    const finalList = equippedList.concat(invList).slice(0,5);
+                                    const equippedList = attacks.filter(a=>equipped.has(a.id)).slice(0, 5);
 
                                     let attackObj = null;
-                                    if (selectedAttackId) attackObj = attacks.find(a=>a.id === selectedAttackId) || finalList[0] || null;
-                                    else attackObj = finalList[0] || attacks[0] || null;
+                                    if (selectedAttackId) attackObj = attacks.find(a=>a.id === selectedAttackId && equipped.has(a.id)) || equippedList[0] || null;
+                                    else attackObj = equippedList[0] || null;
                                     if (!attackObj) attackObj = { name: 'slap', strMultiplier: 1, magicMultiplier: 0, itemName: null, manaCost: 0 };
                                     
                                     const attacker = PARTY_STATS[memberKey];
@@ -2435,19 +2553,28 @@
                                     // Check mana cost
                                     const manaCost = attackObj.manaCost || 0;
                                     const currentMana = Number(attacker.MANA || 0);
-                                    if (manaCost > currentMana) {
-                                        logCombat(`❌ Not enough mana! ${attackObj.name} costs ${manaCost} mana (you have ${currentMana})`);
+                                    
+                                    // Check if this is an AOE attack - need to check BEFORE deducting mana
+                                    const isAOE = attackObj.aoe === true;
+                                    const aliveEnemyCount = isAOE ? Array.from(getEnemyWrappers()).filter(e => Number(e.dataset.hp) > 0).length : 1;
+                                    
+                                    // AOE attacks cost more mana based on number of targets (base cost + 50% per additional target)
+                                    const finalManaCost = isAOE && aliveEnemyCount > 1 ? Math.round(manaCost * (1 + (aliveEnemyCount - 1) * 0.5)) : manaCost;
+                                    
+                                    if (finalManaCost > currentMana) {
+                                        logCombat(`❌ Not enough mana! ${attackObj.name} costs ${finalManaCost} mana (you have ${currentMana})`);
                                         return false;
                                     }
                                     
                                     // Deduct mana cost
-                                    if (manaCost > 0) {
-                                        attacker.MANA = currentMana - manaCost;
+                                    if (finalManaCost > 0) {
+                                        attacker.MANA = currentMana - finalManaCost;
                                         updatePlayerArea();
+                                        if (isAOE) {
+                                            logCombat(`💧 AOE mana cost: ${finalManaCost} (${aliveEnemyCount} targets)`);
+                                        }
                                     }
                                     
-                                    // Check if this is an AOE attack
-                                    const isAOE = attackObj.aoe === true;
                                     const targetEnemies = isAOE ? Array.from(getEnemyWrappers()).filter(e => Number(e.dataset.hp) > 0) : [enemyWrap];
                                     
                                     // Get equipped abilities once before loop
@@ -2737,6 +2864,14 @@
                                             logCombat(`💀 Soul Reaper: +${reaperBonus} damage (${deadAllies} fallen allies)`);
                                         }
                                     }
+                                    
+                                    // Play attack sound effect
+                                    const musicEnabled = localStorage.getItem('musicEnabled') === 'true';
+                                    if (musicEnabled) {
+                                        const attackSound = new Audio('audio/soundEffects/attack.wav');
+                                        attackSound.volume = 0.5;
+                                        attackSound.play().catch(err => console.log('Could not play attack sound:', err));
+                                    }
 
                                     logCombat(`Player uses ${attackObj.name} on ${currentEnemyWrap.querySelector('img').alt} and deals ${dmg} damage${bleedMult > 1 ? ' (BLEED +' + Math.round((bleedMult - 1) * 100) + '%)' : ''}`);
                                     
@@ -2883,13 +3018,19 @@
                                     if (equippedAbilities.includes(25) && Math.random() < 0.2 && !isAOE) {
                                         logCombat(`☄️ METEOR STRIKE! AOE explosion hits all enemies!`);
                                         const allEnemies = Array.from(getEnemyWrappers()).filter(e => Number(e.dataset.hp) > 0);
-                                        allEnemies.forEach((meteEnemy) => {
+                                        allEnemies.forEach((meteEnemy, meteIndex) => {
                                             if (meteEnemy !== currentEnemyWrap) {
                                                 const meteorDmg = Math.round(dmg * 2.0); // 200% of original damage
                                                 const meteHp = Number(meteEnemy.dataset.hp);
                                                 meteEnemy.dataset.hp = Math.max(0, meteHp - meteorDmg);
                                                 updateEnemyBar(meteEnemy);
                                                 logCombat(`☄️ Meteor hits for ${meteorDmg} damage!`);
+                                                
+                                                // Check if enemy was defeated and trigger necromancer resurrection
+                                                if (Number(meteEnemy.dataset.hp) <= 0) {
+                                                    logCombat('Enemy defeated!');
+                                                    handleEnemyDefeat(meteEnemy, meteIndex);
+                                                }
                                             }
                                         });
                                     }
@@ -3121,6 +3262,11 @@
                                             // Recalculate action queue with new speed
                                             recalculateActionQueue();
                                             
+                                            // Change music to revenge.mp3
+                                            if (typeof playBattleMusic === 'function') {
+                                                playBattleMusic();
+                                            }
+                                            
                                         logCombat('Phase 2 begins! The Demon King rises!');
                                         return;
                                     }
@@ -3206,6 +3352,39 @@
                                 return true; // Prevent death
                             }
                             
+                            // Check for multi-health bar enemies (hBars > 1)
+                            const enemyKey = enemyWrap.dataset.key || (enemyWrap.querySelector('img') ? enemyWrap.querySelector('img').alt : '');
+                            const baseStats = ENEMY_BASE_STATS[enemyKey];
+                            
+                            if (baseStats && baseStats.hBars > 1) {
+                                // Initialize bars remaining if not set
+                                if (!enemyWrap.dataset.barsRemaining) {
+                                    enemyWrap.dataset.barsRemaining = baseStats.hBars;
+                                }
+                                
+                                const barsLeft = Number(enemyWrap.dataset.barsRemaining);
+                                
+                                if (barsLeft > 1) {
+                                    // Respawn with new health bar
+                                    const newBarsRemaining = barsLeft - 1;
+                                    enemyWrap.dataset.barsRemaining = newBarsRemaining;
+                                    
+                                    // Restore to full HP
+                                    enemyWrap.dataset.hp = enemyWrap.dataset.maxHp;
+                                    updateEnemyBar(enemyWrap);
+                                    
+                                    logCombat(`💀 ${enemyKey} respawns! ${newBarsRemaining} health bar${newBarsRemaining > 1 ? 's' : ''} remaining!`);
+                                    
+                                    // Change music for overseer based on bars remaining
+                                    if (enemyKey === 'overseer' && level === 200 && typeof playBattleMusic === 'function') {
+                                        playBattleMusic();
+                                    }
+                                    
+                                    return true; // Prevent death
+                                }
+                                // If barsLeft === 1, continue to actual defeat
+                            }
+                            
                             // Register enemy defeat for index tracking
                             const defeatedKey = enemyWrap.dataset.key || (enemyWrap.querySelector('img') ? enemyWrap.querySelector('img').alt : '');
                             if (typeof registerEnemyDefeated === 'function' && defeatedKey) {
@@ -3245,7 +3424,6 @@
                                 }
                                 
                                 updateEnemyBar(enemyWrap);
-                                recalculateActionQueue();
                                 logCombat('🧟 Necromancer resurrects fallen ally as an invulnerable corpse!');
                                 return true; // Enemy was resurrected
                             }
@@ -3277,22 +3455,15 @@
                 const minimumDamage = Math.ceil(deathBiteDamage * 0.1);
                 let finalDmg = Math.max(minimumDamage, Math.round(damageAfterDefense));
                 
-                target.CURRENT_HEALTH -= finalDmg;
-                target.CURRENT_HEALTH = Math.max(0, target.CURRENT_HEALTH);
-                updatePlayerBars();
+                target.HEALTH -= finalDmg;
+                target.HEALTH = Math.max(0, target.HEALTH);
+                updatePlayerArea();
                 logCombat(`🐟 Death Bite: Piranha's final attack deals ${finalDmg} damage!`);
                 
                 // Check if player died
-                if (target.CURRENT_HEALTH <= 0) {
+                if (target.HEALTH <= 0) {
                     logCombat(`☠️ ${target.NAME} has been defeated!`);
-                    // Switch to next alive party member
-                    const nextMember = switchToNextAliveMember();
-                    if (!nextMember) {
-                        // All party members dead - game over
-                        combatRunning = false;
-                        showGameOver();
-                        return true;
-                    }
+                    handleMemberDeath();
                 }
             }
             
@@ -4587,6 +4758,19 @@
         }
 
         function showVictoryRewards(level){
+            // Stop battle music and play victory music
+            if (battleMusic) {
+                battleMusic.pause();
+                battleMusic = null;
+            }
+            
+            const musicEnabled = localStorage.getItem('musicEnabled') === 'true';
+            if (musicEnabled) {
+                const victorySound = new Audio('audio/soundEffects/victoryMusic.wav');
+                victorySound.volume = 0.5;
+                victorySound.play().catch(err => console.log('Could not play victory music:', err));
+            }
+            
             // Compute rewards
             const expInfo = awardExpToParticipants(level);
             const lootArray = generateVictoryLoot(level);

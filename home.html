@@ -169,6 +169,13 @@
                     Instantly unlock all items and enemies in your collection index without having to discover them.
                 </div>
             </div>
+            
+            <div class="settings-option" onclick="toggleMusic()">
+                <div class="option-title">🎵 Toggle Music</div>
+                <div class="option-description" id="music-status">
+                    Music is currently enabled. Click to disable.
+                </div>
+            </div>
 
             <div class="settings-option danger-option" onclick="completelyRestart()">
                 <div class="option-title">🔄 Complete Restart</div>
@@ -178,11 +185,139 @@
             </div>
         </div>
     </div>
+    
+    <!-- Music Preference Modal -->
+    <div class="settings-modal" id="music-preference-modal" style="display: none;">
+        <div class="settings-content" style="max-width: 500px;">
+            <h2 class="settings-title">🎵 Music Preference</h2>
+            <p style="color: #fff; font-size: 1.1em; text-align: center; margin: 20px 0;">
+                Would you like to enable background music while playing?
+            </p>
+            <div style="display: flex; gap: 20px; justify-content: center; margin-top: 30px;">
+                <button class="settings-option" style="width: 150px; cursor: pointer;" onclick="setMusicPreference(true)">
+                    <div class="option-title">✅ Yes</div>
+                    <div class="option-description">Enable music</div>
+                </button>
+                <button class="settings-option" style="width: 150px; cursor: pointer;" onclick="setMusicPreference(false)">
+                    <div class="option-title">❌ No</div>
+                    <div class="option-description">Keep it quiet</div>
+                </button>
+            </div>
+        </div>
+    </div>
 
     <script src="script.js"></script>
     <script src="index.js"></script>
     <script src="enemy-index.js"></script>
     <script>
+        // Music system
+        let lobbyMusic = null;
+        
+        function isMusicEnabled() {
+            const preference = localStorage.getItem('musicEnabled');
+            return preference === 'true';
+        }
+        
+        function setMusicPreference(enabled) {
+            localStorage.setItem('musicEnabled', enabled.toString());
+            localStorage.setItem('musicPreferenceSet', 'true');
+            document.getElementById('music-preference-modal').style.display = 'none';
+            
+            if (enabled) {
+                playLobbyMusic();
+            }
+            
+            updateMusicStatusText();
+        }
+        
+        function playLobbyMusic() {
+            if (!isMusicEnabled()) return;
+            
+            if (lobbyMusic) {
+                lobbyMusic.pause();
+                lobbyMusic = null;
+            }
+            
+            lobbyMusic = new Audio('audio/background/mainTheme.wav');
+            lobbyMusic.loop = true;
+            lobbyMusic.volume = 0.5;
+            
+            // Try to play, handling autoplay restrictions
+            const playPromise = lobbyMusic.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    console.log('Lobby music playing successfully');
+                }).catch(err => {
+                    console.log('Autoplay prevented, waiting for user interaction:', err);
+                    // Add click listener to start music on first interaction
+                    const startMusicOnClick = () => {
+                        lobbyMusic.play().then(() => {
+                            console.log('Lobby music started after user interaction');
+                            document.removeEventListener('click', startMusicOnClick);
+                        }).catch(e => console.error('Failed to play music:', e));
+                    };
+                    document.addEventListener('click', startMusicOnClick, { once: true });
+                });
+            }
+        }
+        
+        function toggleMusic() {
+            const currentState = isMusicEnabled();
+            const newState = !currentState;
+            localStorage.setItem('musicEnabled', newState.toString());
+            
+            if (newState) {
+                playLobbyMusic();
+            } else {
+                if (lobbyMusic) {
+                    lobbyMusic.pause();
+                    lobbyMusic = null;
+                }
+            }
+            
+            updateMusicStatusText();
+        }
+        
+        function updateMusicStatusText() {
+            const statusEl = document.getElementById('music-status');
+            if (statusEl) {
+                if (isMusicEnabled()) {
+                    statusEl.textContent = 'Music is currently enabled. Click to disable.';
+                } else {
+                    statusEl.textContent = 'Music is currently disabled. Click to enable.';
+                }
+            }
+        }
+        
+        // Check if this is first visit
+        window.addEventListener('DOMContentLoaded', () => {
+            const preferenceSet = localStorage.getItem('musicPreferenceSet');
+            
+            if (!preferenceSet) {
+                // First visit - show music preference modal
+                document.getElementById('music-preference-modal').style.display = 'flex';
+            } else if (isMusicEnabled()) {
+                // Returning user with music enabled
+                playLobbyMusic();
+            }
+            
+            updateMusicStatusText();
+            
+            // Add select sound to all buttons and clickable elements
+            document.addEventListener('click', (e) => {
+                const target = e.target;
+                if (target.tagName === 'BUTTON' || target.classList.contains('select-button') || 
+                    target.classList.contains('settings-option') || target.tagName === 'A') {
+                    const musicEnabled = localStorage.getItem('musicEnabled') === 'true';
+                    if (musicEnabled) {
+                        const selectSound = new Audio('audio/soundEffects/select.wav');
+                        selectSound.volume = 0.3;
+                        selectSound.play().catch(err => {});
+                    }
+                }
+            });
+        });
+        
         function openSettings() {
             document.getElementById('settings-modal').classList.add('active');
         }
