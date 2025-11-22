@@ -242,6 +242,15 @@
             lobbyMusic.loop = true;
             lobbyMusic.volume = 0.5;
             
+            // Restore playback position from localStorage
+            const savedPosition = parseFloat(localStorage.getItem('mainTheme_position')) || 0;
+            lobbyMusic.currentTime = savedPosition;
+            
+            // Save position periodically
+            lobbyMusic.addEventListener('timeupdate', () => {
+                localStorage.setItem('mainTheme_position', lobbyMusic.currentTime.toString());
+            });
+            
             // Try to play, handling autoplay restrictions
             const playPromise = lobbyMusic.play();
             if (playPromise !== undefined) {
@@ -249,14 +258,18 @@
                     console.log('Lobby music playing successfully');
                 }).catch(err => {
                     console.log('Autoplay prevented, waiting for user interaction:', err);
-                    // Add click listener to start music on first interaction
-                    const startMusicOnClick = () => {
-                        lobbyMusic.play().then(() => {
-                            console.log('Lobby music started after user interaction');
-                            document.removeEventListener('click', startMusicOnClick);
-                        }).catch(e => console.error('Failed to play music:', e));
+                    // Wait for any user interaction to start music
+                    const startMusic = () => {
+                        if (lobbyMusic && isMusicEnabled()) {
+                            lobbyMusic.play().then(() => {
+                                console.log('Lobby music started after user interaction');
+                            }).catch(e => console.error('Failed to play music:', e));
+                            document.removeEventListener('click', startMusic);
+                            document.removeEventListener('keydown', startMusic);
+                        }
                     };
-                    document.addEventListener('click', startMusicOnClick, { once: true });
+                    document.addEventListener('click', startMusic);
+                    document.addEventListener('keydown', startMusic);
                 });
             }
         }

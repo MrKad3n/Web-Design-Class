@@ -202,6 +202,55 @@
 
     <script src="script.js"></script>
     <script>
+        // Music system for select page
+        let selectMusic = null;
+        
+        function playSelectMusic() {
+            const musicEnabled = localStorage.getItem('musicEnabled') === 'true';
+            if (!musicEnabled) return;
+            
+            if (selectMusic) {
+                selectMusic.pause();
+                selectMusic = null;
+            }
+            
+            selectMusic = new Audio('audio/background/mapMusic.mp3');
+            selectMusic.loop = true;
+            selectMusic.volume = 0.5;
+            
+            // Restore playback position from localStorage
+            const savedPosition = parseFloat(localStorage.getItem('mapMusic_position')) || 0;
+            selectMusic.currentTime = savedPosition;
+            
+            // Save position periodically
+            selectMusic.addEventListener('timeupdate', () => {
+                localStorage.setItem('mapMusic_position', selectMusic.currentTime.toString());
+            });
+            
+            const playPromise = selectMusic.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    console.log('Select music playing');
+                }).catch(err => {
+                    console.log('Autoplay prevented, waiting for user interaction:', err);
+                    const startMusic = () => {
+                        if (selectMusic && localStorage.getItem('musicEnabled') === 'true') {
+                            selectMusic.play().catch(e => console.error('Failed to play music:', e));
+                            document.removeEventListener('click', startMusic);
+                            document.removeEventListener('keydown', startMusic);
+                        }
+                    };
+                    document.addEventListener('click', startMusic);
+                    document.addEventListener('keydown', startMusic);
+                });
+            }
+        }
+        
+        // Start music when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            playSelectMusic();
+        });
+        
         function selectMode(mode) {
             // Save selected mode to localStorage
             localStorage.setItem('selectedGameMode', mode);

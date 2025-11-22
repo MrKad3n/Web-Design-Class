@@ -1981,7 +1981,7 @@ function resetInventory() {
 const ENEMY_BASE_STATS = {
   //Unknown Type Enemy Stats
   'skull': {
-    health:11,
+    health:18,
     strength:3,
     magic:0,
     speed:3,
@@ -1992,7 +1992,7 @@ const ENEMY_BASE_STATS = {
     tier:1,
   },
   'slime': {
-    health:17,
+    health:27,
     strength:3.5,
     magic:0,
     speed:2,
@@ -2003,7 +2003,7 @@ const ENEMY_BASE_STATS = {
     tier:2,
   },
   'alien': {
-    health:14,
+    health:23,
     strength:0,
     magic:6,
     speed:3.5,
@@ -2015,7 +2015,7 @@ const ENEMY_BASE_STATS = {
     specialEffect: "Alien Fire: Applies burn status on attack"
   },
   'cursedKnight': {
-    health:21,
+    health:35,
     strength:6,
     magic:0,
     speed:4,
@@ -2027,7 +2027,7 @@ const ENEMY_BASE_STATS = {
     specialEffect: "Cursed Blade: Applies grim status on attack (2% max HP damage per turn)"
   },
   'Shadow': {
-    health:25,
+    health:40,
     strength:4,
     magic:3,
     speed:8,
@@ -2039,7 +2039,7 @@ const ENEMY_BASE_STATS = {
   },
   //Creature Type Enemy Stats
   'dragon': {
-    health:34,
+    health:55,
     strength:6,
     magic:7,
     speed:5,
@@ -2053,7 +2053,7 @@ const ENEMY_BASE_STATS = {
   },
   //Zombie Type Enemy Stats
   'corspe': {
-    health:13,
+    health:21,
     strength:3.5,
     magic:0,
     speed:2,
@@ -2065,7 +2065,7 @@ const ENEMY_BASE_STATS = {
     specialEffect: "Undead: Slow shambling corpse"
   },
   'crawler': {
-    health:18,
+    health:29,
     strength:5,
     magic:0,
     speed:1.5,
@@ -2076,7 +2076,7 @@ const ENEMY_BASE_STATS = {
     tier:2,
     specialEffect: "Venomous Bite: Applies bleed status on attack + Two Lives (slow/tanky then fast/fragile)",
     secondForm: {
-      health:6,
+      health:10,
       strength:5,
       magic:0,
       speed:7,
@@ -2084,7 +2084,7 @@ const ENEMY_BASE_STATS = {
     }
   },
   'frozenCorspe': {
-    health:15,
+    health:24,
     strength:3,
     magic:4,
     speed:2,
@@ -2097,7 +2097,7 @@ const ENEMY_BASE_STATS = {
     attackStatus: "chill"
   },
   'necromancer': {
-    health:20,
+    health:33,
     strength:0,
     magic:8,
     speed:3,
@@ -2109,7 +2109,7 @@ const ENEMY_BASE_STATS = {
     specialEffect: "Resurrection: While alive, dead allies resurrect as zombies"
   },
   'mutant': {
-    health:31,
+    health:50,
     strength:7,
     magic:1.5,
     speed:7,
@@ -2122,22 +2122,22 @@ const ENEMY_BASE_STATS = {
   },
   //Forest Type Enemy Stats
   'Sapling': {
-    health:14,
+    health:23,
     strength:0,
     magic:3.5,
     speed:1.5,
-    defense:2,
+    defense:3,
     mana:140,
     hBars:1,
     image:"Enemies/sapling.png",
     tier:1,
   },
   'vineLasher': {
-    health:17,
+    health:27,
     strength:4,
     magic:0,
     speed:3,
-    defense:3.5,
+    defense:4,
     mana:100,
     hBars:1,
     image:"Enemies/vineLasher.png",
@@ -2145,7 +2145,7 @@ const ENEMY_BASE_STATS = {
     specialEffect: "Draining Vines: Applies leech status on attack (drains HP over time)"
   },
   'Treant': {
-    health:20,
+    health:32,
     strength:5,
     magic:0,
     speed:2,
@@ -2157,11 +2157,11 @@ const ENEMY_BASE_STATS = {
     specialEffect: "Rooted Defender: High defense, slow but steady"
   },
   'elderEnt': {
-    health:22,
+    health:36,
     strength:0,
     magic:7,
     speed:3,
-    defense:13,
+    defense:9,
     mana:220,
     hBars:1,
     image:"Enemies/elderEnt.png",
@@ -2169,7 +2169,7 @@ const ENEMY_BASE_STATS = {
     specialEffect: "Ancient Growth: Gains 10% bonus magic each turn (compounds) + high defense"
   },
   'Worldroot': {
-    health:35,
+    health:56,
     strength:3,
     magic:8,
     speed:4,
@@ -2182,7 +2182,7 @@ const ENEMY_BASE_STATS = {
   },
   //Army Enemy Stats
   'Knight': {
-    health:15,
+    health:24,
     strength:4,
     magic:0,
     speed:2,
@@ -2193,7 +2193,7 @@ const ENEMY_BASE_STATS = {
     tier:1,
   },
   'Archer': {
-    health:13,
+    health:21,
     strength:4,
     magic:0,
     speed:3.5,
@@ -2204,11 +2204,11 @@ const ENEMY_BASE_STATS = {
     tier:2,
   },
   'Mage': {
-    health:14,
+    health:23,
     strength:0,
     magic:6,
     speed:3.5,
-    defense:3.5,
+    defense:4,
     mana:200,
     hBars:1,
     image:"Enemies/mage.png",
@@ -2216,11 +2216,11 @@ const ENEMY_BASE_STATS = {
     specialEffect: "Arcane Curse: Applies random status effect (burn/bleed/chill) on attack"
   },
   'kingsGuard': {
-    health:22,
+    health:36,
     strength:6,
     magic:0,
     speed:3.5,
-    defense:11,
+    defense:7,
     mana:140,
     hBars:1,
     image:"Enemies/kingsGuard.png",
@@ -2228,11 +2228,11 @@ const ENEMY_BASE_STATS = {
     specialEffect: "Royal Protector: Balanced high-tier warrior"
   },
   'King': {
-    health:35,
-    strength:6,
-    magic:6,
+    health:56,
+    strength:8,
+    magic:8,
     speed:3,
-    defense:13,
+    defense:10,
     mana:240,
     hBars:1,
     image:"Enemies/king.png",
@@ -2241,7 +2241,7 @@ const ENEMY_BASE_STATS = {
   },
   //Ocean Type Enemy Stats
   'piranha': {
-    health:14,
+    health:23,
     strength:6,
     magic:0,
     speed:4,
@@ -2253,7 +2253,7 @@ const ENEMY_BASE_STATS = {
     specialEffect: "Death Bite: Fast first strike, performs one final attack when defeated"
   },
   'coralMonster': {
-    health:18,
+    health:29,
     strength:6,
     magic:1.5,
     speed:2,
@@ -2265,7 +2265,7 @@ const ENEMY_BASE_STATS = {
     specialEffect: "Coral Armor: Big tanky enemy with high defense and coral-enhanced durability"
   },
   'shark': {
-    health:21,
+    health:34,
     strength:7,
     magic:0,
     speed:5,
@@ -2282,7 +2282,7 @@ const ENEMY_BASE_STATS = {
     strength:18,
     magic:18,
     speed:4,
-    defense:25,
+    defense:18,
     mana:500,
     hBars:1,
     image:"Enemies/divineKing.png",
@@ -2294,7 +2294,7 @@ const ENEMY_BASE_STATS = {
     strength:25,
     magic:25,
     speed:5,
-    defense:30,
+    defense:20,
     mana:600,
     hBars:1,
     image:"Enemies/demonKing.png",
@@ -2315,7 +2315,7 @@ const ENEMY_BASE_STATS = {
   },
   // Hell Mode - Unknown Enemies
   'dino': {
-    health:54,
+    health:90,
     strength:12,
     magic:5,
     speed:8,
@@ -2327,7 +2327,7 @@ const ENEMY_BASE_STATS = {
     specialEffect: "UNKNOWN: Prehistoric Rampage - High defense and strength, charges with devastating force"
   },
   'flamelingSmall': {
-    health:35,
+    health:58,
     strength:8,
     magic:12,
     speed:10,
@@ -2339,7 +2339,7 @@ const ENEMY_BASE_STATS = {
     specialEffect: "UNKNOWN: Ember Spark - Fast and agile, applies burn on every attack"
   },
   'flamelingMedium': {
-    health:45,
+    health:75,
     strength:10,
     magic:14,
     speed:7,
@@ -2351,7 +2351,7 @@ const ENEMY_BASE_STATS = {
     specialEffect: "UNKNOWN: Flame Burst - Balanced fire elemental, burn damage scales with magic"
   },
   'flamelingBig': {
-    health:62,
+    health:103,
     strength:14,
     magic:18,
     speed:6,
@@ -2363,7 +2363,7 @@ const ENEMY_BASE_STATS = {
     specialEffect: "UNKNOWN: Inferno Titan - Massive flameling with two health bars, devastating fire magic"
   },
   'sotrak': {
-    health:50,
+    health:83,
     strength:15,
     magic:11,
     speed:11,
@@ -2375,7 +2375,7 @@ const ENEMY_BASE_STATS = {
     specialEffect: "UNKNOWN: Void Walker - Teleports and strikes with void energy, applies random status effects"
   },
   'monstruousFish': {
-    health:65,
+    health:108,
     strength:16,
     magic:12,
     speed:10,
@@ -2387,7 +2387,7 @@ const ENEMY_BASE_STATS = {
     specialEffect: "UNKNOWN: Abyssal Terror - Deadly ocean predator, gains power from bleeding enemies"
   },
   'overseer': {
-    health:500,
+    health:800,
     strength:30,
     magic:30,
     speed:8,
@@ -2582,6 +2582,9 @@ function updateStats(){
     const totalMaxMana = Math.max(50, equippedMana); // Base 50 mana minimum
 
     // 5. Update the party member's stats with the new totals
+    // Store old max values to adjust current values proportionally
+    const oldMaxMana = member.MAX_MANA;
+    
     member.MAX_HEALTH = totalMaxHealth;
     member.STRENGTH = totalStrength;
     member.SPEED = totalSpeed;
@@ -2594,9 +2597,19 @@ function updateStats(){
       member.HEALTH = totalMaxHealth;
     }
     
-    // Set current MANA to MAX_MANA if it's currently null or undefined
+    // Handle MANA adjustments when MAX_MANA changes
     if (typeof member.MANA === 'undefined' || member.MANA === null) {
+      // First time initialization
       member.MANA = totalMaxMana;
+    } else if (oldMaxMana && oldMaxMana !== totalMaxMana) {
+      // MAX_MANA changed due to equipment change - adjust current MANA proportionally
+      const manaRatio = member.MANA / oldMaxMana;
+      member.MANA = Math.min(totalMaxMana, Math.round(manaRatio * totalMaxMana));
+    }
+    
+    // ALWAYS ensure MANA never exceeds MAX_MANA (fixes legacy inflated values)
+    if (member.MANA > member.MAX_MANA) {
+      member.MANA = member.MAX_MANA;
     }
 
   }

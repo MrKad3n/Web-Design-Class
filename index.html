@@ -331,5 +331,55 @@
 
     <script src="script.js"></script>
     <script src="index.js"></script>
+    <script>
+        // Music system for index page
+        let indexMusic = null;
+        
+        function playIndexMusic() {
+            const musicEnabled = localStorage.getItem('musicEnabled') === 'true';
+            if (!musicEnabled) return;
+            
+            if (indexMusic) {
+                indexMusic.pause();
+                indexMusic = null;
+            }
+            
+            indexMusic = new Audio('audio/background/mainTheme.wav');
+            indexMusic.loop = true;
+            indexMusic.volume = 0.5;
+            
+            // Restore playback position from localStorage
+            const savedPosition = parseFloat(localStorage.getItem('mainTheme_position')) || 0;
+            indexMusic.currentTime = savedPosition;
+            
+            // Save position periodically
+            indexMusic.addEventListener('timeupdate', () => {
+                localStorage.setItem('mainTheme_position', indexMusic.currentTime.toString());
+            });
+            
+            const playPromise = indexMusic.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    console.log('Index music playing');
+                }).catch(err => {
+                    console.log('Autoplay prevented, waiting for user interaction:', err);
+                    const startMusic = () => {
+                        if (indexMusic && localStorage.getItem('musicEnabled') === 'true') {
+                            indexMusic.play().catch(e => console.error('Failed to play music:', e));
+                            document.removeEventListener('click', startMusic);
+                            document.removeEventListener('keydown', startMusic);
+                        }
+                    };
+                    document.addEventListener('click', startMusic);
+                    document.addEventListener('keydown', startMusic);
+                });
+            }
+        }
+        
+        // Start music when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            playIndexMusic();
+        });
+    </script>
 </body>
 </html>

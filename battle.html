@@ -137,6 +137,37 @@
             #leave-battle-btn:active {
                 transform: scale(0.98);
             }
+            
+            /* Auto Battle Button */
+            #auto-battle-btn {
+                padding: 0.5rem 1rem;
+                background: rgba(40, 167, 69, 0.8);
+                color: white;
+                border: 2px solid rgba(40, 167, 69, 1);
+                border-radius: 5px;
+                font-size: 1rem;
+                font-weight: bold;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                text-transform: uppercase;
+                box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            }
+            
+            #auto-battle-btn:hover {
+                background: rgba(40, 167, 69, 1);
+                transform: scale(1.05);
+                box-shadow: 0 6px 20px rgba(40, 167, 69, 0.6);
+            }
+            
+            #auto-battle-btn:active {
+                transform: scale(0.98);
+            }
+            
+            #auto-battle-btn.active {
+                background: rgba(255, 193, 7, 0.9);
+                border-color: rgba(255, 193, 7, 1);
+                box-shadow: 0 4px 15px rgba(255, 193, 7, 0.5);
+            }
 
             
             .party-slot {
@@ -413,12 +444,21 @@
                 height: auto;
                 object-fit: contain;
                 filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.5));
-                transition: transform 0.3s ease;
+                transition: transform 0.3s ease, filter 0.3s ease;
                 flex-shrink: 1;
             }
             
             #player:hover {
                 transform: scale(1.05);
+            }
+            
+            /* Chill effect - blue overlay on chilled enemies and players */
+            .chilled {
+                filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.5)) drop-shadow(0 0 15px rgba(100, 200, 255, 0.8)) brightness(0.9) sepia(0.3) hue-rotate(180deg) saturate(2) !important;
+            }
+            
+            .chilled:hover {
+                filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.6)) drop-shadow(0 0 15px rgba(100, 200, 255, 0.8)) brightness(0.9) sepia(0.3) hue-rotate(180deg) saturate(2) !important;
             }
             
             /* Attacks area - bottom center */
@@ -652,7 +692,104 @@
                     padding: 0.3rem;
                 }
             }
+            
+            /* Damage popup animations */
+            .damage-popup {
+                position: absolute;
+                font-size: 32px;
+                font-weight: bold;
+                color: #ff4444;
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.8), -1px -1px 2px rgba(255,255,255,0.3);
+                pointer-events: none;
+                z-index: 10000;
+                animation: damage-float 1.8s ease-out forwards;
+            }
+            
+            .damage-popup.heal {
+                color: #44ff44;
+            }
+            
+            .damage-popup.critical {
+                color: #ffaa00;
+                font-size: 42px;
+            }
+            
+            .damage-popup.burn {
+                color: #ff8800;
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(255,136,0,0.6);
+            }
+            
+            .damage-popup.grim {
+                color: #222222;
+                text-shadow: 2px 2px 4px rgba(255,255,255,0.5), 0 0 8px rgba(128,0,128,0.6);
+            }
+            
+            .damage-popup.leech {
+                color: #2d6b2d;
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,255,0,0.4);
+            }
+            
+            .damage-popup.bleed {
+                color: #cc0000;
+            }
+            
+            .damage-popup.chill {
+                color: #88ccff;
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(136,204,255,0.6);
+            }
+            
+            @keyframes damage-float {
+                0% {
+                    opacity: 1;
+                    transform: translateY(0) scale(0.8);
+                }
+                15% {
+                    transform: translateY(-10px) scale(1.2);
+                }
+                30% {
+                    transform: translateY(-25px) scale(1);
+                }
+                100% {
+                    opacity: 0;
+                    transform: translateY(-80px) scale(0.9);
+                }
+            }
         </style>
+        <script>
+            // Damage popup animation function
+            function showDamagePopup(element, damage, type = 'damage') {
+                const rect = element.getBoundingClientRect();
+                const popup = document.createElement('div');
+                popup.className = 'damage-popup';
+                
+                // Add type-specific class for coloring
+                if (type === 'heal') {
+                    popup.classList.add('heal');
+                    popup.textContent = '+' + damage;
+                } else if (type === 'critical') {
+                    popup.classList.add('critical');
+                    popup.textContent = damage + '!';
+                } else if (type === 'burn' || type === 'grim' || type === 'leech' || type === 'bleed' || type === 'chill') {
+                    popup.classList.add(type);
+                    popup.textContent = damage;
+                } else {
+                    popup.textContent = damage;
+                }
+                
+                // Position with larger random spread around the element
+                const randomX = (Math.random() - 0.5) * 120; // Random offset -60 to +60px
+                const randomY = (Math.random() - 0.5) * 80; // Random offset -40 to +40px
+                popup.style.left = (rect.left + rect.width / 2 + randomX) + 'px';
+                popup.style.top = (rect.top + rect.height / 2 + randomY) + 'px';
+                
+                document.body.appendChild(popup);
+                
+                // Remove after animation completes (increased to 1.8s)
+                setTimeout(() => {
+                    popup.remove();
+                }, 1800);
+            }
+        </script>
     </head>
 <body id="battle">
     <!--Battle arena with party sidebar, player, and enemies in a contained arena space-->
@@ -686,6 +823,7 @@
         
         <!--Leave Battle Button - top right-->
         <div style="grid-column:2;grid-row:1;display:flex;gap:8px;justify-content:flex-end;align-items:center;">
+            <button id="auto-battle-btn" onclick="toggleAutoBattle()">Auto Battle: OFF</button>
             <button id="leave-battle-btn" onclick="leaveBattle()">Leave Battle</button>
             <button id="start-combat-btn" onclick="startCombat()" style="background:rgba(40,167,69,0.85);color:white;border:2px solid rgba(40,167,69,1);padding:0.5rem 1rem;border-radius:5px;cursor:pointer;">Start Combat</button>
         </div>
@@ -881,16 +1019,8 @@
                     if (challengeDataStr) {
                         const challengeData = JSON.parse(challengeDataStr);
                         
-                        // Calculate level based on highest party member + 5
-                        let maxPartyLevel = 1;
-                        if (typeof PARTY_STATS !== 'undefined') {
-                            Object.values(PARTY_STATS).forEach(member => {
-                                if (member && member.LEVEL) {
-                                    maxPartyLevel = Math.max(maxPartyLevel, member.LEVEL);
-                                }
-                            });
-                        }
-                        const challengeLevel = maxPartyLevel + 5; // Challenge enemies are 5 levels higher
+                        // Use the calculated level from challenge data (based on highest cleared dungeon level + 5)
+                        const challengeLevel = challengeData.calculatedLevel || 6; // Default to 6 if not set
                         
                         // Convert enemy names to image paths
                         const enemyPaths = (challengeData.enemies || ['skull']).map(enemyName => {
@@ -1383,6 +1513,7 @@
                 wrap.dataset.mag = scaled.magic;
                 wrap.dataset.def = scaled.defense;
                 wrap.dataset.key = enemyKey;
+                wrap.dataset.level = enemyLevel; // Store the level
                 wrap.dataset.transformed = 'false';
                 wrap.dataset.mana = enemyMana;
                 wrap.dataset.maxMana = enemyMana;
@@ -1470,8 +1601,37 @@
                     registerEnemyEncountered(enemyKey);
                 }
                 
-                // Recalculate action queue with new enemy
-                recalculateActionQueue();
+                // Insert new enemy's turns into the action queue WITHOUT recalculating (to preserve already-taken turns)
+                const savedIndex = queueIndex;
+                const allEnemiesAfterSpawn = getEnemyWrappers();
+                const newEnemyIndex = allEnemiesAfterSpawn.length - 1; // The newly spawned enemy is at the end
+                
+                // Calculate how many turns this new enemy should get based on its speed
+                const baseSpeed = Math.max(1, Number(wrap.dataset.speed) || 1);
+                const effectiveSpeed = getEffectiveSpeed('enemy', newEnemyIndex, baseSpeed);
+                
+                // Find GCD of current queue to determine turn ratio
+                const member1 = PARTY_STATS[activeBattleMember];
+                const member2 = PARTY_STATS[activeBattleMember2];
+                if (member1 && member2) {
+                    const pSpeed1 = getEffectiveSpeed('player', activeBattleMember, Math.max(1, Number(member1.SPEED) || 1));
+                    const pSpeed2 = getEffectiveSpeed('player', activeBattleMember2, Math.max(1, Number(member2.SPEED) || 1));
+                    
+                    // Calculate a rough estimate of how many actions to insert
+                    const avgPlayerSpeed = (pSpeed1 + pSpeed2) / 2;
+                    const turnsToAdd = Math.max(1, Math.round(effectiveSpeed / avgPlayerSpeed * 2)); // Proportional to player speeds
+                    
+                    // Insert new enemy actions evenly into remaining queue
+                    const remainingQueueLength = actionQueue.length - savedIndex;
+                    const insertInterval = Math.max(1, Math.floor(remainingQueueLength / (turnsToAdd + 1)));
+                    
+                    for (let i = 0; i < turnsToAdd; i++) {
+                        const insertPos = Math.min(actionQueue.length, savedIndex + (i + 1) * insertInterval);
+                        actionQueue.splice(insertPos, 0, { type: 'e', index: newEnemyIndex });
+                    }
+                    
+                    logCombat(`Queue updated: Added ${turnsToAdd} turns for new enemy at index ${newEnemyIndex} (position preserved: ${savedIndex}/${actionQueue.length})`);
+                }
             }
             
             function renderEnemies(){
@@ -1630,6 +1790,7 @@
                     wrap.dataset.mag = scaled.magic;
                     wrap.dataset.def = scaled.defense || base.defense || 0;
                     wrap.dataset.key = key;
+                    wrap.dataset.level = level; // Store the level
                     wrap.dataset.transformed = 'false'; // Track transformation state for Divine King
                     wrap.dataset.mana = spawnManaDisplay;
                     wrap.dataset.maxMana = spawnManaDisplay;
@@ -1958,9 +2119,23 @@
                     battleMusic = new Audio(musicPath);
                     battleMusic.loop = true;
                     battleMusic.volume = 0.5;
-                    battleMusic.play().catch(err => {
-                        console.log('Could not play battle music:', err);
-                    });
+                    
+                    const playPromise = battleMusic.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(err => {
+                            console.log('Autoplay prevented, waiting for user interaction:', err);
+                            // Wait for any user interaction to start music
+                            const startMusic = () => {
+                                if (battleMusic && localStorage.getItem('musicEnabled') === 'true') {
+                                    battleMusic.play().catch(e => console.error('Failed to play battle music:', e));
+                                    document.removeEventListener('click', startMusic);
+                                    document.removeEventListener('keydown', startMusic);
+                                }
+                            };
+                            document.addEventListener('click', startMusic);
+                            document.addEventListener('keydown', startMusic);
+                        });
+                    }
                 }
             }
             
@@ -2534,6 +2709,11 @@
                                     else attackObj = equippedList[0] || null;
                                     if (!attackObj) attackObj = { name: 'slap', strMultiplier: 1, magicMultiplier: 0, itemName: null, manaCost: 0 };
                                     
+                                    // Merge with ATTACK_STATS to get special properties like statusBonus
+                                    if (attackObj.name && typeof ATTACK_STATS !== 'undefined' && ATTACK_STATS[attackObj.name]) {
+                                        attackObj = Object.assign({}, ATTACK_STATS[attackObj.name], attackObj);
+                                    }
+                                    
                                     const attacker = PARTY_STATS[memberKey];
                                     
                                     // Handle Rest action
@@ -2587,7 +2767,7 @@
                                     // Loop through all target enemies (single for normal attacks, all for AOE)
                                     targetEnemies.forEach((currentEnemyWrap, targetIndex) => {
 
-                                    const enemyDefense = Number( (ENEMY_BASE_STATS[currentEnemyWrap.querySelector('img').alt] && ENEMY_BASE_STATS[currentEnemyWrap.querySelector('img').alt].defense) || 0 );
+                                    const enemyDefense = Number(currentEnemyWrap.dataset.def) || 0;
                                     const attacker = PARTY_STATS[memberKey];
                                     
                                     // Check for attack-specific abilities (10: MultiStrike, 19: Enhance) - only on first target for AOE
@@ -2846,10 +3026,13 @@
                                     if (attackObj.statusBonus === true) {
                                         const targetEffects = enemyStatusEffects[enemyIndex] || [];
                                         const statusCount = targetEffects.length;
+                                        console.log('[Plague Strike] Enemy index:', enemyIndex, 'Status effects:', targetEffects, 'Count:', statusCount);
                                         if (statusCount > 0) {
                                             const plagueBonus = Math.round(dmg * 0.3 * statusCount); // 30% per status
                                             dmg += plagueBonus;
-                                            logCombat(`☠️ Plague Strike: +${plagueBonus} damage (${statusCount} status effects)`);
+                                            logCombat(`☠️ Plague Strike: +${plagueBonus} damage (${statusCount} status effect${statusCount !== 1 ? 's' : ''})`);
+                                        } else {
+                                            logCombat(`☠️ Plague Strike: No status effects on target for bonus damage`);
                                         }
                                     }
                                     
@@ -2875,6 +3058,12 @@
 
                                     logCombat(`Player uses ${attackObj.name} on ${currentEnemyWrap.querySelector('img').alt} and deals ${dmg} damage${bleedMult > 1 ? ' (BLEED +' + Math.round((bleedMult - 1) * 100) + '%)' : ''}`);
                                     
+                                    // Show damage popup on enemy
+                                    const enemyImg = currentEnemyWrap.querySelector('img');
+                                    if (enemyImg) {
+                                        showDamagePopup(enemyImg, dmg);
+                                    }
+                                    
                                     // Special Attack: Venomous Barrage - Multi-hit attack
                                     if (attackObj.multiHit && attackObj.multiHit > 1) {
                                         const additionalHits = attackObj.multiHit - 1; // First hit already dealt
@@ -2884,6 +3073,11 @@
                                             currentEnemyWrap.dataset.hp = Math.max(0, Number(currentEnemyWrap.dataset.hp) - hitDmg);
                                             updateEnemyBar(currentEnemyWrap);
                                             logCombat(`🐍 Venomous Barrage hit ${i + 2}: ${hitDmg} damage`);
+                                            
+                                            // Show damage popup for additional hits
+                                            if (enemyImg) {
+                                                setTimeout(() => showDamagePopup(enemyImg, hitDmg), (i + 1) * 250);
+                                            }
                                             
                                             // Apply status effect for each hit
                                             const attackStatus = attackObj.statusEffect || attackObj.status;
@@ -2960,9 +3154,9 @@
                                         }
                                     }
                                     
-                                    // Apply Lifesteal: Heal for 20% of damage dealt
+                                    // Apply Lifesteal: Heal for 10% of damage dealt (post-defense)
                                     if (hasLifesteal) {
-                                        const healAmount = Math.ceil(dmg * 0.2);
+                                        const healAmount = Math.ceil(dmg * 0.1);
                                         const currentHealth = Number(attacker.HEALTH || 0);
                                         const maxHealth = Number(attacker.MAX_HEALTH || 1);
                                         const newHealth = Math.min(maxHealth, currentHealth + healAmount);
@@ -3524,11 +3718,11 @@
                             
                             // Handle different effect types
                             if (effectType === 'burn') {
-                                // Burn: 40% of pre-defense damage, 3 turns, stacks, bypasses defense
-                                effectsArray.push({ type: 'burn', turnsLeft: 3, damagePerTurn: Math.round(baseDamage * 0.4) });
-                                logCombat(`Applied BURN (${Math.round(baseDamage * 0.4)} dmg/turn for 3 turns)`);
+                                // Burn: 50% of pre-defense damage, 3 turns, stacks, bypasses defense
+                                effectsArray.push({ type: 'burn', turnsLeft: 3, damagePerTurn: Math.round(baseDamage * 0.5) });
+                                logCombat(`Applied BURN (${Math.round(baseDamage * 0.5)} dmg/turn for 3 turns)`);
                             } else if (effectType === 'leech') {
-                                // Leech: 10% of damage dealt to enemy, heals player, 3 turns, stacks
+                                // Leech: 10% of actual damage dealt (post-defense), heals player, 3 turns, stacks, bypasses defense
                                 effectsArray.push({ type: 'leech', turnsLeft: 3, damagePerTurn: Math.round(baseDamage * 0.1) });
                                 logCombat(`Applied LEECH (${Math.round(baseDamage * 0.1)} dmg+heal/turn for 3 turns)`);
                             } else if (effectType === 'bleed') {
@@ -3552,6 +3746,17 @@
                                 // Chill: Reduces damage output by 25% for 3 turns
                                 effectsArray.push({ type: 'chill', turnsLeft: 3 });
                                 logCombat(`Applied CHILL (25% damage reduction for 3 turns)`);
+                                
+                                // Add visual chill effect (blue overlay)
+                                if (targetType === 'enemy') {
+                                    const enemyImg = target.querySelector('img');
+                                    if (enemyImg) enemyImg.classList.add('chilled');
+                                } else {
+                                    // targetKey is memberKey for players
+                                    const playerImgId = (targetKey === activeBattleMember2) ? 'player-2' : 'player-1';
+                                    const playerImg = document.getElementById(playerImgId);
+                                    if (playerImg) playerImg.classList.add('chilled');
+                                }
                                 // No queue recalculation - this was causing the bug
                             } else if (effectType === 'random') {
                                 // Random effect: pick one of burn, leech, bleed
@@ -3600,6 +3805,16 @@
                                 ally.HEALTH = Math.min(Number(ally.MAX_HEALTH || 100), Number(ally.HEALTH || 0) + allyHeal);
                                 updatePlayerArea();
                                 logCombat(`💚 Regeneration: Healed ${playerHeal}/${allyHeal} HP to both players!`);
+                                
+                                // Show heal popups on both players
+                                const player1Img = document.getElementById('player-1');
+                                const player2Img = document.getElementById('player-2');
+                                if (player1Img) {
+                                    showDamagePopup(player1Img, playerHeal, 'heal');
+                                }
+                                if (player2Img) {
+                                    showDamagePopup(player2Img, allyHeal, 'heal');
+                                }
                             }
                         }
                         
@@ -3612,56 +3827,59 @@
                             
                             effectsArray.forEach((effect, idx) => {
                                 if (effect.type === 'burn') {
-                                    // Apply defense to burn damage
-                                    const baseBurnDmg = effect.damagePerTurn || 0;
-                                    let dmg = baseBurnDmg;
+                                    // Burn bypasses defense - deals full damage
+                                    const dmg = effect.damagePerTurn || 0;
                                     
                                     if (targetType === 'enemy') {
-                                        // Apply enemy defense with inverted logarithmic scaling
-                                        const enemyDefense = Number(target.dataset.def) || 0;
-                                        const defenseMultiplier = Math.max(0.5, 1.0 - (Math.log10(enemyDefense + 1) * 0.05));
-                                        const damageReduction = enemyDefense * defenseMultiplier;
-                                        dmg = Math.max(1, Math.round(baseBurnDmg - damageReduction));
-                                        
                                         const curHp = Number(target.dataset.hp) - dmg;
                                         target.dataset.hp = Math.max(0, curHp);
                                         updateEnemyBar(target);
-                                        logCombat(`BURN deals ${dmg} damage to enemy (${baseBurnDmg} base - ${Math.round(damageReduction)} def reduction)`);
+                                        logCombat(`🔥 BURN deals ${dmg} true damage to enemy`);
+                                        // Show burn damage popup on enemy
+                                        const enemyImg = target.querySelector('img');
+                                        if (enemyImg) {
+                                            showDamagePopup(enemyImg, dmg, 'burn');
+                                        }
                                     } else {
-                                        // Apply player defense with inverted logarithmic scaling
-                                        const playerDefense = Number(target.DEFENSE) || 0;
-                                        const defenseMultiplier = Math.max(0.5, 1.0 - (Math.log10(playerDefense + 1) * 0.05));
-                                        const damageReduction = playerDefense * defenseMultiplier;
-                                        dmg = Math.max(1, Math.round(baseBurnDmg - damageReduction));
-                                        
                                         target.HEALTH = Math.max(0, Number(target.HEALTH) - dmg);
                                         updatePlayerArea();
-                                        logCombat(`BURN deals ${dmg} damage to ${target.NAME} (${baseBurnDmg} base - ${Math.round(damageReduction)} def reduction)`);
+                                        logCombat(`🔥 BURN deals ${dmg} true damage to ${target.NAME}`);
+                                        // Show burn damage popup on player
+                                        const memberKey = targetKey;
+                                        const playerImgId = (memberKey === activeBattleMember2) ? 'player-2' : 'player-1';
+                                        const pimg = document.getElementById(playerImgId);
+                                        if (pimg) {
+                                            showDamagePopup(pimg, dmg, 'burn');
+                                        }
                                     }
                                     effect.turnsLeft--;
                                     if (effect.turnsLeft <= 0) toRemove.push(idx);
                                 } else if (effect.type === 'leech') {
-                                    // Apply defense to leech damage
-                                    const baseLeechDmg = effect.damagePerTurn || 0;
-                                    let dmg = baseLeechDmg;
+                                    // Leech bypasses defense - deals and heals full damage
+                                    const dmg = effect.damagePerTurn || 0;
                                     
                                     if (targetType === 'enemy') {
-                                        // Apply enemy defense with inverted logarithmic scaling
-                                        const enemyDefense = Number(target.dataset.def) || 0;
-                                        const defenseMultiplier = Math.max(0.5, 1.0 - (Math.log10(enemyDefense + 1) * 0.05));
-                                        const damageReduction = enemyDefense * defenseMultiplier;
-                                        dmg = Math.max(1, Math.round(baseLeechDmg - damageReduction));
-                                        
                                         const curHp = Number(target.dataset.hp) - dmg;
                                         target.dataset.hp = Math.max(0, curHp);
                                         updateEnemyBar(target);
-                                        // Heal the active player member
+                                        // Heal the active player member for the same amount
                                         const activeMember = PARTY_STATS[getActiveBattleMember()];
                                         if (activeMember) {
                                             activeMember.HEALTH = Math.min(Number(activeMember.MAX_HEALTH), Number(activeMember.HEALTH) + dmg);
                                             updatePlayerArea();
+                                            // Show heal popup on player
+                                            const playerImgId = 'player-1';
+                                            const pimg = document.getElementById(playerImgId);
+                                            if (pimg) {
+                                                showDamagePopup(pimg, dmg, 'heal');
+                                            }
                                         }
-                                        logCombat(`LEECH deals ${dmg} damage and heals player ${dmg} HP (${baseLeechDmg} base - ${Math.round(damageReduction)} def reduction)`);
+                                        logCombat(`🩸 LEECH deals ${dmg} true damage and heals player ${dmg} HP`);
+                                        // Show leech damage popup on enemy
+                                        const enemyImg = target.querySelector('img');
+                                        if (enemyImg) {
+                                            showDamagePopup(enemyImg, dmg, 'leech');
+                                        }
                                     }
                                     effect.turnsLeft--;
                                     if (effect.turnsLeft <= 0) toRemove.push(idx);
@@ -3673,10 +3891,22 @@
                                         target.dataset.hp = Math.max(0, curHp);
                                         updateEnemyBar(target);
                                         logCombat(`GRIM deals ${dmg} true damage to enemy`);
+                                        // Show grim damage popup on enemy
+                                        const enemyImg = target.querySelector('img');
+                                        if (enemyImg) {
+                                            showDamagePopup(enemyImg, dmg, 'grim');
+                                        }
                                     } else {
                                         target.HEALTH = Math.max(0, Number(target.HEALTH) - dmg);
                                         updatePlayerArea();
                                         logCombat(`GRIM deals ${dmg} true damage to ${target.NAME}`);
+                                        // Show grim damage popup on player
+                                        const memberKey = targetKey;
+                                        const playerImgId = (memberKey === activeBattleMember2) ? 'player-2' : 'player-1';
+                                        const pimg = document.getElementById(playerImgId);
+                                        if (pimg) {
+                                            showDamagePopup(pimg, dmg, 'grim');
+                                        }
                                     }
                                     // Grim doesn't decrement turns (lasts until death)
                                 } else if (effect.type === 'chill') {
@@ -3685,6 +3915,17 @@
                                     if (effect.turnsLeft <= 0) {
                                         toRemove.push(idx);
                                         logCombat('CHILL expired');
+                                        
+                                        // Remove visual chill effect
+                                        if (targetType === 'enemy') {
+                                            const enemyImg = target.querySelector('img');
+                                            if (enemyImg) enemyImg.classList.remove('chilled');
+                                        } else {
+                                            // targetKey is memberKey for players
+                                            const playerImgId = (targetKey === activeBattleMember2) ? 'player-2' : 'player-1';
+                                            const playerImg = document.getElementById(playerImgId);
+                                            if (playerImg) playerImg.classList.remove('chilled');
+                                        }
                                     }
                                 }
                                 // Bleed is applied as damage multiplier during attack, not as DoT
@@ -3883,6 +4124,124 @@
                             }
                             
                             logCombat(`Player ${playerNum} turn: select an attack then click an enemy to perform the action.`);
+                            
+                            // Auto-battle logic: automatically select and perform action
+                            if (window.autoBattleEnabled) {
+                                setTimeout(() => {
+                                    performAutoBattleAction(playerNum, memberKey, target);
+                                }, 800); // Delay to let player see what's happening
+                            }
+                        }
+                        
+                        // Auto-battle: Toggle on/off
+                        let autoBattleEnabled = false;
+                        window.autoBattleEnabled = false;
+                        
+                        function toggleAutoBattle() {
+                            autoBattleEnabled = !autoBattleEnabled;
+                            window.autoBattleEnabled = autoBattleEnabled;
+                            
+                            const btn = document.getElementById('auto-battle-btn');
+                            if (btn) {
+                                if (autoBattleEnabled) {
+                                    btn.textContent = 'Auto Battle: ON';
+                                    btn.classList.add('active');
+                                    logCombat('🤖 Auto Battle ENABLED - Player will automatically attack');
+                                } else {
+                                    btn.textContent = 'Auto Battle: OFF';
+                                    btn.classList.remove('active');
+                                    logCombat('🤖 Auto Battle DISABLED - Manual control restored');
+                                }
+                            }
+                        }
+                        window.toggleAutoBattle = toggleAutoBattle;
+                        
+                        // Auto-battle: Perform automatic action
+                        function performAutoBattleAction(playerNum, memberKey, target) {
+                            if (!window.autoBattleEnabled || !playerCanAct || !playerWaiting) return;
+                            
+                            // Get current mana
+                            const currentMana = Number(target.MANA || 0);
+                            const maxMana = Number(target.MAX_MANA || 100);
+                            
+                            // Check if we need to rest (mana below 30%)
+                            if (currentMana < maxMana * 0.3) {
+                                // Rest to restore mana
+                                const manaRestore = Math.round(maxMana * 0.6);
+                                target.MANA = Math.min(maxMana, currentMana + manaRestore);
+                                logCombat(`💤 [AUTO] ${target.NAME} rests and restores ${manaRestore} mana! (${target.MANA}/${maxMana})`);
+                                updatePlayerArea();
+                                
+                                // Clear waiting flags
+                                playerCanAct = false;
+                                playerWaiting = false;
+                                waitingForPlayerAction = false;
+                                selectedAttackId = null;
+                                selectedTarget = null;
+                                return;
+                            }
+                            
+                            // Get available attacks
+                            const attacks = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_INVENTORY : [];
+                            const equipped = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_EQUIPPED : new Set();
+                            const equippedList = attacks.filter(a => equipped.has(a.id)).slice(0, 5);
+                            
+                            if (equippedList.length === 0) {
+                                logCombat('⚠️ [AUTO] No attacks available!');
+                                playerCanAct = false;
+                                playerWaiting = false;
+                                waitingForPlayerAction = false;
+                                return;
+                            }
+                            
+                            // Filter attacks by mana cost
+                            const affordableAttacks = equippedList.filter(atk => {
+                                const manaCost = atk.manaCost || 0;
+                                return manaCost <= currentMana;
+                            });
+                            
+                            // If no affordable attacks, rest
+                            if (affordableAttacks.length === 0) {
+                                const manaRestore = Math.round(maxMana * 0.6);
+                                target.MANA = Math.min(maxMana, currentMana + manaRestore);
+                                logCombat(`💤 [AUTO] ${target.NAME} rests (no affordable attacks) and restores ${manaRestore} mana!`);
+                                updatePlayerArea();
+                                
+                                playerCanAct = false;
+                                playerWaiting = false;
+                                waitingForPlayerAction = false;
+                                selectedAttackId = null;
+                                selectedTarget = null;
+                                return;
+                            }
+                            
+                            // Select a random attack from affordable attacks
+                            const selectedAttack = affordableAttacks[Math.floor(Math.random() * affordableAttacks.length)];
+                            selectedAttackId = selectedAttack.id;
+                            
+                            // Get alive enemies
+                            const allEnemies = getEnemyWrappers();
+                            const aliveEnemies = allEnemies.filter(e => Number(e.dataset.hp) > 0);
+                            
+                            if (aliveEnemies.length === 0) {
+                                logCombat('⚠️ [AUTO] No targets available!');
+                                playerCanAct = false;
+                                playerWaiting = false;
+                                waitingForPlayerAction = false;
+                                return;
+                            }
+                            
+                            // Select random target (or lowest HP target for strategic play)
+                            const targetEnemy = aliveEnemies[Math.floor(Math.random() * aliveEnemies.length)];
+                            
+                            // Perform the attack
+                            logCombat(`🤖 [AUTO] ${target.NAME} uses ${selectedAttack.name}`);
+                            
+                            setTimeout(() => {
+                                if (typeof window.playerPerformAttackOn === 'function') {
+                                    window.playerPerformAttackOn(targetEnemy);
+                                }
+                            }, 400); // Small delay before attack
                         }
 
                         function performEnemyAction(enemyIndex){
@@ -3891,6 +4250,10 @@
                             
                             // Skip if this enemy is dead
                             if (!enemyWrap || Number(enemyWrap.dataset.hp) <= 0) return;
+                            
+                            // Declare enemy key and level at function scope
+                            const enemyKey = enemyWrap.dataset.key || (enemyWrap.querySelector('img') ? enemyWrap.querySelector('img').alt : '');
+                            const level = Number(enemyWrap.dataset.level) || 1;
                             
                             // Process status effects on this enemy at start of its turn
                             processStatusEffects(enemyWrap, 'enemy', enemyIndex);
@@ -3902,6 +4265,89 @@
                                 // Use centralized enemy defeat handler for necromancer resurrection and cleanup
                                 handleEnemyDefeat(enemyWrap, enemyIndex);
                                 return;
+                            }
+                            
+                            // ===== ENEMY SPECIAL ABILITIES (START OF TURN) =====
+                            // (enemyKey and level already declared at function scope)
+                            
+                            // Elder Ent: Gain 10% bonus magic stats each turn (compounds)
+                            if (enemyKey === 'elderEnt') {
+                                const currentMag = Number(enemyWrap.dataset.mag) || 0;
+                                const magBoost = Math.max(1, Math.round(currentMag * 0.1));
+                                enemyWrap.dataset.mag = currentMag + magBoost;
+                                logCombat(`🌳 Ancient Growth: Elder Ent gained ${magBoost} magic (now ${Number(enemyWrap.dataset.mag)})!`);
+                            }
+                            
+                            // Worldroot: Spawn a Vine Lasher (15 levels lower, min level 1)
+                            if (enemyKey === 'Worldroot') {
+                                const spawnLevel = Math.max(1, level - 15);
+                                spawnEnemy('vineLasher', spawnLevel);
+                                logCombat(`🌲 Nature's Call: Worldroot summoned a Vine Lasher (Lv ${spawnLevel})!`);
+                            }
+                            
+                            // King: 50% chance to spawn King's Guard OR attack normally
+                            // Only the King itself can summon guards (not the guards themselves)
+                            if (enemyKey === 'King') {
+                                // Store base stats if not already stored (first time)
+                                if (!enemyWrap.dataset.baseStr) {
+                                    enemyWrap.dataset.baseStr = enemyWrap.dataset.str;
+                                    enemyWrap.dataset.baseMag = enemyWrap.dataset.mag;
+                                    enemyWrap.dataset.baseSpeed = enemyWrap.dataset.speed;
+                                    enemyWrap.dataset.baseDef = enemyWrap.dataset.def;
+                                }
+                                
+                                // Count alive King's Guards (not including the King)
+                                const allEnemies = getEnemyWrappers();
+                                const kingsGuardCount = allEnemies.filter(w => {
+                                    const wKey = w.dataset.key || (w.querySelector('img') ? w.querySelector('img').alt : '');
+                                    return wKey === 'kingsGuard' && Number(w.dataset.hp) > 0;
+                                }).length;
+                                
+                                // Always update King's stats based on guard count
+                                if (kingsGuardCount > 0) {
+                                    // Apply stat boost from BASE stats, not current stats (prevents exponential growth)
+                                    const statBoost = 0.1 * kingsGuardCount;
+                                    const baseStr = Number(enemyWrap.dataset.baseStr) || 0;
+                                    const baseMag = Number(enemyWrap.dataset.baseMag) || 0;
+                                    const baseSpeed = Number(enemyWrap.dataset.baseSpeed) || 0;
+                                    const baseDef = Number(enemyWrap.dataset.baseDef) || 0;
+                                    
+                                    enemyWrap.dataset.str = Math.round(baseStr * (1 + statBoost));
+                                    enemyWrap.dataset.mag = Math.round(baseMag * (1 + statBoost));
+                                    enemyWrap.dataset.speed = Math.round(baseSpeed * (1 + statBoost));
+                                    enemyWrap.dataset.def = Math.round(baseDef * (1 + statBoost));
+                                }
+                                
+                                // 50% chance to summon a guard (max 8 guards total)
+                                if (kingsGuardCount < 8 && Math.random() < 0.5) {
+                                    const spawnLevel = Math.max(1, level - 15);
+                                    spawnEnemy('kingsGuard', spawnLevel);
+                                    logCombat(`👑 Royal Command: King summoned King's Guard #${kingsGuardCount + 1} (${(kingsGuardCount + 1) * 10}% stats)!`);
+                                    // King used its turn to summon - skip the rest of the attack
+                                    return;
+                                }
+                                // Otherwise, King attacks normally (continue to attack code below)
+                            }
+                            
+                            // Shark: Blood Frenzy - gain 15% strength for each bleeding player
+                            if (enemyKey === 'shark') {
+                                let bleedingCount = 0;
+                                
+                                // Count bleeding players
+                                for (const memberKey in playerStatusEffects) {
+                                    const effects = playerStatusEffects[memberKey] || [];
+                                    if (effects.some(e => e.type === 'bleed')) {
+                                        bleedingCount++;
+                                    }
+                                }
+                                
+                                if (bleedingCount > 0) {
+                                    const frenzyBoost = 0.15 * bleedingCount;
+                                    const baseStr = Number(enemyWrap.dataset.str) || 0;
+                                    const boostedStr = Math.round(baseStr * (1 + frenzyBoost));
+                                    enemyWrap.dataset.str = boostedStr;
+                                    logCombat(`🦈 Blood Frenzy: Shark gains ${(frenzyBoost * 100).toFixed(0)}% strength from ${bleedingCount} bleeding target(s)!`);
+                                }
                             }
                             
                             // Enemy mana system - check if enemy needs to rest
@@ -3927,29 +4373,8 @@
             const enemyStr = Number(enemyWrap.dataset.str) || 1;
             const enemyMag = Number(enemyWrap.dataset.mag) || 0;
             
-            // Shark: Blood Frenzy - gain 15% strength per bleeding player
-            const currentEnemyKey = enemyWrap.dataset.key || (enemyWrap.querySelector('img') ? enemyWrap.querySelector('img').alt : '');
-            let sharkStrBonus = 0;
-            if (currentEnemyKey.toLowerCase() === 'shark') {
-                // Count bleeding party members
-                let bleedingCount = 0;
-                for (const pKey in playerStatusEffects) {
-                    const effects = playerStatusEffects[pKey];
-                    if (effects && effects.find(e => e.type === 'bleed')) {
-                        bleedingCount++;
-                    }
-                }
-                if (bleedingCount > 0) {
-                    sharkStrBonus = Math.round(enemyStr * 0.15 * bleedingCount);
-                    logCombat(`🦈 Blood Frenzy: Shark gains +${sharkStrBonus} STR (${bleedingCount} bleeding targets)!`);
-                }
-            }
-            
-            // Apply shark bonus to strength
-            const finalEnemyStr = enemyStr + sharkStrBonus;
-            
             // Determine which stat is stronger and build attack accordingly
-            const atk = finalEnemyStr >= enemyMag 
+            const atk = enemyStr >= enemyMag 
                 ? { strMultiplier: 1, magicMultiplier: 0 } 
                 : { strMultiplier: 0, magicMultiplier: 1 };
             
@@ -4019,7 +4444,8 @@
                             }
                             
             // Calculate base damage before defense
-            let baseDmg = enemyMag * atk.magicMultiplier + finalEnemyStr * atk.strMultiplier;                            // Apply chill effect BEFORE defense: 25% damage reduction if enemy is chilled
+            let baseDmg = enemyMag * atk.magicMultiplier + enemyStr * atk.strMultiplier;
+            // Apply chill effect BEFORE defense: 25% damage reduction if enemy is chilled
                             const enemyEffects = enemyStatusEffects[enemyIndex];
                             if (enemyEffects && enemyEffects.find(e => e.type === 'chill')) {
                                 baseDmg = baseDmg * 0.75;
@@ -4144,7 +4570,7 @@
                             }
             
             // Apply special enemy status effects using the targeted player's key
-            const enemyKey = enemyWrap.dataset.key || (enemyWrap.querySelector('img') ? enemyWrap.querySelector('img').alt : '');
+            // (enemyKey already declared at function scope)
             const enemyBaseStats = ENEMY_BASE_STATS[enemyKey];
             if (enemyBaseStats && enemyBaseStats.attackStatus) {
                 // Frozen corpse applies chill on attack
@@ -4187,7 +4613,7 @@
             
             // Cursed Knight: Apply grim status effect
             if (enemyKey === 'cursedKnight') {
-                applyStatusEffect(target, 'player', memberKey, 'grim', dmg);
+                applyStatusEffect(target, 'player', targetKey, 'grim', dmg);
                 logCombat(`⚔️ Cursed Blade: Applied GRIM!`);
             }
             
@@ -4199,73 +4625,6 @@
                     window.playerLightningActive = true;
                     window.playerLightningCooldown = 2;
                     logCombat(`⚡ Lightning Shock: Player's next enemy attack will be ignored!`);
-                }
-            }
-            
-            // Elder Ent: Gain 10% bonus magic stats each turn (compounds)
-            if (enemyKey === 'elderEnt') {
-                const currentMag = Number(enemyWrap.dataset.mag) || 0;
-                const magBoost = Math.max(1, Math.round(currentMag * 0.1));
-                enemyWrap.dataset.mag = currentMag + magBoost;
-                logCombat(`🌳 Ancient Growth: Elder Ent gained ${magBoost} magic (now ${Number(enemyWrap.dataset.mag)})!`);
-            }
-            
-            // Worldroot: Spawn a Vine Lasher (15 levels lower, min level 1)
-            if (enemyKey === 'Worldroot') {
-                const spawnLevel = Math.max(1, level - 15);
-                spawnEnemy('vineLasher', spawnLevel);
-                logCombat(`🌲 Nature's Call: Worldroot summoned a Vine Lasher (Lv ${spawnLevel})!`);
-            }
-            
-            // King: Spawn King's Guard (15 levels lower, min level 1) and gain 10% bonus stats per King's Guard alive
-            if (enemyKey === 'King') {
-                const spawnLevel = Math.max(1, level - 15);
-                spawnEnemy('kingsGuard', spawnLevel);
-                
-                // Count alive King's Guards
-                const allEnemies = getEnemyWrappers();
-                const kingsGuardCount = allEnemies.filter(w => 
-                    (w.dataset.key === 'kingsGuard' || (w.querySelector('img') && w.querySelector('img').alt === 'kingsGuard')) 
-                    && Number(w.dataset.hp) > 0
-                ).length;
-                
-                if (kingsGuardCount > 0) {
-                    const statBoost = 0.1 * kingsGuardCount;
-                    const currentStr = Number(enemyWrap.dataset.str) || 0;
-                    const currentMag = Number(enemyWrap.dataset.mag) || 0;
-                    const currentSpeed = Number(enemyWrap.dataset.speed) || 0;
-                    const currentDef = Number(enemyWrap.dataset.def) || 0;
-                    
-                    enemyWrap.dataset.str = Math.round(currentStr * (1 + statBoost));
-                    enemyWrap.dataset.mag = Math.round(currentMag * (1 + statBoost));
-                    enemyWrap.dataset.speed = Math.round(currentSpeed * (1 + statBoost));
-                    enemyWrap.dataset.def = Math.round(currentDef * (1 + statBoost));
-                    
-                    logCombat(`👑 Royal Command: King summoned King's Guard and gained ${(statBoost * 100).toFixed(0)}% stats (${kingsGuardCount} guards alive)!`);
-                } else {
-                    logCombat(`👑 Royal Command: King summoned a King's Guard (Lv ${spawnLevel})!`);
-                }
-            }
-            
-            // Shark: Blood Frenzy - gain 15% strength for each bleeding enemy
-            if (enemyKey === 'shark') {
-                const allEnemies = getEnemyWrappers();
-                let bleedingCount = 0;
-                
-                // Count bleeding players
-                for (const memberKey in playerStatusEffects) {
-                    const effects = playerStatusEffects[memberKey] || [];
-                    if (effects.some(e => e.type === 'bleed')) {
-                        bleedingCount++;
-                    }
-                }
-                
-                if (bleedingCount > 0) {
-                    const frenzyBoost = 0.15 * bleedingCount;
-                    const baseStr = Number(enemyWrap.dataset.str) || 0;
-                    const boostedStr = Math.round(baseStr * (1 + frenzyBoost));
-                    enemyWrap.dataset.str = boostedStr;
-                    logCombat(`🦈 Blood Frenzy: Shark gains ${(frenzyBoost * 100).toFixed(0)}% strength from ${bleedingCount} bleeding target(s)!`);
                 }
             }                            // Update player health UI
                             updatePlayerArea();
@@ -4281,6 +4640,15 @@
                                                 setTimeout(()=> pimg.classList.remove('hit-animation'), 700);
                                             }
                                         } catch(e){}
+                                        
+                                        // Show damage popup on player
+                                        if (dmg > 0) {
+                                            const playerImgId = (targetKey === activeBattleMember2) ? 'player-2' : 'player-1';
+                                            const pimg = document.getElementById(playerImgId);
+                                            if (pimg) {
+                                                showDamagePopup(pimg, dmg);
+                                            }
+                                        }
                                         
                                         // ===== DEFENSIVE ITEM ABILITIES =====
                                         // Check if player survived to trigger defensive abilities
@@ -4321,12 +4689,14 @@
                         // Handle when active member dies - prompt for member switch
                         function handleMemberDeath(){
                             combatRunning = false;
-                            const aliveMembers = ['ONE','TWO','THREE','FOUR','FIVE'].filter(key => {
+                            
+                            // Check if ALL party members are dead (not just switchable ones)
+                            const allMembersDead = ['ONE','TWO','THREE','FOUR','FIVE'].every(key => {
                                 const m = PARTY_STATS[key];
-                                return m && Number(m.HEALTH) > 0;
+                                return !m || Number(m.HEALTH) <= 0;
                             });
-
-                            if (aliveMembers.length === 0) {
+                            
+                            if (allMembersDead) {
                                 logCombat('All party members defeated! Battle lost...');
                                 combatRunning = false;
                                 
@@ -4346,6 +4716,26 @@
                                 
                                 // Show defeat modal
                                 showDefeatModal(defeatedEnemies, totalEnemies, expInfo, level);
+                                return;
+                            }
+                            
+                            // Filter alive members, excluding currently active ones
+                            const aliveMembers = ['ONE','TWO','THREE','FOUR','FIVE'].filter(key => {
+                                const m = PARTY_STATS[key];
+                                // Exclude currently active members and only include alive members
+                                return m && Number(m.HEALTH) > 0 && key !== activeBattleMember && key !== activeBattleMember2;
+                            });
+                            
+                            // If no members to switch to, resume combat with remaining active members
+                            if (aliveMembers.length === 0) {
+                                combatRunning = true;
+                                logCombat('No members available to switch! Continuing with remaining active members...');
+                                // Recalculate queue and resume combat
+                                const savedIndex = queueIndex;
+                                recalculateActionQueue();
+                                queueIndex = Math.min(savedIndex, actionQueue.length - 1);
+                                if (queueIndex < 0) queueIndex = 0;
+                                setTimeout(combatTick, COMBAT_TICK_MS);
                                 return;
                             }
 
@@ -4411,6 +4801,12 @@
                                     playerCanAct = false;
                                     playerWaiting = false;
                                     waitingForPlayerAction = false;
+                                    // Recalculate action queue for new member and preserve position
+                                    const savedIndex = queueIndex;
+                                    recalculateActionQueue();
+                                    queueIndex = Math.min(savedIndex, actionQueue.length - 1);
+                                    if (queueIndex < 0) queueIndex = 0;
+                                    logCombat(`Queue recalculated after death (position: ${queueIndex}/${actionQueue.length})`);
                                     // Resume combat after short delay
                                     setTimeout(combatTick, COMBAT_TICK_MS);
                                 };
@@ -4422,7 +4818,7 @@
                             document.body.appendChild(overlay);
                         }
 
-                        const COMBAT_TICK_MS = 900; // slower tick so actions are visible
+                        const COMBAT_TICK_MS = 1400; // slower tick so actions are visible and damage popups can be seen
 
                         // Loop tick
                         function combatTick(){

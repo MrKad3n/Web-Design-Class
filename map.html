@@ -8,7 +8,7 @@
 <body id="loading">
   <div class="w3-container w3-left">
 
-    <a href="home.html"><span class="glow">Back</span></a>
+    <a href="select.html"><span class="glow">Back</span></a>
 
 </div>
   <div id="map-container">
@@ -43,6 +43,55 @@
   </div>
   
   <script>
+    // Music system for map page
+    let mapMusic = null;
+    
+    function playMapMusic() {
+      const musicEnabled = localStorage.getItem('musicEnabled') === 'true';
+      if (!musicEnabled) return;
+      
+      if (mapMusic) {
+        mapMusic.pause();
+        mapMusic = null;
+      }
+      
+      mapMusic = new Audio('audio/background/mapMusic.mp3');
+      mapMusic.loop = true;
+      mapMusic.volume = 0.5;
+      
+      // Restore playback position from localStorage
+      const savedPosition = parseFloat(localStorage.getItem('mapMusic_position')) || 0;
+      mapMusic.currentTime = savedPosition;
+      
+      // Save position periodically
+      mapMusic.addEventListener('timeupdate', () => {
+        localStorage.setItem('mapMusic_position', mapMusic.currentTime.toString());
+      });
+      
+      const playPromise = mapMusic.play();
+      if (playPromise !== undefined) {
+        playPromise.then(() => {
+          console.log('Map music playing');
+        }).catch(err => {
+          console.log('Autoplay prevented, waiting for user interaction:', err);
+          const startMusic = () => {
+            if (mapMusic && localStorage.getItem('musicEnabled') === 'true') {
+              mapMusic.play().catch(e => console.error('Failed to play music:', e));
+              document.removeEventListener('click', startMusic);
+              document.removeEventListener('keydown', startMusic);
+            }
+          };
+          document.addEventListener('click', startMusic);
+          document.addEventListener('keydown', startMusic);
+        });
+      }
+    }
+    
+    // Start music when page loads
+    window.addEventListener('DOMContentLoaded', () => {
+      playMapMusic();
+    });
+    
     function skipNextLevel() {
       // Load progression to find next locked level
       const progression = window.loadDungeonProgression ? window.loadDungeonProgression() : { unlockedUpToLevel: 1 };

@@ -174,6 +174,55 @@
 
     <script src="script.js"></script>
     <script>
+        // Music system for challenge page
+        let challengeMusic = null;
+        
+        function playChallengeMusic() {
+            const musicEnabled = localStorage.getItem('musicEnabled') === 'true';
+            if (!musicEnabled) return;
+            
+            if (challengeMusic) {
+                challengeMusic.pause();
+                challengeMusic = null;
+            }
+            
+            challengeMusic = new Audio('audio/background/mapMusic.mp3');
+            challengeMusic.loop = true;
+            challengeMusic.volume = 0.5;
+            
+            // Restore playback position from localStorage
+            const savedPosition = parseFloat(localStorage.getItem('mapMusic_position')) || 0;
+            challengeMusic.currentTime = savedPosition;
+            
+            // Save position periodically
+            challengeMusic.addEventListener('timeupdate', () => {
+                localStorage.setItem('mapMusic_position', challengeMusic.currentTime.toString());
+            });
+            
+            const playPromise = challengeMusic.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    console.log('Challenge music playing');
+                }).catch(err => {
+                    console.log('Autoplay prevented, waiting for user interaction:', err);
+                    const startMusic = () => {
+                        if (challengeMusic && localStorage.getItem('musicEnabled') === 'true') {
+                            challengeMusic.play().catch(e => console.error('Failed to play music:', e));
+                            document.removeEventListener('click', startMusic);
+                            document.removeEventListener('keydown', startMusic);
+                        }
+                    };
+                    document.addEventListener('click', startMusic);
+                    document.addEventListener('keydown', startMusic);
+                });
+            }
+        }
+        
+        // Start music when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            playChallengeMusic();
+        });
+        
         // Challenge definitions
         const CHALLENGES = [
             {
@@ -397,8 +446,21 @@
             const challenge = CHALLENGES.find(c => c.id === challengeId);
             if (!challenge) return;
 
-            // Save challenge data to localStorage
-            localStorage.setItem('activeChallengeData', JSON.stringify(challenge));
+            // Calculate level based on highest cleared dungeon level
+            let highestClearedLevel = 1;
+            if (typeof loadDungeonProgression === 'function') {
+                const progression = loadDungeonProgression();
+                // unlockedUpToLevel is the next level to unlock, so subtract 1 for highest cleared
+                highestClearedLevel = Math.max(1, (progression.unlockedUpToLevel || 1) - 1);
+            }
+            const challengeLevel = highestClearedLevel + 5;
+
+            // Save challenge data with calculated level to localStorage
+            const challengeWithLevel = {
+                ...challenge,
+                calculatedLevel: challengeLevel
+            };
+            localStorage.setItem('activeChallengeData', JSON.stringify(challengeWithLevel));
             
             // Redirect to battle page
             window.location.href = 'battle.html?mode=challenge&id=' + challengeId;

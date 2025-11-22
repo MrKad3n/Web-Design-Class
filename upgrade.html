@@ -355,15 +355,32 @@
             upgradeMusic.loop = true;
             upgradeMusic.volume = 0.5;
             
+            // Restore playback position from localStorage
+            const savedPosition = parseFloat(localStorage.getItem('swingingLevel_position')) || 0;
+            upgradeMusic.currentTime = savedPosition;
+            
+            // Save position periodically
+            upgradeMusic.addEventListener('timeupdate', () => {
+                localStorage.setItem('swingingLevel_position', upgradeMusic.currentTime.toString());
+            });
+            
+            // Try to play immediately
             const playPromise = upgradeMusic.play();
             if (playPromise !== undefined) {
                 playPromise.then(() => {
                     console.log('Upgrade music playing');
                 }).catch(err => {
-                    console.log('Autoplay prevented:', err);
-                    document.addEventListener('click', () => {
-                        upgradeMusic.play().catch(e => console.error('Failed to play music:', e));
-                    }, { once: true });
+                    console.log('Autoplay prevented, waiting for user interaction:', err);
+                    // Wait for any user interaction to start music
+                    const startMusic = () => {
+                        if (upgradeMusic && localStorage.getItem('musicEnabled') === 'true') {
+                            upgradeMusic.play().catch(e => console.error('Failed to play music:', e));
+                            document.removeEventListener('click', startMusic);
+                            document.removeEventListener('keydown', startMusic);
+                        }
+                    };
+                    document.addEventListener('click', startMusic);
+                    document.addEventListener('keydown', startMusic);
                 });
             }
         }
@@ -371,7 +388,26 @@
         // Start music when page loads
         window.addEventListener('DOMContentLoaded', () => {
             playUpgradeMusic();
+            loadAttackCosts();
         });
+        
+        // Load saved attack costs from localStorage
+        function loadAttackCosts() {
+            const savedCosts = localStorage.getItem('attackCosts');
+            if (savedCosts && typeof SPECIAL_ATTACKS !== 'undefined') {
+                try {
+                    const costMap = JSON.parse(savedCosts);
+                    Object.keys(costMap).forEach(key => {
+                        if (SPECIAL_ATTACKS[key]) {
+                            SPECIAL_ATTACKS[key].cost = costMap[key];
+                        }
+                    });
+                    console.log('Loaded saved attack costs from localStorage');
+                } catch (err) {
+                    console.error('Failed to load attack costs:', err);
+                }
+            }
+        }
         
         // Sound effect helper
         function playSoundEffect(soundName) {
@@ -650,6 +686,15 @@
                         SPECIAL_ATTACKS[key].cost = Math.round(SPECIAL_ATTACKS[key].cost * 2);
                     }
                 });
+                
+                // Save updated costs to localStorage
+                const costMap = {};
+                Object.keys(SPECIAL_ATTACKS).forEach(key => {
+                    if (SPECIAL_ATTACKS[key].cost) {
+                        costMap[key] = SPECIAL_ATTACKS[key].cost;
+                    }
+                });
+                localStorage.setItem('attackCosts', JSON.stringify(costMap));
             }
             
             // Add attack to ALL party members

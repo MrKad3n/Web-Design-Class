@@ -327,5 +327,55 @@
 
     <script src="script.js"></script>
     <script src="enemy-index.js"></script>
+    <script>
+        // Music system for enemy index page
+        let enemyIndexMusic = null;
+        
+        function playEnemyIndexMusic() {
+            const musicEnabled = localStorage.getItem('musicEnabled') === 'true';
+            if (!musicEnabled) return;
+            
+            if (enemyIndexMusic) {
+                enemyIndexMusic.pause();
+                enemyIndexMusic = null;
+            }
+            
+            enemyIndexMusic = new Audio('audio/background/mainTheme.wav');
+            enemyIndexMusic.loop = true;
+            enemyIndexMusic.volume = 0.5;
+            
+            // Restore playback position from localStorage
+            const savedPosition = parseFloat(localStorage.getItem('mainTheme_position')) || 0;
+            enemyIndexMusic.currentTime = savedPosition;
+            
+            // Save position periodically
+            enemyIndexMusic.addEventListener('timeupdate', () => {
+                localStorage.setItem('mainTheme_position', enemyIndexMusic.currentTime.toString());
+            });
+            
+            const playPromise = enemyIndexMusic.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    console.log('Enemy index music playing');
+                }).catch(err => {
+                    console.log('Autoplay prevented, waiting for user interaction:', err);
+                    const startMusic = () => {
+                        if (enemyIndexMusic && localStorage.getItem('musicEnabled') === 'true') {
+                            enemyIndexMusic.play().catch(e => console.error('Failed to play music:', e));
+                            document.removeEventListener('click', startMusic);
+                            document.removeEventListener('keydown', startMusic);
+                        }
+                    };
+                    document.addEventListener('click', startMusic);
+                    document.addEventListener('keydown', startMusic);
+                });
+            }
+        }
+        
+        // Start music when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            playEnemyIndexMusic();
+        });
+    </script>
 </body>
 </html>

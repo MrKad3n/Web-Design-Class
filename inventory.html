@@ -183,6 +183,55 @@
         if (typeof loadGameData === 'function') {
             loadGameData();
         }
+        
+        // Music system for inventory page
+        let inventoryMusic = null;
+        
+        function playInventoryMusic() {
+            const musicEnabled = localStorage.getItem('musicEnabled') === 'true';
+            if (!musicEnabled) return;
+            
+            if (inventoryMusic) {
+                inventoryMusic.pause();
+                inventoryMusic = null;
+            }
+            
+            inventoryMusic = new Audio('audio/background/mainTheme.wav');
+            inventoryMusic.loop = true;
+            inventoryMusic.volume = 0.5;
+            
+            // Restore playback position from localStorage
+            const savedPosition = parseFloat(localStorage.getItem('mainTheme_position')) || 0;
+            inventoryMusic.currentTime = savedPosition;
+            
+            // Save position periodically
+            inventoryMusic.addEventListener('timeupdate', () => {
+                localStorage.setItem('mainTheme_position', inventoryMusic.currentTime.toString());
+            });
+            
+            const playPromise = inventoryMusic.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    console.log('Inventory music playing');
+                }).catch(err => {
+                    console.log('Autoplay prevented, waiting for user interaction:', err);
+                    const startMusic = () => {
+                        if (inventoryMusic && localStorage.getItem('musicEnabled') === 'true') {
+                            inventoryMusic.play().catch(e => console.error('Failed to play music:', e));
+                            document.removeEventListener('click', startMusic);
+                            document.removeEventListener('keydown', startMusic);
+                        }
+                    };
+                    document.addEventListener('click', startMusic);
+                    document.addEventListener('keydown', startMusic);
+                });
+            }
+        }
+        
+        // Start music when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            playInventoryMusic();
+        });
     </script>
 </body>
     <footer>
