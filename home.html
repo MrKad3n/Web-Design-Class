@@ -389,10 +389,16 @@
             if (!doubleConfirm) return;
 
             try {
-                // Clear all localStorage data
+                // Clear all localStorage data FIRST
                 localStorage.clear(); // Clear everything to ensure complete reset
                 
-                alert('✅ All progress has been completely reset!\n\nThe page will now reload.');
+                // Now reload the page to get fresh PARTY_STATS, INVENTORY, etc. from script.js defaults
+                // Then on the reloaded page, we'll give the sticks
+                
+                // Set a flag so we know to give sticks on next load
+                localStorage.setItem('needsStarterSticks', 'true');
+                
+                alert('✅ All progress has been completely reset!\n\nThe page will now reload and give you starter items.');
                 
                 // Force reload from server (not cache) to get fresh state
                 window.location.href = window.location.href.split('?')[0];

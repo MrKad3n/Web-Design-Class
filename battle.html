@@ -461,6 +461,110 @@
                 filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.6)) drop-shadow(0 0 15px rgba(100, 200, 255, 0.8)) brightness(0.9) sepia(0.3) hue-rotate(180deg) saturate(2) !important;
             }
             
+            /* Enemy spawn animation */
+            @keyframes enemy-spawn {
+                0% {
+                    opacity: 0;
+                    transform: scale(0.5) rotate(-10deg);
+                }
+                60% {
+                    transform: scale(1.1) rotate(5deg);
+                }
+                100% {
+                    opacity: 1;
+                    transform: scale(1) rotate(0deg);
+                }
+            }
+            
+            .enemy-spawning {
+                animation: enemy-spawn 0.6s ease-out;
+            }
+            
+            /* Enemy death animation */
+            @keyframes enemy-death {
+                0% {
+                    transform: scale(1) translateY(0) rotate(0deg);
+                    opacity: 1;
+                }
+                20% {
+                    transform: scale(1.05) translateY(-5px) rotate(-5deg);
+                    filter: brightness(2) drop-shadow(0 0 20px red);
+                }
+                40% {
+                    transform: scale(1.05) translateY(-5px) rotate(5deg);
+                }
+                100% {
+                    transform: scale(0.3) translateY(30px) rotate(90deg);
+                    opacity: 0;
+                    filter: brightness(0.3);
+                }
+            }
+            
+            .enemy-dying {
+                animation: enemy-death 0.8s ease-in forwards;
+            }
+            
+            /* Healing effect overlay */
+            @keyframes heal-flash {
+                0%, 100% {
+                    filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.5));
+                }
+                50% {
+                    filter: drop-shadow(0 0 20px rgba(0, 255, 100, 0.9)) brightness(1.3) saturate(1.5);
+                }
+            }
+            
+            .healing {
+                animation: heal-flash 0.5s ease-in-out;
+            }
+            
+            /* Turn indicator glow */
+            @keyframes turn-glow {
+                0%, 100% {
+                    box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+                }
+                50% {
+                    box-shadow: 0 0 25px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.4);
+                }
+            }
+            
+            .active-turn {
+                border: 3px solid rgba(255, 215, 0, 0.9) !important;
+                animation: turn-glow 2s ease-in-out infinite;
+            }
+            
+            /* Status effect pop-in animation */
+            @keyframes status-pop {
+                0% {
+                    transform: scale(0);
+                    opacity: 0;
+                }
+                60% {
+                    transform: scale(1.2);
+                }
+                100% {
+                    transform: scale(1);
+                    opacity: 1;
+                }
+            }
+            
+            .status-icon {
+                display: inline-block;
+                animation: status-pop 0.3s ease-out;
+                margin: 0 2px;
+            }
+            
+            /* Status effect expiring shake */
+            @keyframes status-expire {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-3px); }
+                75% { transform: translateX(3px); }
+            }
+            
+            .status-expiring {
+                animation: status-expire 0.3s ease-in-out;
+            }
+            
             /* Attacks area - bottom center */
             #Attacks {
                 grid-column: 1 / -1;
@@ -492,12 +596,63 @@
                 border: 1px solid transparent;
                 flex-shrink: 0;
                 min-width: 70px;
+                position: relative;
             }
             
             .attack-slot:hover {
                 background: rgba(255, 255, 255, 0.15);
                 border: 1px solid rgba(255, 215, 0, 0.5);
                 transform: scale(1.05);
+            }
+            
+            .attack-slot.on-cooldown {
+                opacity: 0.4;
+                filter: grayscale(100%);
+                cursor: not-allowed;
+                border-color: rgba(255, 0, 0, 0.3);
+            }
+            
+            .attack-slot.on-cooldown:hover {
+                transform: none;
+                border-color: rgba(255, 0, 0, 0.3);
+            }
+            
+            .attack-slot.no-ammo {
+                opacity: 0.5;
+                filter: grayscale(80%);
+                cursor: not-allowed;
+                border-color: rgba(102, 51, 0, 0.5);
+            }
+            
+            .attack-slot.no-ammo:hover {
+                transform: none;
+                border-color: rgba(102, 51, 0, 0.5);
+            }
+            
+            .attack-slot.no-mana {
+                opacity: 0.5;
+                filter: grayscale(70%);
+                cursor: not-allowed;
+                border-color: rgba(0, 51, 102, 0.5);
+            }
+            
+            .attack-slot.no-mana:hover {
+                transform: none;
+                border-color: rgba(0, 51, 102, 0.5);
+            }
+            
+            .attack-slot .cooldown-overlay {
+                position: absolute;
+                top: 2px;
+                right: 2px;
+                background: rgba(255, 0, 0, 0.9);
+                color: white;
+                padding: 2px 6px;
+                border-radius: 8px;
+                font-size: 0.7em;
+                font-weight: bold;
+                min-width: 18px;
+                text-align: center;
             }
             
             .attack-slot img {
@@ -823,7 +978,6 @@
         
         <!--Leave Battle Button - top right-->
         <div style="grid-column:2;grid-row:1;display:flex;gap:8px;justify-content:flex-end;align-items:center;">
-            <button id="auto-battle-btn" onclick="toggleAutoBattle()">Auto Battle: OFF</button>
             <button id="leave-battle-btn" onclick="leaveBattle()">Leave Battle</button>
             <button id="start-combat-btn" onclick="startCombat()" style="background:rgba(40,167,69,0.85);color:white;border:2px solid rgba(40,167,69,1);padding:0.5rem 1rem;border-radius:5px;cursor:pointer;">Start Combat</button>
         </div>
@@ -844,6 +998,11 @@
                     💤 Rest<br><span style="font-size:0.8em;">(Restore 60% Mana)</span>
                 </button>
             </div>
+            
+            <!--Auto Battle Button-->
+            <div style="text-align:center;margin-top:0.5rem;">
+                <button id="auto-battle-btn" onclick="toggleAutoBattle()" style="width:100%;">Auto Battle: OFF</button>
+            </div>
         </div>
         
         <!--Player Stats Display - Now shows both players-->
@@ -862,6 +1021,14 @@
                     <div class="stat-item">
                         <span class="stat-label">MAG</span>
                         <span class="stat-value" id="stat-magic-p1">10</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">SKL</span>
+                        <span class="stat-value" id="stat-skill-p1">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">🎯</span>
+                        <span class="stat-value" id="stat-ammo-p1">0</span>
                     </div>
                     <div class="stat-item">
                         <span class="stat-label">SPD</span>
@@ -889,6 +1056,14 @@
                         <span class="stat-value" id="stat-magic-p2">10</span>
                     </div>
                     <div class="stat-item">
+                        <span class="stat-label">SKL</span>
+                        <span class="stat-value" id="stat-skill-p2">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">🎯</span>
+                        <span class="stat-value" id="stat-ammo-p2">0</span>
+                    </div>
+                    <div class="stat-item">
                         <span class="stat-label">SPD</span>
                         <span class="stat-value" id="stat-speed-p2">10</span>
                     </div>
@@ -905,7 +1080,10 @@
             <!--Player area - left side of arena - now shows 2 players-->
             <div id="player-area" style="display: flex; flex-direction: row; gap: 1rem; align-items: center; justify-content: space-around; width: 100%; height: 100%;">
                 <!-- Player 1 -->
-                <div id="player-1-wrapper" style="display: flex; flex-direction: column; align-items: center; flex: 1;">
+                <div id="player-1-wrapper" style="display: flex; flex-direction: column; align-items: center; flex: 1; position: relative; padding: 10px; border: 2px solid rgba(255, 255, 255, 0.2); border-radius: 10px; background: rgba(0, 0, 0, 0.3); transition: all 0.3s ease;">
+                    <!-- Status effects for Player 1 -->
+                    <div id="player-1-status" style="position: absolute; top: -15px; left: 50%; transform: translateX(-50%); font-size: 20px; background: rgba(0, 0, 0, 0.9); padding: 3px 10px; border-radius: 8px; border: 2px solid rgba(255, 170, 0, 0.7); white-space: nowrap; z-index: 10;"></div>
+                    
                     <div class="player-bars" style="width: 100%;">
                         <div class="health-bar w3-light-grey">
                             <div class="w3-green" id="p1-health-bar" style="width:50%; height:100%">HP #</div>
@@ -919,7 +1097,10 @@
                 </div>
                 
                 <!-- Player 2 -->
-                <div id="player-2-wrapper" style="display: flex; flex-direction: column; align-items: center; flex: 1;">
+                <div id="player-2-wrapper" style="display: flex; flex-direction: column; align-items: center; flex: 1; position: relative; padding: 10px; border: 2px solid rgba(255, 255, 255, 0.2); border-radius: 10px; background: rgba(0, 0, 0, 0.3); transition: all 0.3s ease;">
+                    <!-- Status effects for Player 2 -->
+                    <div id="player-2-status" style="position: absolute; top: -15px; left: 50%; transform: translateX(-50%); font-size: 20px; background: rgba(0, 0, 0, 0.9); padding: 3px 10px; border-radius: 8px; border: 2px solid rgba(255, 170, 0, 0.7); white-space: nowrap; z-index: 10;"></div>
+                    
                     <div class="player-bars" style="width: 100%;">
                         <div class="health-bar w3-light-grey">
                             <div class="w3-green" id="p2-health-bar" style="width:50%; height:100%">HP #</div>
@@ -998,6 +1179,12 @@
         <!-- Enchantment inventory management -->
         <script src="inventory.js"></script>
         <script>
+        // Attack cooldown tracking - {attackName_memberKey: turnsRemaining}
+        let attackCooldowns = {};
+        
+        // Ammo generation tracking - {memberKey: attacksSinceAmmo}
+        let ammoGenerationCounter = {};
+        
         // Debug: Check what's available from script.js
         console.log('window.clearLevelAndUnlock:', typeof window.clearLevelAndUnlock);
         console.log('window object keys sample:', Object.keys(window).filter(k => k.includes('clear') || k.includes('Level')));
@@ -1272,6 +1459,8 @@
                     const hpEl = document.getElementById('stat-hp-p1');
                     const strEl = document.getElementById('stat-strength-p1');
                     const magEl = document.getElementById('stat-magic-p1');
+                    const sklEl = document.getElementById('stat-skill-p1');
+                    const ammoEl = document.getElementById('stat-ammo-p1');
                     const spdEl = document.getElementById('stat-speed-p1');
                     const defEl = document.getElementById('stat-defense-p1');
                     
@@ -1282,6 +1471,8 @@
                     }
                     if (strEl) strEl.textContent = Number(member1.STRENGTH || 0);
                     if (magEl) magEl.textContent = Number(member1.MAGIC || 0);
+                    if (sklEl) sklEl.textContent = Number(member1.SKILL || 0);
+                    if (ammoEl) ammoEl.textContent = Number(member1.AMMO || 0);
                     if (spdEl) spdEl.textContent = Number(member1.SPEED || 0);
                     if (defEl) defEl.textContent = Number(member1.DEFENSE || 0);
                 }
@@ -1292,6 +1483,8 @@
                     const hpEl = document.getElementById('stat-hp-p2');
                     const strEl = document.getElementById('stat-strength-p2');
                     const magEl = document.getElementById('stat-magic-p2');
+                    const sklEl = document.getElementById('stat-skill-p2');
+                    const ammoEl = document.getElementById('stat-ammo-p2');
                     const spdEl = document.getElementById('stat-speed-p2');
                     const defEl = document.getElementById('stat-defense-p2');
                     
@@ -1302,6 +1495,8 @@
                     }
                     if (strEl) strEl.textContent = Number(member2.STRENGTH || 0);
                     if (magEl) magEl.textContent = Number(member2.MAGIC || 0);
+                    if (sklEl) sklEl.textContent = Number(member2.SKILL || 0);
+                    if (ammoEl) ammoEl.textContent = Number(member2.AMMO || 0);
                     if (spdEl) spdEl.textContent = Number(member2.SPEED || 0);
                     if (defEl) defEl.textContent = Number(member2.DEFENSE || 0);
                 }
@@ -1540,6 +1735,56 @@
                     const currentDef = Number(wrap.dataset.def) || 0;
                     const specialEffect = base.specialEffect || 'No special effect';
                     
+                    // Calculate damage preview if an attack is selected
+                    let damagePreview = '';
+                    if (selectedAttackId) {
+                        const memberKey = (typeof currentPlayerTurn !== 'undefined' && currentPlayerTurn === 2) ? activeBattleMember2 : activeBattleMember;
+                        const attacker = PARTY_STATS[memberKey];
+                        const attacks = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_INVENTORY : [];
+                        const selectedAttack = attacks.find(a => a.id === selectedAttackId);
+                        
+                        if (selectedAttack && attacker) {
+                            const carriedMult = getCarriedMultiplier(memberKey);
+                            let str = Number(attacker.STRENGTH||0) * carriedMult;
+                            let mag = Number(attacker.MAGIC||0) * carriedMult;
+                            const skill = Number(attacker.SKILL || 0);
+                            
+                            const strMult = Number(selectedAttack.strMultiplier||0);
+                            const magMult = Number(selectedAttack.magicMultiplier||0);
+                            const sklMult = Number(selectedAttack.sklMultiplier||0);
+                            
+                            // Calculate base damage
+                            let baseDmg;
+                            if (sklMult > 0) {
+                                const flatDamage = (str * strMult + mag * magMult);
+                                const skillMultiplier = (1 + skill * sklMult);
+                                baseDmg = flatDamage * skillMultiplier;
+                            } else {
+                                baseDmg = (mag * magMult + str * strMult);
+                            }
+                            
+                            // Apply defense reduction
+                            const defenseMultiplier = Math.max(0.5, 1.0 - (Math.log10(currentDef + 1) * 0.05));
+                            const damageReduction = currentDef * defenseMultiplier;
+                            const damageAfterDefense = baseDmg - damageReduction;
+                            const minimumDamage = Math.ceil(baseDmg * 0.1);
+                            let estimatedDmg = Math.max(minimumDamage, Math.round(damageAfterDefense));
+                            
+                            // Account for crit chance on skill attacks
+                            const isSkillAttack = sklMult > 0;
+                            if (isSkillAttack) {
+                                const baseCritChance = 0.05;
+                                const skillCritBonus = skill * 0.003;
+                                const totalCritChance = baseCritChance + skillCritBonus;
+                                const critMultiplier = 1.5;
+                                const avgDmg = Math.round(estimatedDmg * (1 - totalCritChance) + (estimatedDmg * critMultiplier * totalCritChance));
+                                damagePreview = `<div class="stat-row" style="color: #ffaa00; font-weight: bold;"><span>💥 Estimated Damage:</span><span>${estimatedDmg} (${Math.round(totalCritChance * 100)}% crit → avg ${avgDmg})</span></div>`;
+                            } else {
+                                damagePreview = `<div class="stat-row" style="color: #ffaa00; font-weight: bold;"><span>💥 Estimated Damage:</span><span>${estimatedDmg}</span></div>`;
+                            }
+                        }
+                    }
+                    
                     tooltip.innerHTML = `
                         <h4>${enemyKey} (Level ${enemyLevel})</h4>
                         <div class="stat-row"><span>Health:</span><span>${currentHp}/${currentMaxHp}</span></div>
@@ -1547,6 +1792,7 @@
                         <div class="stat-row"><span>Magic:</span><span>${currentMag}</span></div>
                         <div class="stat-row"><span>Speed:</span><span>${currentSpeed}</span></div>
                         <div class="stat-row"><span>Defense:</span><span>${currentDef}</span></div>
+                        ${damagePreview}
                         ${specialEffect !== 'No special effect' ? `<div class="special-effect">${specialEffect}</div>` : ''}
                     `;
                     
@@ -1595,6 +1841,15 @@
                 
                 // Add to enemies container
                 enemiesDiv.appendChild(wrap);
+                
+                // Add spawn animation
+                const enemyImg = wrap.querySelector('img');
+                if (enemyImg) {
+                    enemyImg.classList.add('enemy-spawning');
+                    setTimeout(() => {
+                        enemyImg.classList.remove('enemy-spawning');
+                    }, 600);
+                }
                 
                 // Register encounter
                 if (typeof registerEnemyEncountered === 'function') {
@@ -1838,6 +2093,56 @@
                             statusHtml = `<div class="stat-row" style="color: #ffaa00; font-weight: bold;"><span>Status Effects:</span><span>${statusIcons}</span></div>`;
                         }
                         
+                        // Calculate damage preview if an attack is selected
+                        let damagePreview = '';
+                        if (selectedAttackId) {
+                            const memberKey = (typeof currentPlayerTurn !== 'undefined' && currentPlayerTurn === 2) ? activeBattleMember2 : activeBattleMember;
+                            const attacker = PARTY_STATS[memberKey];
+                            const attacks = (PARTY_ATTACKS && PARTY_ATTACKS[memberKey]) ? PARTY_ATTACKS[memberKey].ATTACK_INVENTORY : [];
+                            const selectedAttack = attacks.find(a => a.id === selectedAttackId);
+                            
+                            if (selectedAttack && attacker) {
+                                const carriedMult = getCarriedMultiplier(memberKey);
+                                let str = Number(attacker.STRENGTH||0) * carriedMult;
+                                let mag = Number(attacker.MAGIC||0) * carriedMult;
+                                const skill = Number(attacker.SKILL || 0);
+                                
+                                const strMult = Number(selectedAttack.strMultiplier||0);
+                                const magMult = Number(selectedAttack.magicMultiplier||0);
+                                const sklMult = Number(selectedAttack.sklMultiplier||0);
+                                
+                                // Calculate base damage
+                                let baseDmg;
+                                if (sklMult > 0) {
+                                    const flatDamage = (str * strMult + mag * magMult);
+                                    const skillMultiplier = (1 + skill * sklMult);
+                                    baseDmg = flatDamage * skillMultiplier;
+                                } else {
+                                    baseDmg = (mag * magMult + str * strMult);
+                                }
+                                
+                                // Apply defense reduction
+                                const defenseMultiplier = Math.max(0.5, 1.0 - (Math.log10(currentDef + 1) * 0.05));
+                                const damageReduction = currentDef * defenseMultiplier;
+                                const damageAfterDefense = baseDmg - damageReduction;
+                                const minimumDamage = Math.ceil(baseDmg * 0.1);
+                                let estimatedDmg = Math.max(minimumDamage, Math.round(damageAfterDefense));
+                                
+                                // Account for crit chance on skill attacks
+                                const isSkillAttack = sklMult > 0;
+                                if (isSkillAttack) {
+                                    const baseCritChance = 0.05;
+                                    const skillCritBonus = skill * 0.003;
+                                    const totalCritChance = baseCritChance + skillCritBonus;
+                                    const critMultiplier = 1.5;
+                                    const avgDmg = Math.round(estimatedDmg * (1 - totalCritChance) + (estimatedDmg * critMultiplier * totalCritChance));
+                                    damagePreview = `<div class="stat-row" style="color: #ffaa00; font-weight: bold;"><span>💥 Estimated Damage:</span><span>${estimatedDmg} (${Math.round(totalCritChance * 100)}% crit → avg ${avgDmg})</span></div>`;
+                                } else {
+                                    damagePreview = `<div class="stat-row" style="color: #ffaa00; font-weight: bold;"><span>💥 Estimated Damage:</span><span>${estimatedDmg}</span></div>`;
+                                }
+                            }
+                        }
+                        
                         tooltip.innerHTML = `
                             <h4>${currentKey} (Level ${level})</h4>
                             <div class="stat-row"><span>Health:</span><span>${currentHp}/${currentMaxHp}</span></div>
@@ -1846,6 +2151,7 @@
                             <div class="stat-row"><span>Speed:</span><span>${currentSpeed}</span></div>
                             <div class="stat-row"><span>Defense:</span><span>${currentDef}</span></div>
                             ${statusHtml}
+                            ${damagePreview}
                             ${specialEffect !== 'No special effect' ? `<div class="special-effect">${specialEffect}</div>` : ''}
                         `;
                         
@@ -1915,9 +2221,35 @@
                 equippedList.forEach(a=>{
                     const slot = document.createElement('div');
                     slot.className = 'attack-slot';
+                    
+                    // Check cooldown, ammo, and mana status
+                    const cooldownKey = `${a.name}_${memberKey}`;
+                    const remainingCooldown = attackCooldowns[cooldownKey] || 0;
+                    const requiresAmmo = a.requiresAmmo || false;
+                    const currentAmmo = Number(PARTY_STATS[memberKey]?.AMMO || 0);
+                    const manaCost = a.manaCost || 0;
+                    const currentMana = Number(PARTY_STATS[memberKey]?.MANA || 0);
+                    
+                    // Add status classes
+                    if (remainingCooldown > 0) {
+                        slot.classList.add('on-cooldown');
+                    } else if (requiresAmmo && currentAmmo < 1) {
+                        slot.classList.add('no-ammo');
+                    } else if (manaCost > currentMana) {
+                        slot.classList.add('no-mana');
+                    }
+                    
                     // Use special icon for Rest, otherwise use item image
                     const attackIcon = a.isRest ? 'Assests/empty-slot.png' : ((ITEM_TABLE && ITEM_TABLE[a.itemName] && ITEM_TABLE[a.itemName].image) || 'Assests/empty-slot.png');
                     slot.innerHTML = `<img src="${attackIcon}" alt="${a.name}"><span>${a.name}</span>`;
+                    
+                    // Add cooldown overlay if on cooldown
+                    if (remainingCooldown > 0) {
+                        const overlay = document.createElement('div');
+                        overlay.className = 'cooldown-overlay';
+                        overlay.textContent = remainingCooldown;
+                        slot.appendChild(overlay);
+                    }
                     
                     // Add tooltip functionality
                     slot.addEventListener('mouseenter', (e) => showAttackTooltip(e, a));
@@ -1940,9 +2272,27 @@
                 
                 const str = Number(attacker.STRENGTH || 0);
                 const mag = Number(attacker.MAGIC || 0);
+                const skill = Number(attacker.SKILL || 0);
                 
                 // Build tooltip content
                 let content = `<div class="tooltip-header">${attackObj.name}</div>`;
+                
+                // Show attack group
+                const attackGroup = attackObj.group || 'unknown';
+                const groupIcons = {
+                    'strength': '💪 Strength',
+                    'magic': '✨ Magic',
+                    'skill': '🎯 Skill',
+                    'hybrid': '⚔️ Hybrid',
+                    'utility': '🛠️ Utility'
+                };
+                content += `<div class="tooltip-group" style="color: #aaa; font-size: 0.85em;">${groupIcons[attackGroup] || '❓ Unknown'}</div>`;
+                
+                // Show cooldown
+                const cooldown = attackObj.cooldown || 0;
+                if (cooldown > 0) {
+                    content += `<div class="tooltip-cooldown">⏳ Cooldown: ${cooldown} turn${cooldown > 1 ? 's' : ''}</div>`;
+                }
                 
                 // Show mana cost
                 const manaCost = attackObj.manaCost || 0;
@@ -1955,15 +2305,21 @@
                 // Calculate base damage from stats
                 const strMult = attackObj.strMultiplier || attackObj.strMult || 0;
                 const magMult = attackObj.magicMultiplier || attackObj.magMult || 0;
+                const sklMult = attackObj.skillMultiplier || 0;
                 
-                if (strMult > 0 || magMult > 0) {
+                if (strMult > 0 || magMult > 0 || sklMult > 0) {
                     const strDamage = Math.round(str * strMult);
                     const magDamage = Math.round(mag * magMult);
-                    const totalDamage = strDamage + magDamage;
+                    const sklDamage = Math.round(skill * sklMult);
+                    const totalDamage = strDamage + magDamage + sklDamage;
                     
                     content += `<div class="tooltip-damage">💥 Base Damage: ${totalDamage}`;
-                    if (strDamage > 0 && magDamage > 0) {
-                        content += ` (${strDamage} + ${magDamage})`;
+                    const parts = [];
+                    if (strDamage > 0) parts.push(`${strDamage} STR`);
+                    if (magDamage > 0) parts.push(`${magDamage} MAG`);
+                    if (sklDamage > 0) parts.push(`${sklDamage} SKL`);
+                    if (parts.length > 1) {
+                        content += ` (${parts.join(' + ')})`;
                     }
                     content += `</div>`;
                 }
@@ -2054,7 +2410,7 @@
                 const isBoss = battleData.isBossTile || false;
                 
                 // Check for specific boss stages
-                if (level === 100) {
+                if (level === 50) {
                     // Divine King stage
                     const enemies = getEnemyWrappers();
                     const hasDemonKing = enemies.some(e => e.dataset.key === 'demonKing');
@@ -2064,10 +2420,10 @@
                     } else {
                         musicPath = 'audio/boss/bossIntroduction.mp3';
                     }
-                } else if (level === 150) {
+                } else if (level === 100) {
                     // Lightning Shark stage
                     musicPath = 'audio/boss/orbitalColossus.mp3';
-                } else if (level === 200) {
+                } else if (level === 150) {
                     // Overseer stage - music changes on each respawn (health bar)
                     const enemies = getEnemyWrappers();
                     const overseer = enemies.find(e => e.dataset.key === 'overseer');
@@ -2244,8 +2600,29 @@
                             
                             // Restore 60% of max mana
                             const manaRestore = Math.round(Number(attacker.MAX_MANA || 100) * 0.6);
-                            attacker.MANA = Math.min(Number(attacker.MAX_MANA || 100), Number(attacker.MANA || 0) + manaRestore);
-                            logCombat(`💤 ${attacker.NAME} rests and restores ${manaRestore} mana! (${attacker.MANA}/${attacker.MAX_MANA})`);
+                            
+                            // Ability 76: Overcharge - Allow above-max mana, bonus damage when above max
+                            const restAbilities = getEquippedAbilities(memberKey);
+                            if (restAbilities.includes(76)) {
+                                // Allow overcharging beyond max mana
+                                const currentMana = Number(attacker.MANA || 0);
+                                const maxMana = Number(attacker.MAX_MANA || 100);
+                                const newMana = currentMana + manaRestore;
+                                attacker.MANA = newMana;
+                                
+                                if (!overchargedMana[memberKey]) overchargedMana[memberKey] = 0;
+                                if (newMana > maxMana) {
+                                    overchargedMana[memberKey] = newMana - maxMana;
+                                    logCombat(`⚡ Overcharge: ${attacker.NAME} rests and OVERCHARGES to ${newMana} mana! (+${overchargedMana[memberKey]} over max)`);
+                                } else {
+                                    logCombat(`💤 ${attacker.NAME} rests and restores ${manaRestore} mana! (${newMana}/${maxMana})`);
+                                }
+                            } else {
+                                // Normal rest: cap at max mana
+                                attacker.MANA = Math.min(Number(attacker.MAX_MANA || 100), Number(attacker.MANA || 0) + manaRestore);
+                                logCombat(`💤 ${attacker.NAME} rests and restores ${manaRestore} mana! (${attacker.MANA}/${attacker.MAX_MANA})`);
+                            }
+                            
                             updatePlayerArea();
                             
                             // Disable Rest button after use
@@ -2264,6 +2641,32 @@
                             selectedAttackId = null;
                             selectedTarget = null;
                         };
+                    }
+
+                    // Helper function to count alive party members
+                    function countAlivePartyMembers() {
+                        let count = 0;
+                        ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE'].forEach(key => {
+                            const m = PARTY_STATS[key];
+                            if (m && Number(m.HEALTH) > 0) count++;
+                        });
+                        return count;
+                    }
+                    
+                    // Helper function to get Carried stat multiplier (ability 6)
+                    function getCarriedMultiplier(memberKey) {
+                        const equippedAbilities = getEquippedAbilities(memberKey);
+                        if (!equippedAbilities.includes(6)) return 1.0;
+                        
+                        const aliveCount = countAlivePartyMembers();
+                        if (aliveCount > 3) {
+                            // +20% per ally over 3
+                            return 1.0 + ((aliveCount - 3) * 0.2);
+                        } else if (aliveCount < 3) {
+                            // -40% per ally under 3
+                            return Math.max(0.1, 1.0 - ((3 - aliveCount) * 0.4));
+                        }
+                        return 1.0;
                     }
 
                     // Helper to update enemy bar visuals when hp changes
@@ -2295,48 +2698,64 @@
                         // Safety check - only run if status effects are initialized
                         if (typeof enemyStatusEffects === 'undefined' || typeof playerStatusEffects === 'undefined') return;
                         
-                        // Status effects on enemies are now shown in tooltip on hover
+                        // Update status effects for both players separately
+                        const member1Key = activeBattleMember;
+                        const member2Key = activeBattleMember2;
                         
-                        // Show status effects above player's head in arena
-                        const memberKey = getActiveBattleMember();
-                        const effects = playerStatusEffects[memberKey];
-                        let playerEffectDisplay = document.getElementById('player-status-effects');
-                        if (!playerEffectDisplay) {
-                            const playerArea = document.getElementById('player-area');
-                            if (playerArea) {
-                                playerEffectDisplay = document.createElement('div');
-                                playerEffectDisplay.id = 'player-status-effects';
-                                playerEffectDisplay.style.position = 'absolute';
-                                playerEffectDisplay.style.top = '0';
-                                playerEffectDisplay.style.left = '50%';
-                                playerEffectDisplay.style.transform = 'translateX(-50%)';
-                                playerEffectDisplay.style.fontSize = '24px';
-                                playerEffectDisplay.style.background = 'rgba(0, 0, 0, 0.8)';
-                                playerEffectDisplay.style.padding = '5px 12px';
-                                playerEffectDisplay.style.borderRadius = '10px';
-                                playerEffectDisplay.style.border = '2px solid rgba(255, 170, 0, 0.8)';
-                                playerEffectDisplay.style.whiteSpace = 'nowrap';
-                                playerEffectDisplay.style.zIndex = '200';
-                                playerEffectDisplay.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.6)';
-                                playerArea.style.position = 'relative';
-                                playerArea.appendChild(playerEffectDisplay);
-                            }
-                        }
-                        if (playerEffectDisplay) {
-                            if (effects && effects.length > 0) {
-                                const icons = effects.map(e => {
+                        // Player 1 status effects
+                        const effects1 = playerStatusEffects[member1Key];
+                        const player1Display = document.getElementById('player-1-status');
+                        if (player1Display) {
+                            if (effects1 && effects1.length > 0) {
+                                const icons = effects1.map(e => {
                                     const icon = e.type === 'burn' ? '🔥' : 
                                                  e.type === 'leech' ? '🩸' : 
                                                  e.type === 'bleed' ? '💉' : 
                                                  e.type === 'grim' ? '💀' : 
                                                  e.type === 'chill' ? '❄️' : '?';
                                     const stackDisplay = (e.stacks && e.stacks > 1) ? `×${e.stacks}` : '';
-                                    return `<span title="${e.type.toUpperCase()}${stackDisplay}">${icon}${stackDisplay}</span>`;
-                                }).join(' ');
-                                playerEffectDisplay.innerHTML = icons;
-                                playerEffectDisplay.style.display = 'block';
+                                    const turnsDisplay = e.turnsLeft && e.turnsLeft < 999 ? `(${e.turnsLeft})` : '';
+                                    return `<span class="status-icon" title="${e.type.toUpperCase()}${stackDisplay} ${turnsDisplay}">${icon}${stackDisplay}</span>`;
+                                }).join('');
+                                player1Display.innerHTML = icons;
+                                player1Display.style.display = 'block';
                             } else {
-                                playerEffectDisplay.style.display = 'none';
+                                player1Display.style.display = 'none';
+                            }
+                        }
+                        
+                        // Player 2 status effects
+                        const effects2 = playerStatusEffects[member2Key];
+                        const player2Display = document.getElementById('player-2-status');
+                        if (player2Display) {
+                            if (effects2 && effects2.length > 0) {
+                                const icons = effects2.map(e => {
+                                    const icon = e.type === 'burn' ? '🔥' : 
+                                                 e.type === 'leech' ? '🩸' : 
+                                                 e.type === 'bleed' ? '💉' : 
+                                                 e.type === 'grim' ? '💀' : 
+                                                 e.type === 'chill' ? '❄️' : '?';
+                                    const stackDisplay = (e.stacks && e.stacks > 1) ? `×${e.stacks}` : '';
+                                    const turnsDisplay = e.turnsLeft && e.turnsLeft < 999 ? `(${e.turnsLeft})` : '';
+                                    return `<span class="status-icon" title="${e.type.toUpperCase()}${stackDisplay} ${turnsDisplay}">${icon}${stackDisplay}</span>`;
+                                }).join('');
+                                player2Display.innerHTML = icons;
+                                player2Display.style.display = 'block';
+                            } else {
+                                player2Display.style.display = 'none';
+                            }
+                        }
+                        
+                        // Update turn indicator glow
+                        const player1Wrapper = document.getElementById('player-1-wrapper');
+                        const player2Wrapper = document.getElementById('player-2-wrapper');
+                        if (typeof currentPlayerTurn !== 'undefined') {
+                            if (currentPlayerTurn === 1 && player1Wrapper) {
+                                player1Wrapper.classList.add('active-turn');
+                                if (player2Wrapper) player2Wrapper.classList.remove('active-turn');
+                            } else if (currentPlayerTurn === 2 && player2Wrapper) {
+                                player2Wrapper.classList.add('active-turn');
+                                if (player1Wrapper) player1Wrapper.classList.remove('active-turn');
                             }
                         }
                     }
@@ -2641,13 +3060,25 @@
                                 let pixelComboCount = 0;
                                 let pixelComboActive = false;
                                 
-                                // Burn ground effect tracking (ability 8) - enemies in burn zone
-                                const burnGroundEffects = {}; // {enemyIndex: {duration, damage}}
-                                
-                                // Enhance ability tracking (ability 19) - permanent stat boosts for the battle
-                                const enhancedStats = {}; // {memberKey: {strength, magic, speed, defense, health}}
-                                
-                                // Helper function to get item data from attack object
+                // Burn ground effect tracking (ability 8) - enemies in burn zone
+                const burnGroundEffects = {}; // {enemyIndex: {duration, damage}}
+                
+                // Enhance ability tracking (ability 19) - permanent stat boosts for the battle
+                const enhancedStats = {}; // {memberKey: {strength, magic, speed, defense, health}}
+                
+                // Insight ability tracking (ability 63) - marked enemies take 15% more damage
+                const insightMarkedEnemies = new Set(); // Set of enemyIndex values
+                
+                // Resurrection tracking (abilities 68, 34, 74) - can only resurrect once per battle
+                let resurrectionUsed = false;
+                
+                // Tri-Element tracking (ability 72) - status effects only on first attack
+                const triElementUsedBy = new Set(); // Set of memberKeys who have used it
+                
+                // Overcharge tracking (ability 76) - allow above-max mana
+                const overchargedMana = {}; // {memberKey: extraMana}
+                
+                // Helper function to get item data from attack object
                                 function getItemFromAttack(attackObj) {
                                     if (!attackObj || !attackObj.itemName) return null;
                                     
@@ -2688,6 +3119,26 @@
                                     }
                                     return 1.0;
                                 }
+                                
+                                // Initialize battle stats including ammo
+                                function initializeBattleStats() {
+                                    // Set initial ammo for players with skill stat
+                                    [activeBattleMember, activeBattleMember2].forEach(memberKey => {
+                                        if (memberKey && PARTY_STATS[memberKey]) {
+                                            const member = PARTY_STATS[memberKey];
+                                            if (Number(member.SKILL || 0) > 0) {
+                                                member.AMMO = 5;
+                                            } else {
+                                                member.AMMO = 0;
+                                            }
+                                            ammoGenerationCounter[memberKey] = 0;
+                                        }
+                                    });
+                                    updatePlayerArea();
+                                }
+                                
+                                // Call initialization when battle starts
+                                setTimeout(() => initializeBattleStats(), 100);
 
                                 // Perform a player attack on a specific enemy wrapper (called when player clicks an enemy)
                                 function playerPerformAttackOn(enemyWrap){
@@ -2730,16 +3181,76 @@
                                         return true;
                                     }
                                     
+                                    // Get equipped abilities to check for Blood Price before mana calculations
+                                    const equippedAbilitiesPreCheck = getEquippedAbilities(memberKey);
+                                    
+                                    // Ability 73: Blood Price - Convert 15% HP to 3x damage bonus
+                                    let bloodPriceDamageBonus = 0;
+                                    if (equippedAbilitiesPreCheck.includes(73)) {
+                                        const currentHP = Number(attacker.HEALTH || 0);
+                                        const hpCost = Math.ceil(currentHP * 0.15);
+                                        
+                                        if (currentHP > hpCost) { // Don't kill yourself
+                                            attacker.HEALTH = currentHP - hpCost;
+                                            bloodPriceDamageBonus = hpCost * 3; // 3x multiplier
+                                            updatePlayerArea();
+                                            logCombat(`🩸 Blood Price: Sacrificed ${hpCost} HP for +${bloodPriceDamageBonus} damage!`);
+                                        }
+                                    }
+                                    
                                     // Check mana cost
                                     const manaCost = attackObj.manaCost || 0;
                                     const currentMana = Number(attacker.MANA || 0);
+                                    
+                                    // Check cooldown
+                                    const cooldown = attackObj.cooldown || 0;
+                                    const cooldownKey = `${attackObj.name}_${memberKey}`;
+                                    const remainingCooldown = attackCooldowns[cooldownKey] || 0;
+                                    
+                                    if (remainingCooldown > 0) {
+                                        logCombat(`❌ ${attackObj.name} is on cooldown! (${remainingCooldown} turn${remainingCooldown > 1 ? 's' : ''} remaining)`);
+                                        return false;
+                                    }
+                                    
+                                    // Check ammo requirement
+                                    const requiresAmmo = attackObj.requiresAmmo || false;
+                                    const currentAmmo = Number(attacker.AMMO || 0);
+                                    
+                                    if (requiresAmmo && currentAmmo < 1) {
+                                        logCombat(`❌ Out of ammo! ${attackObj.name} requires 1 ammo (you have ${currentAmmo})`);
+                                        return false;
+                                    }
                                     
                                     // Check if this is an AOE attack - need to check BEFORE deducting mana
                                     const isAOE = attackObj.aoe === true;
                                     const aliveEnemyCount = isAOE ? Array.from(getEnemyWrappers()).filter(e => Number(e.dataset.hp) > 0).length : 1;
                                     
-                                    // AOE attacks cost more mana based on number of targets (base cost + 50% per additional target)
-                                    const finalManaCost = isAOE && aliveEnemyCount > 1 ? Math.round(manaCost * (1 + (aliveEnemyCount - 1) * 0.5)) : manaCost;
+                                    // AOE attacks cost more mana based on number of targets
+                                    // Calculate effective multiplier for AOE: (strMult + magMult) × target count
+                                    let finalManaCost = manaCost;
+                                    let finalCooldown = cooldown;
+                                    
+                                    if (isAOE && aliveEnemyCount > 1) {
+                                        const strMult = Number(attackObj.strMultiplier || 0);
+                                        const magMult = Number(attackObj.magicMultiplier || 0);
+                                        const totalMult = strMult + magMult;
+                                        const effectiveMult = totalMult * aliveEnemyCount;
+                                        
+                                        // Recalculate mana cost based on effective multiplier
+                                        if (magMult > 0) {
+                                            finalManaCost = Math.round(effectiveMult * 10);
+                                        }
+                                        
+                                        // Recalculate cooldown based on effective strength multiplier
+                                        if (strMult > 0 && magMult === 0) {
+                                            const effectiveStrMult = strMult * aliveEnemyCount;
+                                            if (effectiveStrMult <= 1.0) finalCooldown = 0;
+                                            else if (effectiveStrMult <= 2.0) finalCooldown = 1;
+                                            else if (effectiveStrMult <= 3.0) finalCooldown = 2;
+                                            else if (effectiveStrMult <= 4.0) finalCooldown = 3;
+                                            else finalCooldown = 4;
+                                        }
+                                    }
                                     
                                     if (finalManaCost > currentMana) {
                                         logCombat(`❌ Not enough mana! ${attackObj.name} costs ${finalManaCost} mana (you have ${currentMana})`);
@@ -2750,9 +3261,36 @@
                                     if (finalManaCost > 0) {
                                         attacker.MANA = currentMana - finalManaCost;
                                         updatePlayerArea();
-                                        if (isAOE) {
-                                            logCombat(`💧 AOE mana cost: ${finalManaCost} (${aliveEnemyCount} targets)`);
+                                        if (isAOE && aliveEnemyCount > 1) {
+                                            logCombat(`💧 AOE mana cost: ${finalManaCost} (${aliveEnemyCount} targets, ${(attackObj.magicMultiplier || 0) * aliveEnemyCount}x effective)`);
                                         }
+                                    }
+                                    
+                                    // Set cooldown for this attack
+                                    if (finalCooldown > 0) {
+                                        attackCooldowns[cooldownKey] = finalCooldown;
+                                        if (isAOE && aliveEnemyCount > 1) {
+                                            logCombat(`⏳ AOE cooldown: ${finalCooldown} turns (${aliveEnemyCount} targets, ${(attackObj.strMultiplier || 0) * aliveEnemyCount}x effective)`);
+                                        }
+                                    }
+                                    
+                                    // Deduct ammo if required
+                                    if (requiresAmmo) {
+                                        attacker.AMMO = currentAmmo - 1;
+                                        updatePlayerArea();
+                                        logCombat(`🎯 Ammo used: ${currentAmmo - 1} remaining`);
+                                    }
+                                    
+                                    // Increment ammo generation counter
+                                    if (!ammoGenerationCounter[memberKey]) ammoGenerationCounter[memberKey] = 0;
+                                    ammoGenerationCounter[memberKey]++;
+                                    
+                                    // Generate ammo every 2 attacks
+                                    if (ammoGenerationCounter[memberKey] >= 2 && Number(attacker.SKILL || 0) > 0) {
+                                        attacker.AMMO = Number(attacker.AMMO || 0) + 1;
+                                        ammoGenerationCounter[memberKey] = 0;
+                                        updatePlayerArea();
+                                        logCombat(`🎯 Ammo generated! (${attacker.AMMO} total)`);
                                     }
                                     
                                     const targetEnemies = isAOE ? Array.from(getEnemyWrappers()).filter(e => Number(e.dataset.hp) > 0) : [enemyWrap];
@@ -2869,6 +3407,10 @@
                                     
                                     const strMult = Number(attackObj.strMultiplier||0);
                                     const magMult = Number(attackObj.magicMultiplier||0);
+                                    const sklMult = Number(attackObj.skillMultiplier||0);
+                                    
+                                    // Get skill stat for damage calculation and crit bonus
+                                    const skill = Number(attacker.SKILL || 0);
                                     
                                     // Get enemy index for status tracking
                                     const enemyIndex = Array.from(getEnemyWrappers()).indexOf(currentEnemyWrap);
@@ -2876,12 +3418,33 @@
                     // Apply bleed multiplier if present
                     const bleedMult = getBleedMultiplier('enemy', enemyIndex);
                     
-                    // Calculate base damage before defense
-                    let baseDmg = (mag * magMult + str * strMult) * bleedMult;
+                    // Calculate base damage with MULTIPLICATIVE skill scaling
+                    // Formula: (STR×strMult + MAG×magMult) × (1 + SKILL×sklMult) × bleedMult
+                    let baseDmg;
+                    if (sklMult > 0) {
+                        // Skill attack: flat damage × skill multiplier
+                        const flatDamage = (str * strMult + mag * magMult);
+                        const skillMultiplier = (1 + skill * sklMult);
+                        baseDmg = flatDamage * skillMultiplier * bleedMult;
+                    } else {
+                        // Non-skill attack: additive damage
+                        baseDmg = (mag * magMult + str * strMult) * bleedMult;
+                    }
                     
                     // AOE attacks deal 50% damage to balance multi-target effectiveness
                     if (isAOE) {
                         baseDmg = baseDmg * 0.5;
+                    }
+                    
+                    // Ability 63: Insight - Mark enemy for 15% more damage (permanent for battle)
+                    if (equippedAbilities.includes(63) && !insightMarkedEnemies.has(enemyIndex)) {
+                        insightMarkedEnemies.add(enemyIndex);
+                        logCombat(`👁️ Insight: Enemy marked! +15% damage from all sources`);
+                    }
+                    
+                    // Apply Insight damage bonus if enemy is marked
+                    if (insightMarkedEnemies.has(enemyIndex)) {
+                        baseDmg = baseDmg * 1.15;
                     }
                     
                     // Apply chill effect BEFORE defense: 25% damage reduction if enemy is chilled
@@ -2901,7 +3464,36 @@
                     // Ensure minimum 10% of base damage always gets through
                     const minimumDamage = Math.ceil(baseDmg * 0.1);
                     let dmg = Math.max(minimumDamage, Math.round(damageAfterDefense));
-                    if (isNaN(dmg)) dmg = minimumDamage || 1;                                    // ===== ITEM ABILITIES =====
+                    if (isNaN(dmg)) dmg = minimumDamage || 1;
+                    
+                    // Calculate critical hit chance
+                    // Skill attacks ALWAYS have crit enabled
+                    const isSkillAttack = (attackObj.group === 'skill' || sklMult > 0);
+                    const baseCritChance = 0.05; // 5% base
+                    const skillCritBonus = skill * 0.003; // +0.3% per skill point
+                    const totalCritChance = baseCritChance + skillCritBonus;
+                    
+                    // Roll for critical hit (all skill attacks can crit)
+                    const critRoll = Math.random();
+                    const isCriticalHit = isSkillAttack && critRoll < totalCritChance;
+                    
+                    if (isCriticalHit) {
+                        const critMultiplier = 2.0; // 200% damage on crit
+                        dmg = Math.round(dmg * critMultiplier);
+                        logCombat(`💥 CRITICAL HIT! (${Math.round(totalCritChance * 100)}% chance)`);
+                    }
+                    
+                    // Apply Blood Price damage bonus (ability 73) if active
+                    if (typeof bloodPriceDamageBonus !== 'undefined' && bloodPriceDamageBonus > 0) {
+                        dmg = dmg + bloodPriceDamageBonus;
+                    }
+                    
+                    // Apply Overcharge damage bonus (ability 76) if mana is above max
+                    if (overchargedMana[memberKey] && overchargedMana[memberKey] > 0) {
+                        const overchargeDamage = Math.round(overchargedMana[memberKey] * 1.5); // 1.5x damage per overcharged mana
+                        dmg = dmg + overchargeDamage;
+                        logCombat(`⚡ Overcharge Bonus: +${overchargeDamage} damage from ${overchargedMana[memberKey]} excess mana!`);
+                    }                                    // ===== ITEM ABILITIES =====
                                     // Abilities already loaded before forEach loop
                                     console.log(`[Abilities] Member ${memberKey} equipped abilities:`, equippedAbilities);
                                     
@@ -3108,6 +3700,15 @@
                                         logCombat(`⚡ Plasma: Applied ${randomStatus}!`);
                                     }
                                     
+                                    // Ability 72: Tri-Element - Apply burn+chill+stun ONLY on first attack with item
+                                    if (equippedAbilities.includes(72) && !triElementUsedBy.has(memberKey)) {
+                                        triElementUsedBy.add(memberKey);
+                                        applyStatusEffect(currentEnemyWrap, 'enemy', enemyIndex, 'burn', baseDmg);
+                                        applyStatusEffect(currentEnemyWrap, 'enemy', enemyIndex, 'chill', baseDmg);
+                                        applyStatusEffect(currentEnemyWrap, 'enemy', enemyIndex, 'stun', baseDmg);
+                                        logCombat(`🔥❄️💫 Tri-Element: Applied burn, chill, AND stun! (first use only)`);
+                                    }
+                                    
                                     // Ability 8: Burn - Set ground aflame (35% magic damage per turn)
                                     if (equippedAbilities.includes(8)) {
                                         const burnDmg = Math.round(Number(attacker.MAGIC||0) * 0.35);
@@ -3163,6 +3764,14 @@
                                         attacker.HEALTH = newHealth;
                                         updatePlayerArea();
                                         logCombat(`💉 Lifesteal: Healed ${healAmount} HP (${newHealth}/${maxHealth})`);
+                                        
+                                        // Add healing animation
+                                        const playerImgId = (memberKey === activeBattleMember2) ? 'player-2' : 'player-1';
+                                        const playerImg = document.getElementById(playerImgId);
+                                        if (playerImg) {
+                                            playerImg.classList.add('healing');
+                                            setTimeout(() => playerImg.classList.remove('healing'), 500);
+                                        }
                                     }
                                     
                                     // Ability 31: Life Drain - Heal 20% of damage dealt
@@ -3173,7 +3782,137 @@
                                         const newHealth = Math.min(maxHealth, currentHealth + drainAmount);
                                         attacker.HEALTH = newHealth;
                                         updatePlayerArea();
+                                        
+                                        // Add healing animation
+                                        const playerImgId = (memberKey === activeBattleMember2) ? 'player-2' : 'player-1';
+                                        const playerImg = document.getElementById(playerImgId);
+                                        if (playerImg) {
+                                            playerImg.classList.add('healing');
+                                            setTimeout(() => playerImg.classList.remove('healing'), 500);
+                                        }
                                         logCombat(`🩸 Life Drain: Healed ${drainAmount} HP (${newHealth}/${maxHealth})`);
+                                    }
+                                    
+                                    // Ability 67: Siphon - Steal random stat (STR/MAG/SPD/DEF only, not Health) for 2 turns
+                                    if (equippedAbilities.includes(67)) {
+                                        const siphonableStats = ['STR', 'MAG', 'SPD', 'DEF'];
+                                        const randomStat = siphonableStats[Math.floor(Math.random() * siphonableStats.length)];
+                                        const siphonAmount = Math.ceil(currentEnemyWrap.dataset[randomStat.toLowerCase()] * 0.1);
+                                        
+                                        // Apply stat reduction to enemy
+                                        applyStatusEffect(currentEnemyWrap, 'enemy', enemyIndex, 'siphon-' + randomStat.toLowerCase(), siphonAmount);
+                                        
+                                        // Boost player stat temporarily
+                                        if (!enhancedStats[memberKey]) enhancedStats[memberKey] = {};
+                                        const statMap = {STR: 'STRENGTH', MAG: 'MAGIC', SPD: 'SPEED', DEF: 'DEFENSE'};
+                                        const fullStatName = statMap[randomStat];
+                                        attacker[fullStatName] = Number(attacker[fullStatName] || 0) + siphonAmount;
+                                        updatePlayerArea();
+                                        
+                                        logCombat(`🌀 Siphon: Stole ${siphonAmount} ${randomStat} for 2 turns!`);
+                                    }
+                                    
+                                    // Ability 97: Knockback (Hand Cannon) - Stun enemy for 1 turn
+                                    if (equippedAbilities.includes(97)) {
+                                        applyStatusEffect(currentEnemyWrap, 'enemy', enemyIndex, 'stun', dmg);
+                                        logCombat(`💫 Knockback: Enemy stunned for 1 turn!`);
+                                    }
+                                    
+                                    // Ability 103: Arcane Bullets - Absorb entire mana bar, damage capped at 100 mana
+                                    if (equippedAbilities.includes(103) && Number(attacker.MANA || 0) > 0) {
+                                        const manaAbsorbed = Number(attacker.MANA);
+                                        const manaForDamage = Math.min(manaAbsorbed, 100);
+                                        const bonusDamage = Math.round(manaForDamage * 2); // 2x damage per mana point
+                                        
+                                        attacker.MANA = 0;
+                                        updatePlayerArea();
+                                        
+                                        dmg = dmg + bonusDamage;
+                                        currentEnemyWrap.dataset.hp = Math.max(0, Number(currentEnemyWrap.dataset.hp) - bonusDamage);
+                                        updateEnemyBar(currentEnemyWrap);
+                                        
+                                        logCombat(`✨ Arcane Bullets: Absorbed ${manaAbsorbed} mana, +${bonusDamage} bonus damage (capped at 100 mana)`);
+                                    }
+                                    
+                                    // Ability 84: Soul Shackles - 15% stat reduction to enemy (no ability suppression)
+                                    if (equippedAbilities.includes(84)) {
+                                        const statReduction = 0.15;
+                                        currentEnemyWrap.dataset.str = Math.round(Number(currentEnemyWrap.dataset.str || 0) * (1 - statReduction));
+                                        currentEnemyWrap.dataset.mag = Math.round(Number(currentEnemyWrap.dataset.mag || 0) * (1 - statReduction));
+                                        currentEnemyWrap.dataset.spd = Math.round(Number(currentEnemyWrap.dataset.spd || 0) * (1 - statReduction));
+                                        currentEnemyWrap.dataset.def = Math.round(Number(currentEnemyWrap.dataset.def || 0) * (1 - statReduction));
+                                        logCombat(`⛓️ Soul Shackles: Enemy stats reduced by 15%!`);
+                                    }
+                                    
+                                    // Ability 85: Dual Strike - ONLY applies to Dual Revolvers attack (Double Shot)
+                                    if (equippedAbilities.includes(85) && attackObj.name === 'Double Shot' && Number(currentEnemyWrap.dataset.hp) > 0) {
+                                        // Second strike with Dual Revolvers
+                                        const str2 = Number(attacker.STRENGTH || 0) * carriedMult;
+                                        const mag2 = Number(attacker.MAGIC || 0) * carriedMult;
+                                        const skill2 = Number(attacker.SKILL || 0);
+                                        const bleedMult2 = getBleedMultiplier('enemy', enemyIndex);
+                                        let dmg2 = Math.round((str2 * strMult + mag2 * magMult + skill2 * sklMult) * bleedMult2);
+                                        
+                                        // Apply defense
+                                        const defMult2 = Math.max(0.5, 1.0 - (Math.log10(enemyDefense + 1) * 0.05));
+                                        const dmgReduction2 = enemyDefense * defMult2;
+                                        dmg2 = Math.max(Math.ceil((str2 * strMult + mag2 * magMult + skill2 * sklMult) * bleedMult2 * 0.1), Math.round((str2 * strMult + mag2 * magMult + skill2 * sklMult) * bleedMult2 - dmgReduction2));
+                                        
+                                        currentEnemyWrap.dataset.hp = Math.max(0, Number(currentEnemyWrap.dataset.hp) - dmg2);
+                                        updateEnemyBar(currentEnemyWrap);
+                                        logCombat(`🔫🔫 Dual Strike: Second shot deals ${dmg2} damage!`);
+                                    }
+                                    
+                                    // Ability 88: Gravity Hammer (Gravity Well item) - Multi-hit up to 3 enemies
+                                    if (equippedAbilities.includes(88)) {
+                                        const allEnemies = Array.from(getEnemyWrappers()).filter(e => Number(e.dataset.hp) > 0);
+                                        const additionalTargets = allEnemies.filter(e => e !== currentEnemyWrap).slice(0, 2); // Up to 2 more
+                                        
+                                        additionalTargets.forEach((extraEnemy, idx) => {
+                                            const extraEnemyIdx = Array.from(getEnemyWrappers()).indexOf(extraEnemy);
+                                            const extraDef = Number(extraEnemy.dataset.def || 0);
+                                            const extraBleedMult = getBleedMultiplier('enemy', extraEnemyIdx);
+                                            
+                                            // 60% damage to additional targets
+                                            let extraDmg = Math.round((str * strMult + mag * magMult + skill * sklMult) * extraBleedMult * 0.6);
+                                            const extraDefMult = Math.max(0.5, 1.0 - (Math.log10(extraDef + 1) * 0.05));
+                                            const extraDmgReduction = extraDef * extraDefMult;
+                                            extraDmg = Math.max(Math.ceil(extraDmg * 0.1), Math.round(extraDmg - extraDmgReduction));
+                                            
+                                            extraEnemy.dataset.hp = Math.max(0, Number(extraEnemy.dataset.hp) - extraDmg);
+                                            updateEnemyBar(extraEnemy);
+                                            logCombat(`🌀 Gravity Hammer: Hit enemy ${idx + 2} for ${extraDmg} damage!`);
+                                        });
+                                    }
+                                    
+                                    // Ability 95: Speed Force - Divide damage by attack count, level-scaled speed requirement
+                                    if (equippedAbilities.includes(95)) {
+                                        // Calculate required speed: 10 × level scale factor
+                                        const levelScaleFactor = (1 + (PARTY_STATS[memberKey].LEVEL || 1) * 0.05);
+                                        const requiredSpeed = Math.round(10 * levelScaleFactor);
+                                        const currentSpeed = Number(attacker.SPEED || 0);
+                                        
+                                        if (currentSpeed >= requiredSpeed) {
+                                            // Calculate number of attacks based on speed (1 per required speed)
+                                            const attackCount = Math.floor(currentSpeed / requiredSpeed);
+                                            const damagePerHit = Math.ceil(dmg / attackCount);
+                                            
+                                            logCombat(`⚡ Speed Force: ${attackCount} rapid strikes! (${requiredSpeed} speed each)`);
+                                            
+                                            // Apply damage in multiple hits
+                                            for (let i = 1; i < attackCount; i++) {
+                                                if (Number(currentEnemyWrap.dataset.hp) <= 0) break;
+                                                
+                                                currentEnemyWrap.dataset.hp = Math.max(0, Number(currentEnemyWrap.dataset.hp) - damagePerHit);
+                                                updateEnemyBar(currentEnemyWrap);
+                                                logCombat(`⚡ Strike ${i + 1}: ${damagePerHit} damage`);
+                                            }
+                                            
+                                            // First hit already counted in main damage
+                                            dmg = damagePerHit;
+                                        } else {
+                                            logCombat(`⚡ Speed Force: Insufficient speed (need ${requiredSpeed}, have ${currentSpeed})`);
+                                        }
                                     }
                                     
                                     // Ability 33: Arcane Surge - Casting magic restores 10% of mana cost
@@ -3526,10 +4265,14 @@
 
                                 // After attacking, clear selectedAttackId so player must re-select an attack next time
                                 selectedAttackId = null;
-                                // After attacking, consume selection and reset waiting flag to resume queue
-                                playerCanAct = false;
-                                playerWaiting = false;
-                                waitingForPlayerAction = false;
+                                
+                                // Add delay before enemy turn (800ms for combat flow)
+                                setTimeout(() => {
+                                    // After attacking, consume selection and reset waiting flag to resume queue
+                                    playerCanAct = false;
+                                    playerWaiting = false;
+                                    waitingForPlayerAction = false;
+                                }, 800);
                                 
                                 return true;
                             }                                    // Expose attack performer so click handlers outside can call it when appropriate
@@ -3570,7 +4313,7 @@
                                     logCombat(`💀 ${enemyKey} respawns! ${newBarsRemaining} health bar${newBarsRemaining > 1 ? 's' : ''} remaining!`);
                                     
                                     // Change music for overseer based on bars remaining
-                                    if (enemyKey === 'overseer' && level === 200 && typeof playBattleMusic === 'function') {
+                                    if (enemyKey === 'overseer' && level === 150 && typeof playBattleMusic === 'function') {
                                         playBattleMusic();
                                     }
                                     
@@ -3661,31 +4404,57 @@
                 }
             }
             
-            // Hide the defeated enemy completely (remove from DOM)
-            enemyWrap.remove();                            // Clear status effects for defeated enemy
-                            delete enemyStatusEffects[enemyIndex];
-                            
-                            // Update turn order display to remove dead enemy's turn boxes
-                            updateTurnOrderDisplay();
-                            
-                            const anyAlive = getEnemyWrappers().some(w => Number(w.dataset.hp) > 0);
-                            if (!anyAlive) {
-                                logCombat('All enemies defeated! Redirecting to home...');
-                                combatRunning = false;
-                                // Handle victory: award EXP, generate loot, show victory modal, and then unlock/redirect
-                                try {
-                                    const level = battleData.level || 1;
-                                    showVictoryRewards(level);
-                                } catch (e) {
-                                    console.error('Error showing victory rewards:', e);
-                                    // Fallback: just unlock and go home
-                                    try { if (typeof window.clearLevelAndUnlock === 'function') window.clearLevelAndUnlock(battleData.level||1); } catch(_){}
-                                    setTimeout(()=> window.location.href = 'home.html', 1500);
-                                }
-                                return true;
-                            }
-                            return false; // Enemy was removed but battle continues
+            // Play death animation before removing enemy
+            const enemyImg = enemyWrap.querySelector('img');
+            if (enemyImg) {
+                enemyImg.classList.add('enemy-dying');
+                setTimeout(() => {
+                    // Hide the defeated enemy completely (remove from DOM)
+                    enemyWrap.remove();
+                    // Clear status effects for defeated enemy
+                    delete enemyStatusEffects[enemyIndex];
+                    
+                    // Update turn order display to remove dead enemy's turn boxes
+                    updateTurnOrderDisplay();
+                    
+                    const anyAlive = getEnemyWrappers().some(w => Number(w.dataset.hp) > 0);
+                    if (!anyAlive) {
+                        logCombat('All enemies defeated! Redirecting to home...');
+                        combatRunning = false;
+                        // Handle victory: award EXP, generate loot, show victory modal, and then unlock/redirect
+                        try {
+                            const level = battleData.level || 1;
+                            showVictoryRewards(level);
+                        } catch (e) {
+                            console.error('Error showing victory rewards:', e);
                         }
+                    }
+                }, 800); // Wait for death animation to complete
+            } else {
+                // No image found, remove immediately (fallback)
+                enemyWrap.remove();
+                delete enemyStatusEffects[enemyIndex];
+                updateTurnOrderDisplay();
+                
+                const anyAlive = getEnemyWrappers().some(w => Number(w.dataset.hp) > 0);
+                if (!anyAlive) {
+                    logCombat('All enemies defeated! Redirecting to home...');
+                    combatRunning = false;
+                    // Handle victory: award EXP, generate loot, show victory modal, and then unlock/redirect
+                    try {
+                        const level = battleData.level || 1;
+                        showVictoryRewards(level);
+                    } catch (e) {
+                        console.error('Error showing victory rewards:', e);
+                        // Fallback: just unlock and go home
+                        try { if (typeof window.clearLevelAndUnlock === 'function') window.clearLevelAndUnlock(battleData.level||1); } catch(_){}
+                        setTimeout(()=> window.location.href = 'home.html', 1500);
+                    }
+                    return true;
+                }
+                return false; // Enemy was removed but battle continues
+            }
+        }
 
                         // Apply status effect to a target (enemy or player)
                         function applyStatusEffect(target, targetType, targetKey, effectType, baseDamage) {
@@ -4194,17 +4963,27 @@
                                 return;
                             }
                             
-                            // Filter attacks by mana cost
+                            // Filter attacks by mana cost, cooldown, and ammo
                             const affordableAttacks = equippedList.filter(atk => {
                                 const manaCost = atk.manaCost || 0;
-                                return manaCost <= currentMana;
+                                const cooldownKey = `${atk.name}_${memberKey}`;
+                                const onCooldown = (attackCooldowns[cooldownKey] || 0) > 0;
+                                const requiresAmmo = atk.requiresAmmo || false;
+                                const currentAmmo = Number(target.AMMO || 0);
+                                
+                                // Check all requirements
+                                if (manaCost > currentMana) return false;
+                                if (onCooldown) return false;
+                                if (requiresAmmo && currentAmmo < 1) return false;
+                                
+                                return true;
                             });
                             
                             // If no affordable attacks, rest
                             if (affordableAttacks.length === 0) {
                                 const manaRestore = Math.round(maxMana * 0.6);
                                 target.MANA = Math.min(maxMana, currentMana + manaRestore);
-                                logCombat(`💤 [AUTO] ${target.NAME} rests (no affordable attacks) and restores ${manaRestore} mana!`);
+                                logCombat(`💤 [AUTO] ${target.NAME} rests (no usable attacks) and restores ${manaRestore} mana!`);
                                 updatePlayerArea();
                                 
                                 playerCanAct = false;
@@ -4488,6 +5267,16 @@
                 afterShockCooldown--;
             }
             
+            // Decrement all attack cooldowns at end of turn
+            for (const cooldownKey in attackCooldowns) {
+                if (attackCooldowns[cooldownKey] > 0) {
+                    attackCooldowns[cooldownKey]--;
+                    if (attackCooldowns[cooldownKey] === 0) {
+                        delete attackCooldowns[cooldownKey];
+                    }
+                }
+            }
+            
             // Player Lightning Status - Ignore enemy attack if active (from Lightning Shark)
             if (typeof playerLightningActive !== 'undefined' && playerLightningActive) {
                 playerLightningActive = false;
@@ -4518,16 +5307,77 @@
             }
             
             // Ability 34: Phoenix - Revive once per battle at 30% HP when killed
-            if (activeAbilities.includes(34) && dmg >= Number(target.HEALTH || 0)) {
-                if (!window.phoenixUsed) window.phoenixUsed = {};
-                if (!window.phoenixUsed[targetKey]) {
-                    const reviveHp = Math.ceil(Number(target.MAX_HEALTH || 100) * 0.3);
+            // Ability 68: Resurrection - Revive once per battle at 50% HP when killed
+            // Ability 74: Rebirth - Revive once per battle at 40% HP when killed
+            // NOTE: Only ONE resurrection can occur per battle across ALL resurrection abilities
+            if ((activeAbilities.includes(34) || activeAbilities.includes(68) || activeAbilities.includes(74)) && dmg >= Number(target.HEALTH || 0)) {
+                if (!resurrectionUsed) {
+                    let reviveHp;
+                    let abilityName;
+                    
+                    if (activeAbilities.includes(68)) {
+                        reviveHp = Math.ceil(Number(target.MAX_HEALTH || 100) * 0.5);
+                        abilityName = 'RESURRECTION';
+                    } else if (activeAbilities.includes(74)) {
+                        reviveHp = Math.ceil(Number(target.MAX_HEALTH || 100) * 0.4);
+                        abilityName = 'REBIRTH';
+                    } else {
+                        reviveHp = Math.ceil(Number(target.MAX_HEALTH || 100) * 0.3);
+                        abilityName = 'PHOENIX';
+                    }
+                    
                     target.HEALTH = reviveHp;
-                    window.phoenixUsed[targetKey] = true;
+                    resurrectionUsed = true;
                     updatePlayerArea();
-                    logCombat(`🔥 PHOENIX: ${target.NAME} revived at 30% HP!`);
+                    logCombat(`🔥 ${abilityName}: ${target.NAME} revived at ${Math.round(reviveHp / target.MAX_HEALTH * 100)}% HP! (once per battle)`);
                     dmg = 0; // Cancel the killing blow
+                } else {
+                    // No resurrection available, switch to next member
+                    switchToNextMember(targetKey);
                 }
+            } else if (dmg >= Number(target.HEALTH || 0)) {
+                // Member died without resurrection, switch to next member
+                switchToNextMember(targetKey);
+            }
+            
+            // Auto-switch to next member on death
+            function switchToNextMember(deadMemberKey) {
+                // Find next alive member
+                const memberKeys = ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE'];
+                const deadIndex = memberKeys.indexOf(deadMemberKey);
+                
+                // Check which slot the dead member was in
+                const wasPlayer1 = (deadMemberKey === activeBattleMember);
+                const wasPlayer2 = (deadMemberKey === activeBattleMember2);
+                
+                if (!wasPlayer1 && !wasPlayer2) return; // Not an active player
+                
+                // Find next alive member not already active
+                for (let i = deadIndex + 1; i < memberKeys.length; i++) {
+                    const candidateKey = memberKeys[i];
+                    const candidate = PARTY_STATS[candidateKey];
+                    
+                    if (candidate && Number(candidate.HEALTH || 0) > 0 && 
+                        candidateKey !== activeBattleMember && candidateKey !== activeBattleMember2) {
+                        
+                        // Switch the slot
+                        if (wasPlayer1) {
+                            activeBattleMember = candidateKey;
+                            logCombat(`💀 ${PARTY_STATS[deadMemberKey].NAME} fell! ${candidate.NAME} takes their place!`);
+                        } else {
+                            activeBattleMember2 = candidateKey;
+                            logCombat(`💀 ${PARTY_STATS[deadMemberKey].NAME} fell! ${candidate.NAME} takes their place!`);
+                        }
+                        
+                        updatePlayerArea();
+                        updatePlayerStatsDisplay();
+                        renderAttacksForPlayer();
+                        updatePartySlotHighlight();
+                        return;
+                    }
+                }
+                
+                logCombat(`💀 ${PARTY_STATS[deadMemberKey].NAME} fell! No replacement available.`);
             }
             
             // Ability 45: Divine Intervention - Survive lethal damage once per battle at 1 HP
@@ -5047,8 +5897,8 @@
                     
                     for (let i = 0; i < numItems; i++) {
                         let item;
-                        // LEGENDARY GUARANTEED: Only at boss stages 75 and 100
-                        if (isBossTile && (level === 75 || level === 100)) {
+                        // LEGENDARY GUARANTEED: Only at boss stages 40 and 50 (normal mode), 100 (hard mode), 150 (hell mode)
+                        if (isBossTile && (level === 40 || level === 50 || level === 100 || level === 150)) {
                             item = window.generateRandomItem(level, 'Legendary');
                             if (i === 0) {
                                 logCombat('�✨ LEGENDARY BOSS REWARD: Guaranteed Legendary Item! ✨🌟');

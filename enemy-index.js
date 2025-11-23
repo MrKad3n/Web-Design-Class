@@ -343,12 +343,22 @@ function showEnemyDetails(enemyName, encountered) {
             </table>
         `;
 
-        // Special effect section
+        // Special ability section
         if (enemy.specialEffect) {
             html += `
-                <div class="special-section">
+                <div class="ability-section">
                     <div class="section-title">⚡ Special Ability</div>
                     <p style="color: #ffcc00; font-size: 1.1em;">${enemy.specialEffect}</p>
+                </div>
+            `;
+        }
+
+        // Role/Strategy section
+        if (enemy.role) {
+            html += `
+                <div class="ability-section" style="background: rgba(233, 69, 96, 0.15); border-color: #e94560;">
+                    <div class="section-title" style="color: #ff6b88;">⚔️ Combat Strategy</div>
+                    <p style="font-size: 1.15em; color: #ffd4dc; line-height: 1.6;">${enemy.role}</p>
                 </div>
             `;
         }

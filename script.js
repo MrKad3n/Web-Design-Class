@@ -147,11 +147,11 @@ function initializeGameMode() {
     
     // Set pathLength based on mode
     if (currentGameMode === 'hard') {
-        pathLength = 50; // Hard mode is levels 100-150, so 50 tiles
+        pathLength = 50; // Hard mode is levels 51-100, so 50 tiles
     } else if (currentGameMode === 'hell') {
-        pathLength = 50; // Hell mode is levels 150-200, so 50 tiles
+        pathLength = 50; // Hell mode is levels 101-150, so 50 tiles
     } else {
-        pathLength = 100; // Normal mode is levels 1-100
+        pathLength = 50; // Normal mode is levels 1-50
     }
     
     return currentGameMode;
@@ -324,15 +324,15 @@ function generateAndSaveDungeon() {
 
   function levelToTier(level){
     const lvl = Number(level)||1;
-    // Boss levels: 25, 50, 75, 100
-    if (lvl === 100) return 6; // Divine King (tier 6)
-    if (lvl === 75 || lvl === 50 || lvl === 25) return 5; // Boss tier 5
+    // Boss levels: 10, 20, 30, 40, 50 for normal mode
+    if (lvl === 50) return 6; // Final boss of normal mode (tier 6)
+    if (lvl === 40 || lvl === 30 || lvl === 20 || lvl === 10) return 5; // Mini-boss tier 5
     // Regular tiers based on level ranges
-    if (lvl <= 20) return 1;
-    if (lvl <= 40) return 2;
-    if (lvl <= 60) return 3;
-    if (lvl <= 80) return 4;
-    return 4; // 81-99 stay at tier 4
+    if (lvl <= 10) return 1;
+    if (lvl <= 20) return 2;
+    if (lvl <= 30) return 3;
+    if (lvl <= 40) return 4;
+    return 4; // 41-49 stay at tier 4
   }
 
   // Populate tileData from the generated path
@@ -343,9 +343,9 @@ function generateAndSaveDungeon() {
     const tileIndex = index + 1;
     let level;
     if (currentGameMode === 'hard') {
-      level = 100 + tileIndex;
+      level = 50 + tileIndex;
     } else if (currentGameMode === 'hell') {
-      level = 150 + tileIndex;
+      level = 100 + tileIndex;
     } else {
       level = tileIndex;
     }
@@ -355,7 +355,7 @@ function generateAndSaveDungeon() {
     // Hard Mode specific logic
     if (currentGameMode === 'hard') {
       if (tileIndex === 1) {
-        // First tile of hard mode (level 101)
+        // First tile of hard mode (level 51)
         tile.title = "Hard Mode - Start";
         tile.description = "The true challenge begins here.";
         tile.cleared = false;
@@ -366,7 +366,7 @@ function generateAndSaveDungeon() {
         tile.enemyThree = pool.length ? pool[Math.floor(Math.random()*pool.length)] : null;
         tile.enemyFour = null;
         tile.enemyFive = null;
-      } else if (level === 150) {
+      } else if (level === 100) {
         // Final boss of hard mode: Lightning Shark
         tile.title = "Hard Mode Final Boss";
         tile.description = "The Lightning Shark awaits your challenge.";
@@ -378,7 +378,7 @@ function generateAndSaveDungeon() {
         tile.enemyThree = null;
         tile.enemyFour = null;
         tile.enemyFive = null;
-      } else if ((level - 100) % 5 === 0) {
+      } else if ((level - 50) % 5 === 0) {
         // Boss stages every 5 levels (105, 110, 115, etc.)
         tile.title = "Hard Mode Boss";
         tile.description = "Double boss encounter with enhanced stats.";
@@ -418,7 +418,7 @@ function generateAndSaveDungeon() {
     else if (currentGameMode === 'hell') {
       const hellLevel = level;
       const tileIndex = index + 1;
-      const actualLevel = 150 + tileIndex; // Hell mode is levels 151-200
+      const actualLevel = 100 + tileIndex; // Hell mode is levels 101-150
       
       tile.level = actualLevel; // Override level for hell mode
       
@@ -441,7 +441,7 @@ function generateAndSaveDungeon() {
         tile.enemyThree = null;
         tile.enemyFour = null;
         tile.enemyFive = null;
-      } else if (actualLevel === 200) {
+      } else if (actualLevel === 150) {
         // Final boss: The Overseer (tier 7)
         tile.title = "The Overseer";
         tile.description = "The Ancient One awaits at the pinnacle of hell.";
@@ -453,7 +453,7 @@ function generateAndSaveDungeon() {
         tile.enemyThree = null;
         tile.enemyFour = null;
         tile.enemyFive = null;
-      } else if (actualLevel === 175) {
+      } else if (actualLevel === 125) {
         // Mid-boss: Monstrous Fish with minions
         tile.title = "Abyssal Terror";
         tile.description = "The Monstrous Fish rules this domain.";
@@ -477,8 +477,8 @@ function generateAndSaveDungeon() {
         // Build pool: unknown enemies + all tiers 2-5
         let unknownPool = getEnemiesByTier('unknown');
         
-        // Exclude monstrous fish until after level 175
-        if (actualLevel <= 175) {
+        // Exclude monstrous fish until after mid-boss encounter
+        if (actualLevel < 125) {
           unknownPool = unknownPool.filter(img => img !== "Enemies/monstruousFish.png");
         }
         
@@ -542,7 +542,7 @@ function generateAndSaveDungeon() {
         tile.enemyOne = pool.length ? pool[Math.floor(Math.random()*pool.length)] : null;
         tile.enemyTwo = null;
         tile.enemyThree = null;
-      } else if (level === 100) {
+      } else if (level === 50) {
         // Final boss: Divine King (tier 6)
         tile.title = "Divine King";
         tile.description = "The ultimate challenge awaits.";
@@ -552,7 +552,7 @@ function generateAndSaveDungeon() {
         tile.enemyOne = "Enemies/divineKing.png";
         tile.enemyTwo = null;
         tile.enemyThree = null;
-      } else if (level === 75 || level === 50 || level === 25) {
+      } else if (level === 40 || level === 30 || level === 20 || level === 10) {
         // Boss levels: tier 5
         tile.title = "Boss";
         tile.description = "A powerful boss blocks your path.";
@@ -637,9 +637,9 @@ function renderGrid() {
         cell.textContent = `Lvl ${data.level}`;
         
         // Define specific mini-boss levels (excluding Hell Mode)
-        const miniBossLevels = [25, 50, 75, 105, 110, 115, 120, 125, 130, 135, 140, 145];
-        const isFinalBoss = data.level === 100 || data.level === 150 || data.level === 200;
-        const isMidBoss = data.level === 175; // Monstrous Fish
+        const miniBossLevels = [10, 20, 30, 40, 55, 60, 65, 70, 75, 80, 85, 90, 95];
+        const isFinalBoss = data.level === 50 || data.level === 100 || data.level === 150;
+        const isMidBoss = data.level === 125; // Monstrous Fish
         const isMiniBoss = miniBossLevels.includes(data.level);
         
         // Apply appropriate class
@@ -717,7 +717,7 @@ map.addEventListener("click", (e) => {
       const isAccessible = data.cleared || data.level === highestCleared + 1;
       
       // Determine if this is a boss tile
-      const isBossTile = data.level === 25 || data.level === 50 || data.level === 75 || data.level === 100;
+      const isBossTile = data.level === 10 || data.level === 20 || data.level === 30 || data.level === 40 || data.level === 50;
       
       let battleButtonHTML = '';
       if (isAccessible) {
@@ -918,6 +918,12 @@ function clearLevelAndUnlock(level) {
     progression.unlockedUpToLevel = level + 1;
   }
   
+  // Give iron armor set on first level completion
+  if (level === 1 && !localStorage.getItem('firstLevelReward')) {
+    giveIronArmorSet();
+    localStorage.setItem('firstLevelReward', 'true');
+  }
+  
   console.log('Updated progression:', progression);
   saveDungeonProgression(progression);
   
@@ -939,6 +945,57 @@ function clearLevelAndUnlock(level) {
   }
   
   console.log(`Level ${level} cleared! Unlocked up to level ${progression.unlockedUpToLevel}`);
+}
+
+// Give each party member a full iron armor set (level 1)
+function giveIronArmorSet() {
+  const armorPieces = [
+    { name: 'Iron Helmet', slot: 'HELMET' },
+    { name: 'Iron Chestplate', slot: 'CHEST' },
+    { name: 'Iron Legging', slot: 'LEGS' },
+    { name: 'Iron Boots', slot: 'BOOTS' }
+  ];
+  
+  const memberKeys = ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE'];
+  
+  memberKeys.forEach(memberKey => {
+    armorPieces.forEach(({ name, slot }) => {
+      const template = ITEM_TABLE[name];
+      if (!template) return;
+      
+      const armorItem = generateRandomItem(1, 'Common');
+      const level1Scale = Math.pow(1, 0.8);
+      
+      armorItem.name = name;
+      armorItem.slot = template.slot;
+      armorItem.rarity = template.rarity;
+      armorItem.strength = Math.round(template.strength * level1Scale);
+      armorItem.speed = Math.round(template.speed * level1Scale);
+      armorItem.magic = Math.round(template.magic * level1Scale);
+      armorItem.defense = Math.round(template.defense * level1Scale);
+      armorItem.health = Math.round(template.health * level1Scale);
+      armorItem.attack = template.attack;
+      armorItem.ability = template.ability;
+      armorItem.image = template.image;
+      armorItem.level = 1;
+      armorItem.equipped = false;
+      armorItem._uid = `iron_${slot}_${memberKey}_${Date.now()}`;
+      
+      INVENTORY.push(armorItem);
+      
+      // Auto-equip to this party member
+      if (PARTY_STATS[memberKey]) {
+        PARTY_STATS[memberKey][slot] = armorItem.name;
+        armorItem.equipped = true;
+      }
+    });
+  });
+  
+  // Update stats and save
+  if (typeof updateStats === 'function') updateStats();
+  saveGameData();
+  
+  console.log('Gave iron armor sets to all party members!');
 }
 
 // Make clearLevelAndUnlock globally accessible for battle.html
@@ -1002,6 +1059,7 @@ const ITEM_TABLE = {
     attack: "poke",
     ability: 0,
     image: "Items/stick.png",
+    role: "Beginner weapon - Balanced stats for early game exploration and learning combat mechanics.",
   },
   
   // COMMON - Early balanced items
@@ -1017,6 +1075,7 @@ const ITEM_TABLE = {
     attack: "stap",
     ability: 1,
     image: "Items/woodenSword.png",
+    role: "Physical damage starter - Good for learning strength-based combat with bleed status effects.",
   },
   "Grass Staff": {
     slot: "Weapon",
@@ -1030,6 +1089,7 @@ const ITEM_TABLE = {
     attack: "leaf impale",
     ability: 1,
     image: "Items/grassStaff.png",
+    role: "Magic damage starter - Introduces spell-based combat with mana management and status effects.",
   },
   "Iron Helmet": {
     slot: "Helmet",
@@ -1037,12 +1097,13 @@ const ITEM_TABLE = {
     strength: 0,
     speed: 0,
     magic: 0,
-    defense: 3,
-    health: 3,
+    defense: 2,
+    health: 2,
     mana: 0,
     attack: "none",
     ability: 0,
     image: "Items/ironHelmet.png",
+    role: "Basic defense - Early game survival, protects against physical damage in the first dungeons.",
   },
   "Iron Chestplate": {
     slot: "Chest",
@@ -1050,12 +1111,13 @@ const ITEM_TABLE = {
     strength: 0,
     speed: 0,
     magic: 0,
-    defense: 4,
-    health: 4,
+    defense: 2,
+    health: 2,
     mana: 0,
     attack: "none",
     ability: 0,
     image: "Items/ironChest.png",
+    role: "Tanking core - Essential for building defensive characters who can absorb enemy attacks.",
   },
   "Iron Legging": {
     slot: "Leg",
@@ -1063,12 +1125,13 @@ const ITEM_TABLE = {
     strength: 0,
     speed: 0,
     magic: 0,
-    defense: 3,
-    health: 3,
+    defense: 2,
+    health: 2,
     mana: 0,
     attack: "none",
     ability: 0,
     image: "Items/ironPants.png",
+    role: "Defensive foundation - Complements tanky builds focusing on survival over damage.",
   },
   "Iron Boots": {
     slot: "Boot",
@@ -1082,6 +1145,7 @@ const ITEM_TABLE = {
     attack: "none",
     ability: 0,
     image: "Items/ironBoots.png",
+    role: "Balanced mobility - Adds speed for turn advantage while maintaining defensive capabilities.",
   },
   
   // UNCOMMON - Specialization begins
@@ -1097,6 +1161,7 @@ const ITEM_TABLE = {
     attack: "coral leech",
     ability: null,
     image: "Items/coralDagger.png",
+    role: "Sustained DPS - Rewards consistent attacking with stacking damage bonuses, best for aggressive fighters.",
   },
   "Sea Crystal": {
     slot: "Offhand",
@@ -1104,12 +1169,13 @@ const ITEM_TABLE = {
     strength: 0,
     speed: 2,
     magic: 7,
-    defense: 3,
-    health: 5,
+    defense: 2,
+    health: 4,
     mana: 25,
     attack: "sea shield",
     ability: 21, // Sea Shield: Immune to leech, burn, and chill status effects
     image: "Items/seaCrystal.png",
+    role: "Status immunity - Perfect for magic users who want protection from debilitating status effects.",
   },
   "Shell": {
     slot: "Offhand",
@@ -1117,12 +1183,13 @@ const ITEM_TABLE = {
     strength: 0,
     speed: 0,
     magic: 0,
-    defense: 8,
-    health: 4,
+    defense: 7,
+    health: 3,
     mana: 0,
     attack: "none",
     ability: 0,
     image: "Items/shell.png",
+    role: "Pure tank - Maximum defense for players who prioritize survival and protecting teammates.",
   },
   "Water Skaters": {
     slot: "Boots",
@@ -1136,6 +1203,7 @@ const ITEM_TABLE = {
     attack: null,
     ability: null,
     image: "Items/waterSkaters.png",
+    role: "Speed demon - Turn advantage specialist, ensures you attack first in most encounters.",
   },
   
   // RARE - Strong specialization
@@ -1145,11 +1213,12 @@ const ITEM_TABLE = {
     strength: 6,
     speed: 0,
     magic: 0,
-    defense: 9,
-    health: 6,
+    defense: 7,
+    health: 5,
     attack: "Charge",
     ability: 4,
     image: "Items/spikedShield.png",
+    role: "Counter-attacker - Tank who fights back, dealing damage while absorbing hits with high defense.",
   },
   "Grimore": {
     slot: "Weapon",
@@ -1158,10 +1227,11 @@ const ITEM_TABLE = {
     speed: 2,
     magic: 7,
     defense: 0,
-    health: 3,
+    health: 2,
     attack: "Plasma Blast",
     ability: 5,
     image: "Items/grimoire.png",
+    role: "Burst mage - High magic damage with multi-target potential through random status effects.",
   },
   "Ice Spear": {
     slot: "Weapon",
@@ -1170,10 +1240,11 @@ const ITEM_TABLE = {
     speed: 3,
     magic: 0,
     defense: 0,
-    health: 3,
+    health: 2,
     attack: "plunge",
     ability: 1,
     image: "Items/iceSpear.png",
+    role: "Physical DPS - High strength and speed for rapid single-target elimination with bleed stacking.",
   },
   "Forest Crown": {
     slot: "Helmet",
@@ -1181,11 +1252,12 @@ const ITEM_TABLE = {
     strength: 0,
     speed: 3,
     magic: 2,
-    defense: 3,
-    health: 7,
+    defense: 2,
+    health: 5,
     attack: "Tree People",
     ability: 0,
     image: "Items/forestCrown.png",
+    role: "Support utility - Balanced stats with moderate speed for players who assist teammates.",
   },
   "Frosted Helmet": {
     slot: "Helmet",
@@ -1193,11 +1265,12 @@ const ITEM_TABLE = {
     strength: 0,
     speed: 0,
     magic: 2,
-    defense: 6,
-    health: 7,
+    defense: 4,
+    health: 5,
     attack: "none",
     ability: 0,
     image: "Items/frostHelmet.png",
+    role: "Magic tank - Combines magical damage with defensive capabilities for spell-based tanks.",
   },
   "Frosted Chest": {
     slot: "Chest",
@@ -1205,11 +1278,12 @@ const ITEM_TABLE = {
     strength: 0,
     speed: 0,
     magic: 3,
-    defense: 8,
-    health: 8,
+    defense: 6,
+    health: 6,
     attack: "none",
     ability: 0,
     image: "Items/frostChest.png",
+    role: "Magic defense - Core armor for mages who need survivability without sacrificing magical power.",
   },
   "Frosted Leg": {
     slot: "Leg",
@@ -1217,11 +1291,12 @@ const ITEM_TABLE = {
     strength: 0,
     speed: 1,
     magic: 2,
-    defense: 7,
-    health: 5,
+    defense: 5,
+    health: 3,
     attack: "none",
     ability: 0,
     image: "Items/frostPants.png",
+    role: "Balanced caster - Moderate defense and magic for mages who want some protection.",
   },
   "Frosted Boots": {
     slot: "Boot",
@@ -1229,11 +1304,12 @@ const ITEM_TABLE = {
     strength: 0,
     speed: 4,
     magic: 1,
-    defense: 3,
-    health: 3,
+    defense: 2,
+    health: 2,
     attack: "none",
     ability: 0,
     image: "Items/frostBoots.png",
+    role: "Spellcaster mobility - Speed boost for mages to cast before enemies can react.",
   },
   
   // EPIC - Heavy specialization
@@ -1244,10 +1320,11 @@ const ITEM_TABLE = {
     speed: 2,
     magic: 9,
     defense: 0,
-    health: 4,
+    health: 3,
     attack: "shadow vortex",
     ability: 7,
     image: "Items/shadowStaff.png",
+    role: "High-risk mage - Massive magic damage with recoil mechanic, rewards skilled play with consecutive attacks.",
   },
   "Blaze Blade": {
     slot: "Weapon",
@@ -1256,10 +1333,11 @@ const ITEM_TABLE = {
     speed: 4,
     magic: 0,
     defense: 1,
-    health: 4,
+    health: 3,
     attack: "Incenerate",
     ability: 8,
     image: "Items/blazeBlade.png",
+    role: "Aggressive DPS - Speed and strength synergy with fire status for players who go all-in on offense.",
   },
   "Spell Shield": {
     slot: "Offhand",
@@ -1267,11 +1345,12 @@ const ITEM_TABLE = {
     strength: 0,
     speed: 0,
     magic: 7,
-    defense: 8,
-    health: 6,
+    defense: 7,
+    health: 5,
     attack: null,
     ability: 20,
     image: "Items/spellShield.png",
+    role: "Hybrid defender - Combines magic power with defense, perfect for battle-mages who need protection.",
   },
   "Gem Helmet": {
     slot: "Helmet",
@@ -1279,11 +1358,12 @@ const ITEM_TABLE = {
     strength: 1,
     speed: 0,
     magic: 3,
-    defense: 8,
-    health: 9,
+    defense: 6,
+    health: 6,
     attack: "none",
     ability: 3,
     image: "Items/gemHelmet.png",
+    role: "Magic tank hybrid - Magi Reflect ability counters magic enemies while providing solid defense.",
   },
   "Gem Chest": {
     slot: "Chest",
@@ -1291,11 +1371,12 @@ const ITEM_TABLE = {
     strength: 2,
     speed: 0,
     magic: 4,
-    defense: 11,
-    health: 11,
+    defense: 7,
+    health: 7,
     attack: "none",
     ability: 0,
     image: "Items/gemChest.png",
+    role: "Versatile defense - Strong armor with balanced stats for various build types.",
   },
   "Gem Legs": {
     slot: "Leg",
@@ -1303,11 +1384,12 @@ const ITEM_TABLE = {
     strength: 1,
     speed: 1,
     magic: 3,
-    defense: 8,
-    health: 7,
+    defense: 6,
+    health: 5,
     attack: "none",
     ability: 0,
     image: "Items/gemLegs.png",
+    role: "Hybrid protection - Mixed stats for characters balancing physical and magical approaches.",
   },
   "Gem Boots": {
     slot: "Boots",
@@ -1315,11 +1397,12 @@ const ITEM_TABLE = {
     strength: 0,
     speed: 5,
     magic: 2,
-    defense: 4,
-    health: 5,
+    defense: 3,
+    health: 4,
     attack: "none",
     ability: 3,
     image: "Items/gemBoots.png",
+    role: "Fast hybrid - High speed with Magi Reflect for mobile casters who counter magic damage.",
   },
   
   // LEGENDARY - Extreme specialization with some versatility
@@ -1330,10 +1413,11 @@ const ITEM_TABLE = {
     speed: 5,
     magic: 1,
     defense: 2,
-    health: 6,
+    health: 5,
     attack: "force strike",
     ability: 10,
     image: "Items/energySaber.png",
+    role: "Double striker - Attack twice per turn, ideal for builds maximizing attack count and on-hit effects.",
   },
   "Demon Sythe": {
     slot: "Weapon",
@@ -1342,10 +1426,11 @@ const ITEM_TABLE = {
     speed: 4,
     magic: 0,
     defense: 2,
-    health: 5,
+    health: 4,
     attack: "Grim slice",
     ability: 10,
     image: "Items/demonSythe.png",
+    role: "Grim reaper - Massive strength with grim status, devastating for players who capitalize on dead allies.",
   },
   "Lightning Spear": {
     slot: "Offhand",
@@ -1354,10 +1439,11 @@ const ITEM_TABLE = {
     speed: 6,
     magic: 2,
     defense: 2,
-    health: 6,
+    health: 5,
     attack: "Thunder",
     ability: 12,
     image: "Items/lightningSpear.png",
+    role: "Speed striker - Combines high speed with After Shock defense, perfect for hit-and-run tactics.",
   },
   "Pixel Sword": {
     slot: "Weapon",
@@ -1366,10 +1452,11 @@ const ITEM_TABLE = {
     speed: 6,
     magic: 0,
     defense: 2,
-    health: 6,
+    health: 5,
     attack: "Combo",
     ability: 13,
     image: "Items/pixelSword.png",
+    role: "Combo master - Rewards skillful play with mini-game mechanics, scaling damage through perfect timing.",
   },
   "Ice Cream Gun": {
     slot: "Weapon",
@@ -1377,11 +1464,13 @@ const ITEM_TABLE = {
     strength: 0,
     speed: 4,
     magic: 10,
+    skill: 11,
     defense: 2,
-    health: 5,
+    health: 4,
     attack: "Chilled Cream",
     ability: 14,
     image: "Items/iceCreamGun.png",
+    role: "Crowd control mage - Freeze enemies with chill status while dealing consistent magic damage.",
   },
   
   // MYTHICAL - Peak specialization, balanced generalist option exists
@@ -1391,11 +1480,12 @@ const ITEM_TABLE = {
     strength: 1,
     speed: 9,
     magic: 1,
-    defense: 5,
-    health: 7,
+    defense: 4,
+    health: 6,
     attack: "none",
     ability: 15,
     image: "Items/runningSpikes.png",
+    role: "Maximum speed - Ensures turn priority in almost every fight, critical for speed-based strategies.",
   },
   "Rulers Hand": {
     slot: "Weapon",
@@ -1403,11 +1493,12 @@ const ITEM_TABLE = {
     strength: 9,
     speed: 5,
     magic: 1,
-    defense: 4,
-    health: 8,
+    defense: 3,
+    health: 7,
     attack: "Arise",
     ability: 16,
     image: "Items/rulersHand.png",
+    role: "Summoner - Arise ability for characters who want minion support and high physical damage.",
   },
   "Muramasa": {
     slot: "Weapon",
@@ -1415,11 +1506,13 @@ const ITEM_TABLE = {
     strength: 13,
     speed: 7,
     magic: 0,
+    skill: 15,
     defense: 2,
-    health: 6,
+    health: 5,
     attack: "Pure skill",
     ability: 17,
     image: "Items/muramasa.png",
+    role: "Critical striker - Extreme strength with critical hit chance, best for all-or-nothing damage dealers.",
   },
   "Spell Blade": {
     slot: "Weapon",
@@ -1428,10 +1521,11 @@ const ITEM_TABLE = {
     speed: 5,
     magic: 11,
     defense: 2,
-    health: 6,
+    health: 5,
     attack: "spell infused",
     ability: 18,
     image: "Items/spellBlade.png",
+    role: "Hybrid DPS - Balanced magic and strength for versatile damage dealers who use both stats.",
   },
   "Enhanced Stick": {
     slot: "Weapon",
@@ -1440,10 +1534,11 @@ const ITEM_TABLE = {
     speed: 4,
     magic: 6,
     defense: 2,
-    health: 6,
+    health: 5,
     attack: "enhance",
     ability: 19,
     image: "Items/enhancedStick.png",
+    role: "Stat booster - Continuously stacking stats through the Enhance ability, rewards sustained combat.",
   },
   
   // ARTIFACT
@@ -1453,11 +1548,12 @@ const ITEM_TABLE = {
     strength: 4,
     speed: 4,
     magic: 4,
-    defense: 8,
-    health: 12,
+    defense: 6,
+    health: 8,
     attack: "Rulers Authority",
     ability: 20,
     image: "Items/divineCrown.png",
+    role: "Supreme tank - Spell Shield ability with balanced stats, the ultimate defensive headpiece.",
   },
   
   // ========================================
@@ -1472,10 +1568,11 @@ const ITEM_TABLE = {
     speed: 0,
     magic: 0,
     defense: 1,
-    health: 4,
+    health: 2,
     attack: "none",
     ability: 22, // Fury: Deal +10% damage per 10% HP missing
     image: "Items/trainingWeights.png",
+    role: "Low HP berserker - Fury ability rewards staying at low health for massive damage scaling.",
   },
   "Apprentice Robes": {
     slot: "Chest",
@@ -1484,10 +1581,11 @@ const ITEM_TABLE = {
     speed: 1,
     magic: 3,
     defense: 1,
-    health: 3,
+    health: 2,
     attack: "none",
     ability: 33, // Arcane Surge: Casting magic restores 10% of mana cost
     image: "Items/apprenticeRobes.png",
+    role: "Mana sustain - Arcane Surge keeps spell-casters in the fight with mana regeneration.",
   },
   "Swift Gloves": {
     slot: "Offhand",
@@ -1500,6 +1598,7 @@ const ITEM_TABLE = {
     attack: "Quick Jab",
     ability: 0,
     image: "Items/swiftGloves.png",
+    role: "Fast attacker - Speed-focused offhand for quick consecutive strikes and turn advantage.",
   },
   
   // UNCOMMON SET 2
@@ -1510,10 +1609,11 @@ const ITEM_TABLE = {
     speed: 0,
     magic: 0,
     defense: 0,
-    health: 5,
+    health: 4,
     attack: "Reckless Swing",
     ability: 32, // Berserker: Gain +5% damage per consecutive attack (max +50%)
     image: "Items/berserkerAxe.png",
+    role: "Rampage fighter - Stacking damage through consecutive attacks, devastating in prolonged fights.",
   },
   "Arcane Focus": {
     slot: "Offhand",
@@ -1526,6 +1626,7 @@ const ITEM_TABLE = {
     attack: "Arcane Bolt",
     ability: 25, // Meteor Strike: 20% chance to deal 200% AOE damage
     image: "Items/arcaneFocus.png",
+    role: "AOE nuker - Meteor Strike ability for mages who want explosive multi-target damage.",
   },
   "Assassin's Boots": {
     slot: "Boot",
@@ -1538,6 +1639,7 @@ const ITEM_TABLE = {
     attack: "none",
     ability: 30, // Ethereal: 25% chance to dodge all damage
     image: "Items/assassinBoots.png",
+    role: "Dodge tank - Ethereal ability for evasion-based defense rather than raw stats.",
   },
   "Healer's Vestment": {
     slot: "Chest",
@@ -1545,12 +1647,13 @@ const ITEM_TABLE = {
     strength: 0,
     speed: 1,
     magic: 5,
-    defense: 5,
-    health: 7,
+    defense: 3,
+    health: 5,
     mana: 20,
     attack: "none",
     ability: 53, // Regeneration: Restore 3% max HP to both players per turn
     image: "Items/healerVestment.png",
+    role: "Team support - Regeneration keeps both players alive, essential for dual-player content.",
   },
   
   // RARE SET 2
@@ -1561,10 +1664,11 @@ const ITEM_TABLE = {
     speed: 2,
     magic: 0,
     defense: 0,
-    health: 4,
+    health: 3,
     attack: "Drain Strike",
     ability: 31, // Life Drain: Heal 20% of damage dealt
     image: "Items/bloodReaver.png",
+    role: "Vampire fighter - Life Drain sustains aggressive fighters who convert damage into healing.",
   },
   "Oracle's Vision": {
     slot: "Helmet",
@@ -1572,12 +1676,13 @@ const ITEM_TABLE = {
     strength: 1,
     speed: 3,
     magic: 6,
-    defense: 4,
-    health: 6,
+    defense: 2,
+    health: 4,
     mana: 25,
     attack: "Foresight",
     ability: 52, // Precognition: Grant ally +10% damage and +10% defense
     image: "Items/oracleVision.png",
+    role: "Team buffer - Precognition boosts ally performance, perfect for support-focused players.",
   },
   "Titan Gauntlets": {
     slot: "Offhand",
@@ -1585,11 +1690,12 @@ const ITEM_TABLE = {
     strength: 7,
     speed: -1,
     magic: 0,
-    defense: 5,
-    health: 8,
+    defense: 4,
+    health: 7,
     attack: "Ground Slam",
     ability: 44, // Reaper: Deal bonus damage equal to 5% of enemy max HP
     image: "Items/titanGauntlets.png",
+    role: "Boss killer - Reaper ability deals percentage-based damage, shreds high-HP enemies.",
   },
   "Sage's Codex": {
     slot: "Offhand",
@@ -1598,11 +1704,12 @@ const ITEM_TABLE = {
     speed: 1,
     magic: 7,
     defense: 2,
-    health: 4,
+    health: 3,
     mana: 25,
     attack: "Wisdom Beam",
     ability: 47, // Sage's Wisdom: Restore 5% max mana to both players per turn
     image: "Items/sagesCodex.png",
+    role: "Mana battery - Restores team mana for sustained magical combat in long battles.",
   },
   
   // EPIC SET 2
@@ -1613,10 +1720,11 @@ const ITEM_TABLE = {
     speed: 3,
     magic: 0,
     defense: 1,
-    health: 5,
+    health: 4,
     attack: "Decapitate",
     ability: 24, // Execute: Deal 300% damage to enemies below 25% HP
     image: "Items/executionerEdge.png",
+    role: "Finisher - Execute ability delivers massive damage to low-HP enemies for quick eliminations.",
   },
   "Void Catalyst": {
     slot: "Weapon",
@@ -1625,10 +1733,11 @@ const ITEM_TABLE = {
     speed: 3,
     magic: 11,
     defense: 1,
-    health: 4,
+    health: 3,
     attack: "Void Surge",
     ability: 29, // Corruption: Deal +50% damage to enemies with status effects
     image: "Items/voidCatalyst.png",
+    role: "Status synergy - Corruption amplifies damage against debuffed enemies, pairs with status attack builds.",
   },
   "Guardian's Embrace": {
     slot: "Chest",
@@ -1636,12 +1745,13 @@ const ITEM_TABLE = {
     strength: 2,
     speed: 0,
     magic: 4,
-    defense: 10,
-    health: 12,
+    defense: 6,
+    health: 8,
     mana: 20,
     attack: "none",
     ability: 48, // Protective Aura: Allies (dual-player) take 15% less damage
     image: "Items/guardianEmbrace.png",
+    role: "Team protector - Protective Aura reduces party damage, essential for defensive team compositions.",
   },
   "Versatile Grimoire": {
     slot: "Offhand",
@@ -1649,12 +1759,13 @@ const ITEM_TABLE = {
     strength: 3,
     speed: 2,
     magic: 8,
-    defense: 4,
-    health: 6,
+    defense: 3,
+    health: 5,
     mana: 30,
     attack: "Adaptive Spell",
     ability: 49, // Versatility: Share 15% of your highest stat with ally
     image: "Items/versatileGrimoire.png",
+    role: "Stat sharer - Versatility ability spreads your strengths to allies for balanced team power.",
   },
   "Dragon Scale Armor": {
     slot: "Chest",
@@ -1662,11 +1773,12 @@ const ITEM_TABLE = {
     strength: 3,
     speed: -1,
     magic: 2,
-    defense: 12,
-    health: 10,
+    defense: 8,
+    health: 6,
     attack: "none",
     ability: 34, // Phoenix: Revive once per battle at 30% HP when killed
     image: "Items/dragonScaleArmor.png",
+    role: "Phoenix tank - Revive ability gives a second chance, perfect for risky aggressive tanks.",
   },
   
   // LEGENDARY SET 2
@@ -1677,11 +1789,12 @@ const ITEM_TABLE = {
     speed: 6,
     magic: 1,
     defense: 2,
-    health: 7,
+    health: 6,
     mana: 15,
     attack: "Divine Rend",
     ability: 50, // Godslayer: Heal to full HP on kill
     image: "Items/godslayerBlade.png",
+    role: "Nutrition fighter - Godslayer ability provides full heal on kills, sustains aggressive single-target attackers through consecutive battles.",
   },
   "Cosmic Orb": {
     slot: "Offhand",
@@ -1690,11 +1803,12 @@ const ITEM_TABLE = {
     speed: 5,
     magic: 12,
     defense: 2,
-    health: 6,
+    health: 5,
     mana: 35,
     attack: "Supernova",
     ability: 35, // Frozen Heart: 40% chance to freeze enemies hit for 1 turn
     image: "Items/cosmicOrb.png",
+    role: "Freeze mage - Frozen Heart locks down enemies while dealing massive magic damage.",
   },
   "Quicksilver Daggers": {
     slot: "Weapon",
@@ -1702,11 +1816,13 @@ const ITEM_TABLE = {
     strength: 9,
     speed: 8,
     magic: 0,
+    skill: 13,
     defense: 1,
-    health: 5,
+    health: 4,
     attack: "Blur",
     ability: 43, // Elemental Chaos: Attacks randomly deal fire, ice, or lightning damage (+30%)
     image: "Items/quicksilverDaggers.png",
+    role: "Elemental assassin - High speed with random elemental damage for unpredictable burst offense.",
   },
   "Harmony Treads": {
     slot: "Boots",
@@ -1714,12 +1830,13 @@ const ITEM_TABLE = {
     strength: 4,
     speed: 8,
     magic: 4,
-    defense: 3,
-    health: 7,
+    defense: 2,
+    health: 6,
     mana: 20,
     attack: "none",
     ability: 51, // Balance: Grant both players +20% speed when fighting together
     image: "Items/harmonyTreads.png",
+    role: "Team speedster - Balance ability boosts dual-player speed for synchronized fast attacks.",
   },
   
   // MYTHICAL SET 2
@@ -1729,12 +1846,13 @@ const ITEM_TABLE = {
     strength: 3,
     speed: 1,
     magic: 5,
-    defense: 13,
-    health: 12,
+    defense: 11,
+    health: 10,
     mana: 25,
     attack: "Shield Bash",
     ability: 45, // Divine Intervention: Survive lethal damage once per battle at 1 HP
     image: "Items/aegisShield.png",
+    role: "Last stand - Divine Intervention prevents death, the ultimate defensive tool for risky strategies.",
   },
   "Soul Reaper": {
     slot: "Weapon",
@@ -1742,11 +1860,12 @@ const ITEM_TABLE = {
     strength: 12,
     speed: 6,
     magic: 4,
-    defense: 3,
-    health: 7,
+    defense: 2,
+    health: 6,
     attack: "Soul Harvest",
     ability: 26, // Death's Touch: Attacks instantly kill enemies below 15% HP
     image: "Items/soulReaper.png",
+    role: "Execution specialist - Deaths Touch instantly kills low-HP enemies, perfect for finishing blows.",
   },
   "Archmage Vestments": {
     slot: "Chest",
@@ -1754,11 +1873,12 @@ const ITEM_TABLE = {
     strength: 1,
     speed: 3,
     magic: 13,
-    defense: 7,
-    health: 8,
+    defense: 5,
+    health: 6,
     attack: "none",
     ability: 36, // Thunder God: Lightning attacks chain to 2 random enemies for 50% damage
     image: "Items/archmageVestments.png",
+    role: "Lightning mage - Thunder God chains damage across multiple enemies for devastating AOE.",
   },
   "Celestial Treads": {
     slot: "Boots",
@@ -1766,11 +1886,12 @@ const ITEM_TABLE = {
     strength: 2,
     speed: 10,
     magic: 3,
-    defense: 5,
-    health: 7,
+    defense: 4,
+    health: 6,
     attack: "none",
     ability: 39, // Mana Burn: Physical attacks drain 20% of enemy max mana
     image: "Items/celestialTreads.png",
+    role: "Mana drainer - Disrupts enemy casters by depleting their mana with physical attacks.",
   },
   
   // ARTIFACT SET 2
@@ -1780,11 +1901,1023 @@ const ITEM_TABLE = {
     strength: 15,
     speed: 6,
     magic: 6,
-    defense: 4,
-    health: 10,
+    defense: 3,
+    health: 8,
     attack: "Apocalypse",
     ability: 46, // Apocalypse: Deal 150% damage to all enemies when HP drops below 20%
     image: "Items/worldEnder.png",
+    role: "Last resort - Apocalypse activates at low HP for desperate comebacks, high-risk high-reward.",
+  },
+
+  // ========================================
+  // SET 3 ITEMS - Expanded Content
+  // ========================================
+
+  // NEW ITEMS BATCH 1 (Items 1-15)
+  "Stormcaller Staff": {
+    slot: "Weapon",
+    rarity: "Rare",
+    strength: 0,
+    speed: 3,
+    magic: 8,
+    defense: 1,
+    health: 3,
+    mana: 30,
+    attack: "Chain Lightning",
+    ability: 36,
+    image: "Items/stormcallerStaff.png",
+    role: "AOE specialist - Chain lightning that bounces between enemies, ideal for clearing groups of weaker foes.",
+  },
+  "Reaper's Cowl": {
+    slot: "Helmet",
+    rarity: "Epic",
+    strength: 4,
+    speed: 3,
+    magic: 2,
+    defense: 4,
+    health: 5,
+    mana: 15,
+    attack: "Death Mark",
+    ability: 26,
+    image: "Items/reaperCowl.png",
+    role: "Execute specialist - Pairs with finisher builds, increases damage against wounded enemies for consistent kills.",
+  },
+  "Crystalline Gauntlets": {
+    slot: "Offhand",
+    rarity: "Legendary",
+    strength: 3,
+    speed: 0,
+    magic: 6,
+    defense: 9,
+    health: 7,
+    mana: 20,
+    attack: "Crystal Barrier",
+    ability: 38,
+    image: "Items/crystallineGauntlets.png",
+    role: "Reflect tank - Counters both physical and magical attacks, perfect for defensive players who punish aggression.",
+  },
+  "Windwalker Cloak": {
+    slot: "Chest",
+    rarity: "Uncommon",
+    strength: 0,
+    speed: 4,
+    magic: 1,
+    defense: 2,
+    health: 3,
+    mana: 10,
+    attack: "none",
+    ability: 30,
+    image: "Items/windwalkerCloak.png",
+    role: "Evasion support - Moderate dodge chance with speed boost, affordable defensive option for agile builds.",
+  },
+  "Abyssal Greaves": {
+    slot: "Leg",
+    rarity: "Mythical",
+    strength: 3,
+    speed: 2,
+    magic: 4,
+    defense: 7,
+    health: 6,
+    mana: 25,
+    attack: "none",
+    ability: 39,
+    image: "Items/abyssalGreaves.png",
+    role: "Mana disruptor - Shuts down enemy spellcasters while providing excellent defense for anti-mage strategies.",
+  },
+  "Phoenix Feather": {
+    slot: "Offhand",
+    rarity: "Rare",
+    strength: 1,
+    speed: 3,
+    magic: 5,
+    defense: 2,
+    health: 4,
+    mana: 25,
+    attack: "Flame Rebirth",
+    ability: 34,
+    image: "Items/phoenixFeather.png",
+    role: "Resurrection insurance - Cheaper alternative to Phoenix-based armor, provides safety net for risky players.",
+  },
+  "Berserker's Mantle": {
+    slot: "Chest",
+    rarity: "Epic",
+    strength: 5,
+    speed: 1,
+    magic: 0,
+    defense: 5,
+    health: 4,
+    mana: 0,
+    attack: "none",
+    ability: 22,
+    image: "Items/berserkerMantle.png",
+    role: "Fury amplifier - Synergizes with low-HP damage builds, combines defense with offensive scaling for all-in fighters.",
+  },
+  "Chrono Bracers": {
+    slot: "Offhand",
+    rarity: "Legendary",
+    strength: 2,
+    speed: 7,
+    magic: 5,
+    defense: 3,
+    health: 5,
+    mana: 30,
+    attack: "Time Warp",
+    ability: 23,
+    image: "Items/chronoBracers.png",
+    role: "Turn manipulator - Temporal Shift provides extra actions, game-changing for combo-based strategies.",
+  },
+  "Lifetap Dagger": {
+    slot: "Weapon",
+    rarity: "Common",
+    strength: 3,
+    speed: 2,
+    magic: 0,
+    defense: 0,
+    health: 3,
+    mana: 0,
+    attack: "Vampiric Stab",
+    ability: 31,
+    image: "Items/lifetapDagger.png",
+    role: "Beginner sustain - Early game lifesteal weapon, teaches players about self-healing combat strategies.",
+  },
+  "Titan's Crown": {
+    slot: "Helmet",
+    rarity: "Mythical",
+    strength: 6,
+    speed: 1,
+    magic: 2,
+    defense: 8,
+    health: 9,
+    mana: 15,
+    attack: "Giant's Wrath",
+    ability: 44,
+    image: "Items/titanCrown.png",
+    role: "Boss destroyer - Reaper ability on headpiece for maximum HP damage, dominates high-health encounters.",
+  },
+  "Frostbite Pendant": {
+    slot: "Offhand",
+    rarity: "Uncommon",
+    strength: 0,
+    speed: 2,
+    magic: 5,
+    defense: 1,
+    health: 2,
+    mana: 20,
+    attack: "Ice Shard",
+    ability: 35,
+    image: "Items/frostbitePendant.png",
+    role: "Chill applicator - Affordable freeze utility, enables crowd control for budget mage builds.",
+  },
+  "Warmage Robes": {
+    slot: "Chest",
+    rarity: "Rare",
+    strength: 1,
+    speed: 2,
+    magic: 6,
+    defense: 4,
+    health: 4,
+    mana: 35,
+    attack: "none",
+    ability: 20,
+    image: "Items/warmageRobes.png",
+    role: "Battle mage core - Balanced magic and defense for spellcasters in close combat, versatile caster armor.",
+  },
+  "Shadowstep Sandals": {
+    slot: "Boots",
+    rarity: "Epic",
+    strength: 2,
+    speed: 9,
+    magic: 1,
+    defense: 2,
+    health: 3,
+    mana: 15,
+    attack: "none",
+    ability: 30,
+    image: "Items/shadowstepSandals.png",
+    role: "Stealth speedster - Maximum mobility with ethereal dodge, perfect for hit-and-run assassin playstyles.",
+  },
+  "Soulbound Grimoire": {
+    slot: "Weapon",
+    rarity: "Legendary",
+    strength: 0,
+    speed: 4,
+    magic: 12,
+    defense: 2,
+    health: 4,
+    mana: 40,
+    attack: "Soul Spell",
+    ability: 33,
+    image: "Items/soulboundGrimoire.png",
+    role: "Mana regeneration carry - Arcane Surge on weapon for sustained spell-slinging, enables infinite casting strategies.",
+  },
+  "Colossus Plating": {
+    slot: "Chest",
+    rarity: "Artifact",
+    strength: 5,
+    speed: -2,
+    magic: 3,
+    defense: 12,
+    health: 12,
+    mana: 20,
+    attack: "none",
+    ability: 48,
+    image: "Items/colossusPlating.png",
+    role: "Ultimate tank - Maximum defense with protective aura, the pinnacle of team-defensive armor for dual-player content.",
+  },
+
+  // NEW ITEMS BATCH 2 (Items 16-30 with new abilities)
+  "Provoke Banner": {
+    slot: "Offhand",
+    rarity: "Uncommon",
+    strength: 2,
+    speed: 0,
+    magic: 0,
+    defense: 6,
+    health: 8,
+    mana: 0,
+    attack: "Challenge",
+    ability: 54,
+    image: "Items/provokeBanner.png",
+    role: "Taunt tank - Forces enemies to target you, essential for protecting fragile teammates in dual-player battles.",
+  },
+  "Vanguard's Oath": {
+    slot: "Chest",
+    rarity: "Epic",
+    strength: 3,
+    speed: -1,
+    magic: 1,
+    defense: 9,
+    health: 10,
+    mana: 10,
+    attack: "none",
+    ability: 54,
+    image: "Items/vanguardOath.png",
+    role: "Aggro protector - Combines high defense with taunt, the ultimate tank armor for drawing fire.",
+  },
+  "Crescendo Blade": {
+    slot: "Weapon",
+    rarity: "Legendary",
+    strength: 8,
+    speed: 5,
+    magic: 0,
+    defense: 2,
+    health: 4,
+    mana: 10,
+    attack: "Rising Power",
+    ability: 27,
+    image: "Items/crescendoBlade.png",
+    role: "Scaling striker - Gains permanent stat bonuses per kill, becomes unstoppable in long campaigns.",
+  },
+  "Rallying Horn": {
+    slot: "Offhand",
+    rarity: "Rare",
+    strength: 1,
+    speed: 2,
+    magic: 4,
+    defense: 3,
+    health: 5,
+    mana: 25,
+    attack: "Inspiring Call",
+    ability: 55,
+    image: "Items/rallyingHorn.png",
+    role: "Team buffer - Boosts all ally stats temporarily, perfect support tool for coordinated dual-player strategies.",
+  },
+  "Adaptive Circlet": {
+    slot: "Helmet",
+    rarity: "Mythical",
+    strength: 4,
+    speed: 4,
+    magic: 4,
+    defense: 6,
+    health: 7,
+    mana: 30,
+    attack: "Adaptation",
+    ability: 56,
+    image: "Items/adaptiveCirclet.png",
+    role: "Dynamic scaling - Stats change based on enemy composition, ultimate versatility for unpredictable encounters.",
+  },
+  "Bonecrusher Maul": {
+    slot: "Weapon",
+    rarity: "Epic",
+    strength: 10,
+    speed: 1,
+    magic: 0,
+    defense: 3,
+    health: 6,
+    mana: 0,
+    attack: "Shatter Guard",
+    ability: 57,
+    image: "Items/bonecrusherMaul.png",
+    role: "Armor breaker - Reduces enemy defense permanently, enables team to shred tanky enemies.",
+  },
+  "Martyr's Resolve": {
+    slot: "Chest",
+    rarity: "Rare",
+    strength: 1,
+    speed: 0,
+    magic: 2,
+    defense: 7,
+    health: 9,
+    mana: 15,
+    attack: "none",
+    ability: 58,
+    image: "Items/martyrResolve.png",
+    role: "Sacrifice support - Redirects ally damage to you, extreme team protection for dedicated tanks.",
+  },
+  "Momentum Greaves": {
+    slot: "Leg",
+    rarity: "Legendary",
+    strength: 3,
+    speed: 6,
+    magic: 2,
+    defense: 4,
+    health: 5,
+    mana: 15,
+    attack: "none",
+    ability: 59,
+    image: "Items/momentumGreaves.png",
+    role: "Speed scaler - Speed increases each turn in combat, dominates longer battles with escalating power.",
+  },
+  "Warden's Sigil": {
+    slot: "Offhand",
+    rarity: "Epic",
+    strength: 0,
+    speed: 2,
+    magic: 5,
+    defense: 6,
+    health: 6,
+    mana: 30,
+    attack: "Purification",
+    ability: 60,
+    image: "Items/wardenSigil.png",
+    role: "Debuff immunity - Protects team from status effects, critical for facing debuff-heavy enemies.",
+  },
+  "Champion's Greatsword": {
+    slot: "Weapon",
+    rarity: "Mythical",
+    strength: 11,
+    speed: 4,
+    magic: 1,
+    defense: 4,
+    health: 7,
+    mana: 15,
+    attack: "Last Stand",
+    ability: 61,
+    image: "Items/championGreatsword.png",
+    role: "Solo carry - Stronger when allies are down, clutch weapon for turning desperate situations into victories.",
+  },
+  "Lifebond Amulet": {
+    slot: "Offhand",
+    rarity: "Uncommon",
+    strength: 0,
+    speed: 1,
+    magic: 3,
+    defense: 2,
+    health: 6,
+    mana: 20,
+    attack: "Shared Fate",
+    ability: 62,
+    image: "Items/lifebondAmulet.png",
+    role: "HP sharing - Links health pools with ally, spreads damage for balanced survival.",
+  },
+  "Tactician's Visor": {
+    slot: "Helmet",
+    rarity: "Rare",
+    strength: 1,
+    speed: 3,
+    magic: 5,
+    defense: 3,
+    health: 4,
+    mana: 25,
+    attack: "Analyze",
+    ability: 63,
+    image: "Items/tacticianVisor.png",
+    role: "Strategic support - Reveals enemy stats and grants team coordination bonus for informed combat decisions.",
+  },
+  "Worldshaper Staff": {
+    slot: "Weapon",
+    rarity: "Artifact",
+    strength: 2,
+    speed: 3,
+    magic: 13,
+    defense: 5,
+    health: 6,
+    mana: 50,
+    attack: "Terraform",
+    ability: 64,
+    image: "Items/worldshaperStaff.png",
+    role: "Environmental control - Alters battlefield conditions favoring your team, ultimate support weapon.",
+  },
+  "Berserker's Tooth": {
+    slot: "Offhand",
+    rarity: "Common",
+    strength: 3,
+    speed: 1,
+    magic: 0,
+    defense: 0,
+    health: 2,
+    mana: 0,
+    attack: "Savage Bite",
+    ability: 22,
+    image: "Items/berserkerTooth.png",
+    role: "Budget fury - Cheap low-HP damage boost, teaches players risk-reward mechanics early.",
+  },
+  "Unity Mantle": {
+    slot: "Chest",
+    rarity: "Legendary",
+    strength: 4,
+    speed: 3,
+    magic: 4,
+    defense: 7,
+    health: 8,
+    mana: 30,
+    attack: "none",
+    ability: 65,
+    image: "Items/unityMantle.png",
+    role: "Team scaler - Gets stronger with more active allies, ultimate dual-player cooperative armor.",
+  },
+
+  // ========================================
+  // SET 4 ITEMS - Advanced Mechanics
+  // ========================================
+
+  "Combo Gauntlet": {
+    slot: "Offhand",
+    rarity: "Rare",
+    strength: 4,
+    speed: 5,
+    magic: 1,
+    defense: 2,
+    health: 3,
+    mana: 15,
+    attack: "Strike Chain",
+    ability: 66,
+    image: "Items/comboGauntlet.png",
+    role: "Combo builder - Each consecutive hit increases damage exponentially, rewards aggressive sustained combat.",
+  },
+  "Siphon Dagger": {
+    slot: "Weapon",
+    rarity: "Epic",
+    strength: 7,
+    speed: 6,
+    magic: 2,
+    defense: 1,
+    health: 3,
+    mana: 20,
+    attack: "Stat Steal",
+    ability: 67,
+    image: "Items/siphonDagger.png",
+    role: "Stat thief - Steals enemy stats on hit, weakening foes while empowering yourself for strategic advantage.",
+  },
+  "Resurrection Tome": {
+    slot: "Weapon",
+    rarity: "Legendary",
+    strength: 1,
+    speed: 2,
+    magic: 11,
+    defense: 3,
+    health: 5,
+    mana: 45,
+    attack: "Revive Ally",
+    ability: 68,
+    image: "Items/resurrectionTome.png",
+    role: "Ally revival - Brings fallen teammates back to life, ultimate support weapon for desperate situations.",
+  },
+  "Mirror Plate": {
+    slot: "Chest",
+    rarity: "Mythical",
+    strength: 2,
+    speed: 0,
+    magic: 6,
+    defense: 10,
+    health: 8,
+    mana: 25,
+    attack: "none",
+    ability: 69,
+    image: "Items/mirrorPlate.png",
+    role: "Damage mirror - Reflects a percentage of all damage taken back to attackers, passive retaliation tank.",
+  },
+  "Critical Edge": {
+    slot: "Weapon",
+    rarity: "Rare",
+    strength: 8,
+    speed: 5,
+    magic: 0,
+    skill: 10,
+    defense: 1,
+    health: 3,
+    mana: 10,
+    attack: "Precision Cut",
+    ability: 70,
+    image: "Items/criticalEdge.png",
+    role: "Crit scaler - Critical hits increase crit chance, snowballs into guaranteed crits with sustained offense.",
+  },
+  "Hasty Boots": {
+    slot: "Boots",
+    rarity: "Uncommon",
+    strength: 1,
+    speed: 6,
+    magic: 1,
+    defense: 1,
+    health: 2,
+    mana: 10,
+    attack: "none",
+    ability: 71,
+    image: "Items/hastyBoots.png",
+    role: "Cooldown reducer - Reduces ability cooldowns with each action, enables rapid skill spam strategies.",
+  },
+  "Elemental Orb": {
+    slot: "Offhand",
+    rarity: "Epic",
+    strength: 1,
+    speed: 3,
+    magic: 9,
+    defense: 3,
+    health: 4,
+    mana: 35,
+    attack: "Tri-Element",
+    ability: 72,
+    image: "Items/elementalOrb.png",
+    role: "Multi-element caster - Attacks deal fire, ice, and lightning simultaneously, triple status application.",
+  },
+  "Blood Price": {
+    slot: "Weapon",
+    rarity: "Mythical",
+    strength: 12,
+    speed: 5,
+    magic: 3,
+    defense: 0,
+    health: 2,
+    mana: 20,
+    attack: "Sacrifice Strike",
+    ability: 73,
+    image: "Items/bloodPrice.png",
+    role: "HP sacrifice - Converts your HP into devastating damage, high-risk extreme burst for clutch moments.",
+  },
+  "Guardian Angel": {
+    slot: "Chest",
+    rarity: "Artifact",
+    strength: 3,
+    speed: 2,
+    magic: 7,
+    defense: 9,
+    health: 10,
+    mana: 30,
+    attack: "none",
+    ability: 74,
+    image: "Items/guardianAngel.png",
+    role: "Auto-revive - Automatically resurrects you and heals allies on death, ultimate safety net for team survival.",
+  },
+  "Poison Fang": {
+    slot: "Weapon",
+    rarity: "Common",
+    strength: 3,
+    speed: 3,
+    magic: 1,
+    defense: 0,
+    health: 2,
+    mana: 8,
+    attack: "Venom Bite",
+    ability: 75,
+    image: "Items/poisonFang.png",
+    role: "DoT starter - Applies stacking poison damage, affordable damage-over-time for early game grinding.",
+  },
+  "Overcharge Core": {
+    slot: "Offhand",
+    rarity: "Legendary",
+    strength: 2,
+    speed: 4,
+    magic: 10,
+    defense: 2,
+    health: 4,
+    mana: 40,
+    attack: "Power Surge",
+    ability: 76,
+    image: "Items/overchargeCore.png",
+    role: "Mana converter - Excess mana converts to damage, rewards high mana builds with explosive power.",
+  },
+  "Cursed Armor": {
+    slot: "Chest",
+    rarity: "Epic",
+    strength: 6,
+    speed: -1,
+    magic: 4,
+    defense: 8,
+    health: 7,
+    mana: 15,
+    attack: "none",
+    ability: 77,
+    image: "Items/cursedArmor.png",
+    role: "Curse transfer - Transfers your debuffs to enemies on hit, turns weaknesses into offensive weapons.",
+  },
+  "Sniper Scope": {
+    slot: "Helmet",
+    rarity: "Rare",
+    strength: 5,
+    speed: 4,
+    magic: 2,
+    skill: 11,
+    defense: 2,
+    health: 3,
+    mana: 15,
+    attack: "Headshot",
+    ability: 78,
+    image: "Items/sniperScope.png",
+    role: "Precision striker - Ignores enemy defense on crits, perfect for bursting through tanky targets.",
+  },
+  "Summoner Staff": {
+    slot: "Weapon",
+    rarity: "Mythical",
+    strength: 2,
+    speed: 3,
+    magic: 12,
+    defense: 3,
+    health: 5,
+    mana: 50,
+    attack: "Conjure Ally",
+    ability: 79,
+    image: "Items/summonerStaff.png",
+    role: "Pet summoner - Creates temporary minions to fight alongside you, army-building spellcaster weapon.",
+  },
+  "Leech Crown": {
+    slot: "Helmet",
+    rarity: "Uncommon",
+    strength: 1,
+    speed: 2,
+    magic: 4,
+    defense: 3,
+    health: 4,
+    mana: 20,
+    attack: "Drain Aura",
+    ability: 80,
+    image: "Items/leechCrown.png",
+    role: "Passive leech - Constantly drains small amounts from all enemies, sustained healing for patient players.",
+  },
+  "Berserker Ring": {
+    slot: "Offhand",
+    rarity: "Rare",
+    strength: 7,
+    speed: 2,
+    magic: 0,
+    defense: 0,
+    health: 3,
+    mana: 5,
+    attack: "Rage Strike",
+    ability: 81,
+    image: "Items/berserkerRing.png",
+    role: "Missing HP scaler - Damage scales with missing HP exponentially, extreme glass cannon for last stands.",
+  },
+  "Temporal Blade": {
+    slot: "Weapon",
+    rarity: "Legendary",
+    strength: 9,
+    speed: 7,
+    magic: 3,
+    defense: 2,
+    health: 4,
+    mana: 25,
+    attack: "Rewind Strike",
+    ability: 82,
+    image: "Items/temporalBlade.png",
+    role: "Turn rewind - Undoes enemy turns on crit, time manipulation for controlling battlefield momentum.",
+  },
+  "Fortified Boots": {
+    slot: "Boots",
+    rarity: "Common",
+    strength: 1,
+    speed: 3,
+    magic: 0,
+    defense: 3,
+    health: 4,
+    mana: 0,
+    attack: "none",
+    ability: 83,
+    image: "Items/fortifiedBoots.png",
+    role: "Defense scaler - Defense increases with each hit taken, grows tankier throughout extended battles.",
+  },
+  "Soul Shackles": {
+    slot: "Leg",
+    rarity: "Epic",
+    strength: 4,
+    speed: 1,
+    magic: 7,
+    defense: 5,
+    health: 6,
+    mana: 30,
+    attack: "none",
+    ability: 84,
+    image: "Items/soulShackles.png",
+    role: "Enemy bind - Prevents enemy abilities and reduces their stats, control-focused debuffer equipment.",
+  },
+  "Dual Revolvers": {
+    slot: "Weapon",
+    rarity: "Legendary",
+    strength: 10,
+    speed: 8,
+    magic: 1,
+    skill: 14,
+    defense: 1,
+    health: 3,
+    mana: 15,
+    attack: "Double Shot",
+    ability: 85,
+    image: "Items/dualRevolvers.png",
+    role: "Multi-strike - Attacks hit twice with decreasing damage, speed-based DPS weapon for rapid attackers.",
+  },
+  "Lifesteal Mask": {
+    slot: "Helmet",
+    rarity: "Epic",
+    strength: 5,
+    speed: 3,
+    magic: 3,
+    defense: 4,
+    health: 5,
+    mana: 20,
+    attack: "Blood Drain",
+    ability: 86,
+    image: "Items/lifestealMask.png",
+    role: "Overheal converter - Excess healing converts to shields, maximizes sustain value for lifesteal builds.",
+  },
+  "Mana Shield": {
+    slot: "Offhand",
+    rarity: "Rare",
+    strength: 0,
+    speed: 2,
+    magic: 6,
+    defense: 5,
+    health: 4,
+    mana: 35,
+    attack: "Arcane Ward",
+    ability: 87,
+    image: "Items/manaShield.png",
+    role: "Mana tank - Uses mana as HP buffer, protects health for mages with deep mana pools.",
+  },
+  "Gravity Hammer": {
+    slot: "Weapon",
+    rarity: "Mythical",
+    strength: 13,
+    speed: 2,
+    magic: 2,
+    defense: 4,
+    health: 7,
+    mana: 20,
+    attack: "Singularity Slam",
+    ability: 88,
+    image: "Items/gravityHammer.png",
+    role: "AOE pull - Pulls all enemies together then hits them all, devastating group damage with crowd control.",
+  },
+  "Lucky Charm": {
+    slot: "Offhand",
+    rarity: "Uncommon",
+    strength: 2,
+    speed: 3,
+    magic: 2,
+    defense: 1,
+    health: 3,
+    mana: 15,
+    attack: "Fortune Strike",
+    ability: 89,
+    image: "Items/luckyCharm.png",
+    role: "Luck amplifier - Increases all proc chances and crit rates, enhances RNG-based builds significantly.",
+  },
+  "Void Greaves": {
+    slot: "Leg",
+    rarity: "Legendary",
+    strength: 3,
+    speed: 5,
+    magic: 6,
+    defense: 6,
+    health: 5,
+    mana: 25,
+    attack: "none",
+    ability: 90,
+    image: "Items/voidGreaves.png",
+    role: "Enemy debuff - Enemies near you lose stats passively, zone control for dominating small areas.",
+  },
+  "Revenge Blade": {
+    slot: "Weapon",
+    rarity: "Epic",
+    strength: 9,
+    speed: 4,
+    magic: 1,
+    defense: 2,
+    health: 4,
+    mana: 15,
+    attack: "Retribution",
+    ability: 91,
+    image: "Items/revengeBlade.png",
+    role: "Counter attacker - Stores damage taken and releases it, tactical weapon for absorbing then returning hits.",
+  },
+  "Harmony Amulet": {
+    slot: "Offhand",
+    rarity: "Rare",
+    strength: 3,
+    speed: 3,
+    magic: 3,
+    defense: 3,
+    health: 5,
+    mana: 25,
+    attack: "Balance",
+    ability: 92,
+    image: "Items/harmonyAmulet.png",
+    role: "Stat equalizer - Balances your stats for consistent performance, removes weaknesses at cost of peaks.",
+  },
+  "Plague Doctor Mask": {
+    slot: "Helmet",
+    rarity: "Mythical",
+    strength: 2,
+    speed: 3,
+    magic: 9,
+    defense: 6,
+    health: 7,
+    mana: 35,
+    attack: "Epidemic",
+    ability: 93,
+    image: "Items/plagueDoctorMask.png",
+    role: "Status spreader - Your status effects spread to nearby enemies, turns single-target debuffs into AOE.",
+  },
+  "Titan Fist": {
+    slot: "Weapon",
+    rarity: "Artifact",
+    strength: 14,
+    speed: 3,
+    magic: 4,
+    defense: 6,
+    health: 10,
+    mana: 25,
+    attack: "Earthshaker",
+    ability: 94,
+    image: "Items/titanFist.png",
+    role: "True damage - Deals pure HP damage ignoring all defenses, ultimate anti-tank weapon for boss fights.",
+  },
+  "Speed Force Boots": {
+    slot: "Boots",
+    rarity: "Artifact",
+    strength: 3,
+    speed: 12,
+    magic: 3,
+    defense: 4,
+    health: 6,
+    mana: 30,
+    attack: "none",
+    ability: 95,
+    image: "Items/speedForceBoots.png",
+    role: "Multi-action - Gain extra attacks based on speed stat, transforms speed into overwhelming action economy.",
+  },
+
+  // ========================================
+  // SKILL-BASED RANGED WEAPONS
+  // ========================================
+
+  "Longbow": {
+    slot: "Weapon",
+    rarity: "Uncommon",
+    strength: 2,
+    speed: 3,
+    magic: 0,
+    skill: 8,
+    defense: 0,
+    health: 2,
+    mana: 8,
+    attack: "Arrow Shot",
+    ability: 0,
+    image: "Items/longbow.png",
+    role: "Ranged starter - Basic bow with skill scaling, affordable entry into precision archery builds.",
+  },
+  "Marksman Rifle": {
+    slot: "Weapon",
+    rarity: "Rare",
+    strength: 3,
+    speed: 4,
+    magic: 1,
+    skill: 12,
+    defense: 1,
+    health: 3,
+    mana: 12,
+    attack: "Rifle Shot",
+    ability: 0,
+    image: "Items/marksmanRifle.png",
+    role: "Sharpshooter - High skill scaling rifle for consistent ranged damage output.",
+  },
+  "Compound Bow": {
+    slot: "Weapon",
+    rarity: "Epic",
+    strength: 4,
+    speed: 5,
+    magic: 0,
+    skill: 15,
+    defense: 1,
+    health: 3,
+    mana: 15,
+    attack: "Power Shot",
+    ability: 96,
+    image: "Items/compoundBow.png",
+    role: "Penetrator - Arrows pierce through enemy defenses, skill-based anti-tank archer weapon.",
+  },
+  "Hand Cannon": {
+    slot: "Weapon",
+    rarity: "Legendary",
+    strength: 6,
+    speed: 3,
+    magic: 2,
+    skill: 17,
+    defense: 2,
+    health: 4,
+    mana: 18,
+    attack: "Explosive Round",
+    ability: 97,
+    image: "Items/handCannon.png",
+    role: "Heavy gunner - Massive damage per shot with knockback, slow but devastating firepower.",
+  },
+  "Assassin Crossbow": {
+    slot: "Weapon",
+    rarity: "Epic",
+    strength: 3,
+    speed: 6,
+    magic: 1,
+    skill: 14,
+    defense: 1,
+    health: 3,
+    mana: 14,
+    attack: "Silent Bolt",
+    ability: 98,
+    image: "Items/assassinCrossbow.png",
+    role: "Stealth striker - Critical hits from stealth deal massive bonus damage, assassin's ranged tool.",
+  },
+  "Ranger's Quiver": {
+    slot: "Offhand",
+    rarity: "Rare",
+    strength: 1,
+    speed: 4,
+    magic: 0,
+    skill: 10,
+    defense: 2,
+    health: 3,
+    mana: 10,
+    attack: "none",
+    ability: 99,
+    image: "Items/rangersQuiver.png",
+    role: "Ammo supplier - Grants bonus attacks per turn based on skill, sustained DPS for archers.",
+  },
+  "Eagle Eye Goggles": {
+    slot: "Helmet",
+    rarity: "Epic",
+    strength: 2,
+    speed: 5,
+    magic: 2,
+    skill: 14,
+    defense: 2,
+    health: 4,
+    mana: 16,
+    attack: "none",
+    ability: 100,
+    image: "Items/eagleEyeGoggles.png",
+    role: "Vision enhancer - Increases crit chance and reveals enemy weakpoints, ultimate precision headgear.",
+  },
+  "Phantom Bow": {
+    slot: "Weapon",
+    rarity: "Mythical",
+    strength: 5,
+    speed: 7,
+    magic: 4,
+    skill: 20,
+    defense: 2,
+    health: 5,
+    mana: 25,
+    attack: "Ghost Arrow",
+    ability: 101,
+    image: "Items/phantomBow.png",
+    role: "Ethereal archer - Arrows phase through enemies hitting multiple targets, supernatural ranged weapon.",
+  },
+  "Sniper's Cloak": {
+    slot: "Chest",
+    rarity: "Legendary",
+    strength: 2,
+    speed: 6,
+    magic: 3,
+    skill: 13,
+    defense: 5,
+    health: 6,
+    mana: 20,
+    attack: "none",
+    ability: 102,
+    image: "Items/snipersCloak.png",
+    role: "Stealth armor - First attack from full HP deals triple damage, ultimate ambush equipment.",
+  },
+  "Arcane Pistol": {
+    slot: "Offhand",
+    rarity: "Mythical",
+    strength: 3,
+    speed: 5,
+    magic: 8,
+    skill: 16,
+    defense: 2,
+    health: 4,
+    mana: 30,
+    attack: "Mana Bullet",
+    ability: 103,
+    image: "Items/arcanePistol.png",
+    role: "Spellslinger - Converts mana into skill damage, hybrid magic-ranged offensive tool.",
   },
 };
 
@@ -1822,6 +2955,73 @@ function saveGameData() {
 function loadGameData() {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
+    
+    // Check if we need to give starter sticks after a complete reset
+    const needsStarters = localStorage.getItem('needsStarterSticks');
+    if (needsStarters === 'true') {
+      localStorage.removeItem('needsStarterSticks');
+      
+      // Give each party member a level 3 stick
+      const memberKeys = ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE'];
+      memberKeys.forEach(memberKey => {
+        const starterStick = generateRandomItem(3, 'Base');
+        const stickTemplate = ITEM_TABLE['Stick'];
+        if (stickTemplate) {
+          const level3Scale = Math.pow(3, 0.8);
+          starterStick.name = 'Stick';
+          starterStick.slot = stickTemplate.slot;
+          starterStick.rarity = stickTemplate.rarity;
+          starterStick.strength = Math.round(stickTemplate.strength * level3Scale);
+          starterStick.speed = Math.round(stickTemplate.speed * level3Scale);
+          starterStick.magic = Math.round(stickTemplate.magic * level3Scale);
+          starterStick.defense = Math.round(stickTemplate.defense * level3Scale);
+          starterStick.health = Math.round(stickTemplate.health * level3Scale);
+          starterStick.attack = stickTemplate.attack;
+          starterStick.ability = stickTemplate.ability;
+          starterStick.image = stickTemplate.image;
+          starterStick.level = 3;
+          starterStick.equipped = false;
+          starterStick._uid = `starter_stick_${memberKey}_${Date.now()}`;
+        }
+        
+        INVENTORY.push(starterStick);
+        
+        // Equip it to this party member
+        if (PARTY_STATS[memberKey]) {
+          PARTY_STATS[memberKey].MAINHAND = starterStick.name;
+          starterStick.equipped = true;
+          
+          // Add the attack from the stick
+          if (starterStick.attack && PARTY_ATTACKS[memberKey]) {
+            const attackData = ATTACK_STATS[starterStick.attack];
+            if (attackData) {
+              const attackObj = {
+                id: attackCounter++,
+                sourceUid: starterStick._uid,
+                name: starterStick.attack,
+                itemName: starterStick.name,
+                strMultiplier: attackData.strMultiplier || 0,
+                magicMultiplier: attackData.magicMultiplier || 0,
+                sklMultiplier: attackData.sklMultiplier || 0,
+                status: attackData.status || 'none',
+                manaCost: attackData.manaCost || 0,
+                cooldown: attackData.cooldown || 0,
+                requiresAmmo: attackData.requiresAmmo || false,
+              };
+              PARTY_ATTACKS[memberKey].ATTACK_INVENTORY.push(attackObj);
+              PARTY_ATTACKS[memberKey].ATTACK_EQUIPPED.add(attackObj.id);
+            }
+          }
+        }
+      });
+      
+      // Update stats and save
+      if (typeof updateStats === 'function') updateStats();
+      saveGameData();
+      console.log('Gave starter sticks after complete reset');
+      return; // Don't load old data
+    }
+    
     if (!raw) return;
     const payload = JSON.parse(raw);
     if (payload) {
@@ -1941,25 +3141,61 @@ function resetInventory() {
       }
     }
     
-    // Give a level 3 stick as starter item
-    const starterStick = generateRandomItem(3, 'Base'); // This will create a stick at level 3
-    // Force it to be a Stick specifically
-    const stickTemplate = ITEM_TABLE['Stick'];
-    if (stickTemplate) {
-      const level3Scale = Math.pow(3, 0.8);
-      starterStick.name = 'Stick';
-      starterStick.slot = stickTemplate.slot;
-      starterStick.rarity = stickTemplate.rarity;
-      starterStick.strength = Math.round(stickTemplate.strength * level3Scale);
-      starterStick.speed = Math.round(stickTemplate.speed * level3Scale);
-      starterStick.magic = Math.round(stickTemplate.magic * level3Scale);
-      starterStick.defense = Math.round(stickTemplate.defense * level3Scale);
-      starterStick.health = Math.round(stickTemplate.health * level3Scale);
-      starterStick.attack = stickTemplate.attack; // "poke"
-      starterStick.ability = stickTemplate.ability;
-      starterStick.image = stickTemplate.image;
-      starterStick.level = 3;
-    }
+    // Give a level 3 stick as starter item to each party member
+    const memberKeys = ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE'];
+    memberKeys.forEach(memberKey => {
+      const starterStick = generateRandomItem(3, 'Base'); // This will create a stick at level 3
+      // Force it to be a Stick specifically
+      const stickTemplate = ITEM_TABLE['Stick'];
+      if (stickTemplate) {
+        const level3Scale = Math.pow(3, 0.8);
+        starterStick.name = 'Stick';
+        starterStick.slot = stickTemplate.slot;
+        starterStick.rarity = stickTemplate.rarity;
+        starterStick.strength = Math.round(stickTemplate.strength * level3Scale);
+        starterStick.speed = Math.round(stickTemplate.speed * level3Scale);
+        starterStick.magic = Math.round(stickTemplate.magic * level3Scale);
+        starterStick.defense = Math.round(stickTemplate.defense * level3Scale);
+        starterStick.health = Math.round(stickTemplate.health * level3Scale);
+        starterStick.attack = stickTemplate.attack; // "poke"
+        starterStick.ability = stickTemplate.ability;
+        starterStick.image = stickTemplate.image;
+        starterStick.level = 3;
+        starterStick.equipped = false; // Will be equipped below
+        starterStick._uid = `starter_stick_${memberKey}_${Date.now()}`;
+      }
+      
+      // Add to inventory
+      INVENTORY.push(starterStick);
+      
+      // Equip it to this party member
+      if (PARTY_STATS[memberKey]) {
+        PARTY_STATS[memberKey].MAINHAND = starterStick.name;
+        starterStick.equipped = true;
+        
+        // Add the attack from the stick
+        if (starterStick.attack && PARTY_ATTACKS[memberKey]) {
+          const attackData = ATTACK_STATS[starterStick.attack];
+          if (attackData) {
+            const attackObj = {
+              id: attackCounter++,
+              sourceUid: starterStick._uid,
+              name: starterStick.attack,
+              itemName: starterStick.name,
+              strMultiplier: attackData.strMultiplier || 0,
+              magicMultiplier: attackData.magicMultiplier || 0,
+              sklMultiplier: attackData.sklMultiplier || 0,
+              status: attackData.status || 'none',
+              manaCost: attackData.manaCost || 0,
+              cooldown: attackData.cooldown || 0,
+              requiresAmmo: attackData.requiresAmmo || false,
+            };
+            PARTY_ATTACKS[memberKey].ATTACK_INVENTORY.push(attackObj);
+            PARTY_ATTACKS[memberKey].ATTACK_EQUIPPED.add(attackObj.id);
+          }
+        }
+      }
+    });
     
     // Update stats for all party members
     if (typeof updateStats === 'function') updateStats();
@@ -1981,33 +3217,35 @@ function resetInventory() {
 const ENEMY_BASE_STATS = {
   //Unknown Type Enemy Stats
   'skull': {
-    health:18,
+    health: 15,
     strength:3,
     magic:0,
     speed:3,
-    defense:2,
+    defense: 2,
     mana:100,
     hBars:1,
     image:"Enemies/skull.png",
     tier:1,
+    role: "Early threat - Low health but decent speed, teaches players basic combat mechanics and attack timing.",
   },
   'slime': {
-    health:27,
+    health: 22,
     strength:3.5,
     magic:0,
     speed:2,
-    defense:3.5,
+    defense: 2.5,
     mana:100,
     hBars:1,
     image:"Enemies/slime.png",
     tier:2,
+    role: "Tanky starter - Higher HP and defense than skulls, introduces the need for sustained damage.",
   },
   'alien': {
-    health:23,
+    health: 19,
     strength:0,
     magic:6,
     speed:3.5,
-    defense:4,
+    defense: 3,
     mana:180,
     hBars:1,
     image:"Enemies/alien.png",
@@ -2015,11 +3253,11 @@ const ENEMY_BASE_STATS = {
     specialEffect: "Alien Fire: Applies burn status on attack"
   },
   'cursedKnight': {
-    health:35,
+    health: 29,
     strength:6,
     magic:0,
     speed:4,
-    defense:11,
+    defense: 9,
     mana:120,
     hBars:1,
     image:"Enemies/cursedKnight.png",
@@ -2027,23 +3265,24 @@ const ENEMY_BASE_STATS = {
     specialEffect: "Cursed Blade: Applies grim status on attack (2% max HP damage per turn)"
   },
   'Shadow': {
-    health:40,
+    health: 33,
     strength:4,
     magic:3,
-    speed:8,
-    defense:7,
+    speed:12,
+    defense: 6,
     mana:150,
     hBars:1,
     image:"Enemies/shadow.png",
     tier:5,
+    role: "Speed demon - Extremely fast enemy that attacks frequently, tests player defense and speed builds.",
   },
   //Creature Type Enemy Stats
   'dragon': {
-    health:55,
+    health: 45,
     strength:6,
     magic:7,
     speed:5,
-    defense:11,
+    defense: 9,
     mana:220,
     hBars:1,
     image:"Enemies/dragon.png",
@@ -2053,11 +3292,11 @@ const ENEMY_BASE_STATS = {
   },
   //Zombie Type Enemy Stats
   'corspe': {
-    health:21,
+    health: 17,
     strength:3.5,
     magic:0,
     speed:2,
-    defense:2,
+    defense: 2,
     mana:100,
     hBars:1,
     image:"Enemies/corspe.png",
@@ -2065,30 +3304,30 @@ const ENEMY_BASE_STATS = {
     specialEffect: "Undead: Slow shambling corpse"
   },
   'crawler': {
-    health:29,
+    health: 24,
     strength:5,
     magic:0,
     speed:1.5,
-    defense:5,
+    defense: 4,
     mana:110,
     hBars:2,
     image:"Enemies/crawler.png",
     tier:2,
     specialEffect: "Venomous Bite: Applies bleed status on attack + Two Lives (slow/tanky then fast/fragile)",
     secondForm: {
-      health:10,
+      health: 8,
       strength:5,
       magic:0,
       speed:7,
-      defense:0
+      defense: 0
     }
   },
   'frozenCorspe': {
-    health:24,
+    health: 20,
     strength:3,
     magic:4,
     speed:2,
-    defense:4,
+    defense: 3,
     mana:160,
     hBars:1,
     image:"Enemies/frozenCorspe.png",
@@ -2097,11 +3336,11 @@ const ENEMY_BASE_STATS = {
     attackStatus: "chill"
   },
   'necromancer': {
-    health:33,
+    health: 27,
     strength:0,
     magic:8,
     speed:3,
-    defense:8,
+    defense: 7,
     mana:240,
     hBars:1,
     image:"Enemies/necromancer.png",
@@ -2109,11 +3348,11 @@ const ENEMY_BASE_STATS = {
     specialEffect: "Resurrection: While alive, dead allies resurrect as zombies"
   },
   'mutant': {
-    health:50,
+    health: 41,
     strength:7,
     magic:1.5,
     speed:7,
-    defense:6,
+    defense: 5,
     mana:180,
     hBars:1,
     image:"Enemies/mutant.png",
@@ -2122,22 +3361,23 @@ const ENEMY_BASE_STATS = {
   },
   //Forest Type Enemy Stats
   'Sapling': {
-    health:23,
+    health: 19,
     strength:0,
     magic:3.5,
     speed:1.5,
-    defense:3,
+    defense: 2,
     mana:140,
     hBars:1,
     image:"Enemies/sapling.png",
     tier:1,
+    role: "Magic seedling - Low HP forest caster, introduces nature-themed enemies.",
   },
   'vineLasher': {
-    health:27,
+    health: 22,
     strength:4,
     magic:0,
     speed:3,
-    defense:4,
+    defense: 3,
     mana:100,
     hBars:1,
     image:"Enemies/vineLasher.png",
@@ -2145,11 +3385,11 @@ const ENEMY_BASE_STATS = {
     specialEffect: "Draining Vines: Applies leech status on attack (drains HP over time)"
   },
   'Treant': {
-    health:32,
+    health: 26,
     strength:5,
     magic:0,
     speed:2,
-    defense:8,
+    defense: 7,
     mana:110,
     hBars:1,
     image:"Enemies/treant.png",
@@ -2157,11 +3397,11 @@ const ENEMY_BASE_STATS = {
     specialEffect: "Rooted Defender: High defense, slow but steady"
   },
   'elderEnt': {
-    health:36,
+    health: 30,
     strength:0,
     magic:7,
     speed:3,
-    defense:9,
+    defense: 7,
     mana:220,
     hBars:1,
     image:"Enemies/elderEnt.png",
@@ -2169,11 +3409,11 @@ const ENEMY_BASE_STATS = {
     specialEffect: "Ancient Growth: Gains 10% bonus magic each turn (compounds) + high defense"
   },
   'Worldroot': {
-    health:56,
+    health: 46,
     strength:3,
     magic:8,
-    speed:4,
-    defense:10,
+    speed:6,
+    defense: 8,
     mana:260,
     hBars:1,
     image:"Enemies/worldroot.png",
@@ -2182,33 +3422,33 @@ const ENEMY_BASE_STATS = {
   },
   //Army Enemy Stats
   'Knight': {
-    health:24,
+    health: 20,
     strength:4,
     magic:0,
     speed:2,
-    defense:5,
+    defense: 4,
     mana:100,
     hBars:1,
     image:"Enemies/knight.png",
     tier:1,
   },
   'Archer': {
-    health:21,
+    health: 17,
     strength:4,
     magic:0,
     speed:3.5,
-    defense:3,
+    defense: 2,
     mana:100,
     hBars:1,
     image:"Enemies/archer.png",
     tier:2,
   },
   'Mage': {
-    health:23,
+    health: 19,
     strength:0,
     magic:6,
     speed:3.5,
-    defense:4,
+    defense: 3,
     mana:200,
     hBars:1,
     image:"Enemies/mage.png",
@@ -2216,11 +3456,11 @@ const ENEMY_BASE_STATS = {
     specialEffect: "Arcane Curse: Applies random status effect (burn/bleed/chill) on attack"
   },
   'kingsGuard': {
-    health:36,
+    health: 30,
     strength:6,
     magic:0,
     speed:3.5,
-    defense:7,
+    defense: 6,
     mana:140,
     hBars:1,
     image:"Enemies/kingsGuard.png",
@@ -2228,11 +3468,11 @@ const ENEMY_BASE_STATS = {
     specialEffect: "Royal Protector: Balanced high-tier warrior"
   },
   'King': {
-    health:56,
+    health: 46,
     strength:8,
     magic:8,
     speed:3,
-    defense:10,
+    defense: 8,
     mana:240,
     hBars:1,
     image:"Enemies/king.png",
@@ -2241,11 +3481,11 @@ const ENEMY_BASE_STATS = {
   },
   //Ocean Type Enemy Stats
   'piranha': {
-    health:23,
+    health: 19,
     strength:6,
     magic:0,
     speed:4,
-    defense:3,
+    defense: 2,
     mana:100,
     hBars:1,
     image:"Enemies/piranha.png",
@@ -2253,11 +3493,11 @@ const ENEMY_BASE_STATS = {
     specialEffect: "Death Bite: Fast first strike, performs one final attack when defeated"
   },
   'coralMonster': {
-    health:29,
+    health: 24,
     strength:6,
     magic:1.5,
     speed:2,
-    defense:7,
+    defense: 6,
     mana:120,
     hBars:1,
     image:"Enemies/coralMonster.png",
@@ -2265,11 +3505,11 @@ const ENEMY_BASE_STATS = {
     specialEffect: "Coral Armor: Big tanky enemy with high defense and coral-enhanced durability"
   },
   'shark': {
-    health:34,
+    health: 28,
     strength:7,
     magic:0,
     speed:5,
-    defense:8,
+    defense: 7,
     mana:140,
     hBars:1,
     image:"Enemies/shark.png",
@@ -2278,11 +3518,11 @@ const ENEMY_BASE_STATS = {
   },
   //Final Boss Enemy Stats
   'divineKing': {
-    health:350,
+    health: 287,
     strength:18,
     magic:18,
     speed:4,
-    defense:18,
+    defense: 15,
     mana:500,
     hBars:1,
     image:"Enemies/divineKing.png",
@@ -2290,11 +3530,11 @@ const ENEMY_BASE_STATS = {
     specialEffect: "FINAL BOSS Phase 1: Divine power incarnate"
   },
   'demonKing': {
-    health:600,
+    health: 492,
     strength:25,
     magic:25,
     speed:5,
-    defense:20,
+    defense: 16,
     mana:600,
     hBars:1,
     image:"Enemies/demonKing.png",
@@ -2302,11 +3542,11 @@ const ENEMY_BASE_STATS = {
     specialEffect: "FINAL BOSS Phase 2: Demonic transformation - ultimate power"
   },
   'lightning_shark': {
-    health:400,
+    health: 328,
     strength:20,
     magic:20,
     speed:6,
-    defense:15,
+    defense: 12,
     mana:450,
     hBars:1,
     image:"Enemies/lightningShark.png",
@@ -2315,11 +3555,11 @@ const ENEMY_BASE_STATS = {
   },
   // Hell Mode - Unknown Enemies
   'dino': {
-    health:90,
+    health: 74,
     strength:12,
     magic:5,
     speed:8,
-    defense:19,
+    defense: 16,
     mana:180,
     hBars:1,
     image:"Enemies/dino.png",
@@ -2327,11 +3567,11 @@ const ENEMY_BASE_STATS = {
     specialEffect: "UNKNOWN: Prehistoric Rampage - High defense and strength, charges with devastating force"
   },
   'flamelingSmall': {
-    health:58,
+    health: 48,
     strength:8,
     magic:12,
     speed:10,
-    defense:8,
+    defense: 7,
     mana:250,
     hBars:1,
     image:"Enemies/flamelingSmall.png",
@@ -2339,11 +3579,11 @@ const ENEMY_BASE_STATS = {
     specialEffect: "UNKNOWN: Ember Spark - Fast and agile, applies burn on every attack"
   },
   'flamelingMedium': {
-    health:75,
+    health: 61,
     strength:10,
     magic:14,
     speed:7,
-    defense:12,
+    defense: 10,
     mana:280,
     hBars:1,
     image:"Enemies/flamelingMedium.png",
@@ -2351,11 +3591,11 @@ const ENEMY_BASE_STATS = {
     specialEffect: "UNKNOWN: Flame Burst - Balanced fire elemental, burn damage scales with magic"
   },
   'flamelingBig': {
-    health:103,
+    health: 84,
     strength:14,
     magic:18,
     speed:6,
-    defense:18,
+    defense: 15,
     mana:320,
     hBars:2,
     image:"Enemies/flamelingBig.png",
@@ -2363,11 +3603,11 @@ const ENEMY_BASE_STATS = {
     specialEffect: "UNKNOWN: Inferno Titan - Massive flameling with two health bars, devastating fire magic"
   },
   'sotrak': {
-    health:83,
+    health: 68,
     strength:15,
     magic:11,
     speed:11,
-    defense:14,
+    defense: 11,
     mana:240,
     hBars:1,
     image:"Enemies/sotrak.png",
@@ -2375,11 +3615,11 @@ const ENEMY_BASE_STATS = {
     specialEffect: "UNKNOWN: Void Walker - Teleports and strikes with void energy, applies random status effects"
   },
   'monstruousFish': {
-    health:108,
+    health: 89,
     strength:16,
     magic:12,
     speed:10,
-    defense:21,
+    defense: 17,
     mana:280,
     hBars:2,
     image:"Enemies/monstruousFish.png",
@@ -2387,11 +3627,11 @@ const ENEMY_BASE_STATS = {
     specialEffect: "UNKNOWN: Abyssal Terror - Deadly ocean predator, gains power from bleeding enemies"
   },
   'overseer': {
-    health:800,
+    health: 656,
     strength:30,
     magic:30,
     speed:8,
-    defense:40,
+    defense: 33,
     mana:800,
     hBars:3,
     image:"Enemies/overseer.png",
@@ -2403,54 +3643,124 @@ const ENEMY_BASE_STATS = {
 // attack stats multipliers and status effects
 
 const ATTACK_STATS = {
-  "punch":           { strMultiplier: 0.5,  magicMultiplier: 0,    status: "none", manaCost: 0 },
-  "poke":            { strMultiplier: 0.5,  magicMultiplier: 0.5,  status: "none", manaCost: 5 },
-  "stap":            { strMultiplier: 1,    magicMultiplier: 0,    status: "none", manaCost: 8 },
-  "slap":            { strMultiplier: 0.45, magicMultiplier: 0.45, status: "none", manaCost: 5 },
-  "leaf impale":     { strMultiplier: 0,    magicMultiplier: 1,    status: "none", manaCost: 10 },
-  "coral leech":     { strMultiplier: 1.1,  magicMultiplier: 0,    status: "leech", manaCost: 16 },
-  "reflection":      { strMultiplier: 0,    magicMultiplier: 1.2,  status: "none", manaCost: 12 },
-  "sea shield":      { strMultiplier: 0,    magicMultiplier: 1,    status: "none", manaCost: 10 },
-  "Charge":          { strMultiplier: 1.4,  magicMultiplier: 0,    status: "none", manaCost: 18 },
-  "Plasma Blast":    { strMultiplier: 0,    magicMultiplier: 1.4,  status: "none", manaCost: 18 },
-  "Tree People":     { strMultiplier: 0.3,  magicMultiplier: 0.5,  status: "leech", manaCost: 12 },
-  "plunge":          { strMultiplier: 1.5,  magicMultiplier: 0,    status: "bleed", manaCost: 20 },
-  "shadow vortex":   { strMultiplier: 0,    magicMultiplier: 1.7,  status: "none", manaCost: 22 },
-  "Incenerate":      { strMultiplier: 1.4,  magicMultiplier: 1,    status: "burn", manaCost: 25 },
-  "skater slice":    { strMultiplier: 1.6,  magicMultiplier: 0.4,  status: "bleed", manaCost: 20 },
-  "force strike":    { strMultiplier: 2.2,  magicMultiplier: 1.3,  status: "none", manaCost: 30 },
-  "Grim slice":      { strMultiplier: 3,    magicMultiplier: 0,    status: "grim", manaCost: 35 },
-  "Thunder":         { strMultiplier: 1.8,  magicMultiplier: 1.8,  status: "burn", manaCost: 38 },
-  "Combo":           { strMultiplier: 2.3,  magicMultiplier: 0,    status: "none", manaCost: 28 },
-  "Chilled Cream":   { strMultiplier: 0,    magicMultiplier: 0,    status: "chill", manaCost: 15 },
-  "Arise":           { strMultiplier: 0,    magicMultiplier: 2,    status: "none", manaCost: 25 },
-  "Pure skill":      { strMultiplier: 3.4,  magicMultiplier: 0,    status: "bleed", manaCost: 42 },
-  "spell infused":   { strMultiplier: 2,    magicMultiplier: 2.5,  status: "random", manaCost: 45 },
-  "enhance":         { strMultiplier: 0,    magicMultiplier: 0,    status: "player buff", manaCost: 20 },
-  "Rulers Authority":{ strMultiplier: 0,    magicMultiplier: 4,    status: "player buff", manaCost: 50 },
-  "Rest":            { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, isRest: true },
+  // ==================== STRENGTH ATTACKS ====================
+  // Pure strength attacks have NO mana cost but have cooldowns based on multiplier
+  // Cooldown formula: 0 turns (≤1.0x), 1 turn (1.1-2.0x), 2 turns (2.1-3.0x), 3 turns (3.1-4.0x), 4 turns (4.0x+)
   
-  // SET 2 ATTACKS
-  "Quick Jab":       { strMultiplier: 1.2,  magicMultiplier: 0,    status: "none", manaCost: 10 },
-  "Reckless Swing":  { strMultiplier: 2.0,  magicMultiplier: 0,    status: "bleed", manaCost: 22 },
-  "Arcane Bolt":     { strMultiplier: 0,    magicMultiplier: 1.5,  status: "none", manaCost: 18 },
-  "Drain Strike":    { strMultiplier: 1.6,  magicMultiplier: 0,    status: "leech", manaCost: 20 },
-  "Time Warp":       { strMultiplier: 0,    magicMultiplier: 1.8,  status: "chill", manaCost: 25 },
-  "Ground Slam":     { strMultiplier: 2.2,  magicMultiplier: 0,    status: "none", manaCost: 28 },
-  "Psychic Blast":   { strMultiplier: 0,    magicMultiplier: 1.7,  status: "none", manaCost: 22 },
-  "Decapitate":      { strMultiplier: 2.8,  magicMultiplier: 0,    status: "bleed", manaCost: 35 },
-  "Void Surge":      { strMultiplier: 0,    magicMultiplier: 2.5,  status: "grim", manaCost: 32 },
-  "Shield Bash":     { strMultiplier: 1.3,  magicMultiplier: 0.5,  status: "none", manaCost: 15 },
-  "Divine Rend":     { strMultiplier: 3.2,  magicMultiplier: 0.5,  status: "bleed", manaCost: 40 },
-  "Supernova":       { strMultiplier: 0.5,  magicMultiplier: 3.0,  status: "burn", manaCost: 38 },
-  "Blur":            { strMultiplier: 2.4,  magicMultiplier: 0,    status: "bleed", manaCost: 30 },
-  "Tidal Crash":     { strMultiplier: 1.2,  magicMultiplier: 1.8,  status: "chill", manaCost: 28 },
-  "Reality Stone":   { strMultiplier: 1.5,  magicMultiplier: 2.2,  status: "random", manaCost: 42 },
-  "Soul Harvest":    { strMultiplier: 2.6,  magicMultiplier: 1.0,  status: "grim", manaCost: 38 },
-  "Apocalypse":      { strMultiplier: 2.0,  magicMultiplier: 2.0,  status: "burn", manaCost: 48, aoe: true },
-  "Wisdom Beam":     { strMultiplier: 0,    magicMultiplier: 1.6,  status: "none", manaCost: 20 },
-  "Adaptive Spell":  { strMultiplier: 1.0,  magicMultiplier: 1.5,  status: "none", manaCost: 22 },
-  "Foresight":       { strMultiplier: 0.5,  magicMultiplier: 1.2,  status: "none", manaCost: 15 },
+  "punch":           { strMultiplier: 0.5,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "strength" },
+  "stap":            { strMultiplier: 1,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "strength" },
+  "coral leech":     { strMultiplier: 1.1,  magicMultiplier: 0,    status: "leech", manaCost: 0, cooldown: 1, group: "strength" },
+  "Charge":          { strMultiplier: 1.4,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 1, group: "strength" },
+  "plunge":          { strMultiplier: 1.5,  magicMultiplier: 0,    status: "bleed", manaCost: 0, cooldown: 1, group: "strength" },
+  "Combo":           { strMultiplier: 2.3,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "strength" },
+  "Grim slice":      { strMultiplier: 3,    magicMultiplier: 0,    status: "grim", manaCost: 0, cooldown: 3, group: "strength" },
+  "Quick Jab":       { strMultiplier: 1.2,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 1, group: "strength" },
+  "Reckless Swing":  { strMultiplier: 2.0,  magicMultiplier: 0,    status: "bleed", manaCost: 0, cooldown: 2, group: "strength" },
+  "Drain Strike":    { strMultiplier: 1.6,  magicMultiplier: 0,    status: "leech", manaCost: 0, cooldown: 1, group: "strength" },
+  "Ground Slam":     { strMultiplier: 2.2,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "strength" },
+  "Decapitate":      { strMultiplier: 2.8,  magicMultiplier: 0,    status: "bleed", manaCost: 0, cooldown: 3, group: "strength" },
+  "Blur":            { strMultiplier: 2.4,  magicMultiplier: 0,    status: "bleed", manaCost: 0, cooldown: 2, group: "strength" },
+  "Vampiric Stab":   { strMultiplier: 1.3,  magicMultiplier: 0,    status: "leech", manaCost: 0, cooldown: 1, group: "strength" },
+  "Giant's Wrath":   { strMultiplier: 2.5,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "strength" },
+  "Challenge":       { strMultiplier: 1.0,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "strength" },
+  "Rising Power":    { strMultiplier: 2.0,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "strength" },
+  "Shatter Guard":   { strMultiplier: 2.4,  magicMultiplier: 0,    status: "bleed", manaCost: 0, cooldown: 2, group: "strength" },
+  "Savage Bite":     { strMultiplier: 1.4,  magicMultiplier: 0,    status: "bleed", manaCost: 0, cooldown: 1, group: "strength" },
+  "Strike Chain":    { strMultiplier: 1.3,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 1, group: "strength" },
+  "Sacrifice Strike":{ strMultiplier: 3.5,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 3, group: "strength" },
+  "Rage Strike":     { strMultiplier: 2.5,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "strength" },
+  "Singularity Slam":{ strMultiplier: 3.0,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 3, group: "strength" },
+  "Retribution":     { strMultiplier: 2.0,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "strength" },
+  "Earthshaker":     { strMultiplier: 4.0,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 4, group: "strength" },
+  "Last Stand":      { strMultiplier: 2.8,  magicMultiplier: 0.5,  status: "none", manaCost: 5, cooldown: 3, group: "strength" },
+  "Divine Rend":     { strMultiplier: 3.2,  magicMultiplier: 0.5,  status: "bleed", manaCost: 5, cooldown: 3, group: "strength" },
+  
+  // ==================== MAGIC ATTACKS ====================
+  // Pure magic attacks cost mana based on multiplier (multiplier × 10)
+  // No cooldowns for pure magic attacks
+  
+  "leaf impale":     { strMultiplier: 0,    magicMultiplier: 1,    status: "none", manaCost: 10, cooldown: 0, group: "magic" },
+  "reflection":      { strMultiplier: 0,    magicMultiplier: 1.2,  status: "none", manaCost: 12, cooldown: 0, group: "magic" },
+  "sea shield":      { strMultiplier: 0,    magicMultiplier: 1,    status: "none", manaCost: 10, cooldown: 0, group: "magic" },
+  "Plasma Blast":    { strMultiplier: 0,    magicMultiplier: 1.4,  status: "none", manaCost: 14, cooldown: 0, group: "magic" },
+  "shadow vortex":   { strMultiplier: 0,    magicMultiplier: 1.7,  status: "none", manaCost: 17, cooldown: 0, group: "magic" },
+  "Arise":           { strMultiplier: 0,    magicMultiplier: 2,    status: "none", manaCost: 20, cooldown: 0, group: "magic" },
+  "Rulers Authority":{ strMultiplier: 0,    magicMultiplier: 4,    status: "player buff", manaCost: 40, cooldown: 0, group: "magic" },
+  "Arcane Bolt":     { strMultiplier: 0,    magicMultiplier: 1.5,  status: "none", manaCost: 15, cooldown: 0, group: "magic" },
+  "Time Warp":       { strMultiplier: 0,    magicMultiplier: 1.8,  status: "chill", manaCost: 18, cooldown: 0, group: "magic" },
+  "Psychic Blast":   { strMultiplier: 0,    magicMultiplier: 1.7,  status: "none", manaCost: 17, cooldown: 0, group: "magic" },
+  "Void Surge":      { strMultiplier: 0,    magicMultiplier: 2.5,  status: "grim", manaCost: 25, cooldown: 0, group: "magic" },
+  "Supernova":       { strMultiplier: 0.5,  magicMultiplier: 3.0,  status: "burn", manaCost: 30, cooldown: 1, group: "magic" },
+  "Wisdom Beam":     { strMultiplier: 0,    magicMultiplier: 1.6,  status: "none", manaCost: 16, cooldown: 0, group: "magic" },
+  "Chain Lightning": { strMultiplier: 0,    magicMultiplier: 1.8,  status: "burn", manaCost: 18, cooldown: 0, group: "magic" },
+  "Ice Shard":       { strMultiplier: 0,    magicMultiplier: 1.4,  status: "chill", manaCost: 14, cooldown: 0, group: "magic" },
+  "Soul Spell":      { strMultiplier: 0,    magicMultiplier: 2.2,  status: "random", manaCost: 22, cooldown: 0, group: "magic" },
+  "Purification":    { strMultiplier: 0,    magicMultiplier: 1.3,  status: "none", manaCost: 13, cooldown: 0, group: "magic" },
+  "Terraform":       { strMultiplier: 1.0,  magicMultiplier: 3.0,  status: "player buff", manaCost: 30, cooldown: 0, group: "magic" },
+  "Revive Ally":     { strMultiplier: 0,    magicMultiplier: 2.5,  status: "player buff", manaCost: 25, cooldown: 0, group: "magic" },
+  "Power Surge":     { strMultiplier: 0,    magicMultiplier: 2.8,  status: "none", manaCost: 28, cooldown: 0, group: "magic" },
+  "Conjure Ally":    { strMultiplier: 0.5,  magicMultiplier: 1.8,  status: "player buff", manaCost: 18, cooldown: 1, group: "magic" },
+  "Arcane Ward":     { strMultiplier: 0,    magicMultiplier: 1.2,  status: "player buff", manaCost: 12, cooldown: 0, group: "magic" },
+  "Epidemic":        { strMultiplier: 0.6,  magicMultiplier: 2.3,  status: "poison", manaCost: 23, cooldown: 1, group: "magic" },
+  "Apocalypse":      { strMultiplier: 2.0,  magicMultiplier: 2.0,  status: "burn", manaCost: 60, cooldown: 2, aoe: true, group: "magic" }, // AOE: 3 enemies × 2.0 mag = 6.0 effective
+  
+  // ==================== HYBRID ATTACKS (Strength + Magic) ====================
+  // Attacks with both strength and magic have BOTH cooldown AND mana cost
+  
+  "poke":            { strMultiplier: 0.5,  magicMultiplier: 0.5,  status: "none", manaCost: 5, cooldown: 0, group: "hybrid" },
+  "slap":            { strMultiplier: 0.45, magicMultiplier: 0.45, status: "none", manaCost: 5, cooldown: 0, group: "hybrid" },
+  "Tree People":     { strMultiplier: 0.3,  magicMultiplier: 0.5,  status: "leech", manaCost: 5, cooldown: 0, group: "hybrid" },
+  "Incenerate":      { strMultiplier: 1.4,  magicMultiplier: 1,    status: "burn", manaCost: 10, cooldown: 1, group: "hybrid" },
+  "skater slice":    { strMultiplier: 1.6,  magicMultiplier: 0.4,  status: "bleed", manaCost: 4, cooldown: 1, group: "hybrid" },
+  "force strike":    { strMultiplier: 2.2,  magicMultiplier: 1.3,  status: "none", manaCost: 13, cooldown: 2, group: "hybrid" },
+  "Thunder":         { strMultiplier: 1.8,  magicMultiplier: 1.8,  status: "burn", manaCost: 18, cooldown: 2, group: "hybrid" },
+  "spell infused":   { strMultiplier: 2,    magicMultiplier: 2.5,  status: "random", manaCost: 25, cooldown: 2, group: "hybrid" },
+  "Shield Bash":     { strMultiplier: 1.3,  magicMultiplier: 0.5,  status: "none", manaCost: 5, cooldown: 1, group: "hybrid" },
+  "Tidal Crash":     { strMultiplier: 1.2,  magicMultiplier: 1.8,  status: "chill", manaCost: 18, cooldown: 1, group: "hybrid" },
+  "Reality Stone":   { strMultiplier: 1.5,  magicMultiplier: 2.2,  status: "random", manaCost: 22, cooldown: 2, group: "hybrid" },
+  "Soul Harvest":    { strMultiplier: 2.6,  magicMultiplier: 1.0,  status: "grim", manaCost: 10, cooldown: 2, group: "hybrid" },
+  "Adaptive Spell":  { strMultiplier: 1.0,  magicMultiplier: 1.5,  status: "none", manaCost: 15, cooldown: 0, group: "hybrid" },
+  "Foresight":       { strMultiplier: 0.5,  magicMultiplier: 1.2,  status: "none", manaCost: 12, cooldown: 0, group: "hybrid" },
+  "Death Mark":      { strMultiplier: 1.5,  magicMultiplier: 0.5,  status: "grim", manaCost: 5, cooldown: 1, group: "hybrid" },
+  "Crystal Barrier": { strMultiplier: 0.8,  magicMultiplier: 1.2,  status: "none", manaCost: 12, cooldown: 0, group: "hybrid" },
+  "Flame Rebirth":   { strMultiplier: 0.5,  magicMultiplier: 1.5,  status: "burn", manaCost: 15, cooldown: 0, group: "hybrid" },
+  "Inspiring Call":  { strMultiplier: 0.5,  magicMultiplier: 1.0,  status: "player buff", manaCost: 10, cooldown: 0, group: "hybrid" },
+  "Adaptation":      { strMultiplier: 1.2,  magicMultiplier: 1.2,  status: "none", manaCost: 12, cooldown: 1, group: "hybrid" },
+  "Shared Fate":     { strMultiplier: 0.7,  magicMultiplier: 0.7,  status: "none", manaCost: 7, cooldown: 0, group: "hybrid" },
+  "Analyze":         { strMultiplier: 0.5,  magicMultiplier: 1.5,  status: "none", manaCost: 15, cooldown: 0, group: "hybrid" },
+  "Stat Steal":      { strMultiplier: 1.6,  magicMultiplier: 0.4,  status: "none", manaCost: 4, cooldown: 1, group: "hybrid" },
+  "Tri-Element":     { strMultiplier: 0.3,  magicMultiplier: 2.0,  status: "random", manaCost: 20, cooldown: 0, group: "hybrid" },
+  "Venom Bite":      { strMultiplier: 0.8,  magicMultiplier: 0.2,  status: "poison", manaCost: 2, cooldown: 0, group: "hybrid" },
+  "Drain Aura":      { strMultiplier: 0.4,  magicMultiplier: 1.0,  status: "none", manaCost: 10, cooldown: 0, group: "hybrid" },
+  "Rewind Strike":   { strMultiplier: 2.0,  magicMultiplier: 0.5,  status: "none", manaCost: 5, cooldown: 2, group: "hybrid" },
+  "Blood Drain":     { strMultiplier: 1.3,  magicMultiplier: 0.7,  status: "none", manaCost: 7, cooldown: 1, group: "hybrid" },
+  "Fortune Strike":  { strMultiplier: 1.1,  magicMultiplier: 0.6,  status: "none", manaCost: 6, cooldown: 1, group: "hybrid" },
+  "Balance":         { strMultiplier: 1.0,  magicMultiplier: 1.0,  status: "none", manaCost: 10, cooldown: 0, group: "hybrid" },
+  "Explosive Round": { strMultiplier: 1.0,  magicMultiplier: 0.3,  skillMultiplier: 0.028, status: "none", manaCost: 3, cooldown: 1, group: "skill", requiresAmmo: true },
+  "Ghost Arrow":     { strMultiplier: 0.8,  magicMultiplier: 0.5,  skillMultiplier: 0.035, status: "none", manaCost: 5, cooldown: 1, group: "skill", requiresAmmo: true },
+  "Mana Bullet":     { strMultiplier: 0.3,  magicMultiplier: 1.0,  skillMultiplier: 0.025, status: "none", manaCost: 12, cooldown: 0, group: "skill", requiresAmmo: true },
+  
+  // ==================== SKILL ATTACKS ====================
+  // Skill attacks use MULTIPLICATIVE scaling: (STR×strMult + MAG×magMult) × (1 + SKILL×sklMult)
+  // Flat multipliers capped at 1.5x max, skill provides multiplicative bonus
+  // All skill attacks can crit, guns/bows require ammo
+  
+  "Chilled Cream":   { strMultiplier: 0,    magicMultiplier: 0.8,  skillMultiplier: 0.015, status: "chill", manaCost: 0, cooldown: 0, group: "skill", requiresAmmo: false },
+  "Pure skill":      { strMultiplier: 1.2,  magicMultiplier: 0,    skillMultiplier: 0.025, status: "bleed", manaCost: 0, cooldown: 3, group: "skill", requiresAmmo: false },
+  "Arrow Shot":      { strMultiplier: 0.4,  magicMultiplier: 0,    skillMultiplier: 0.020, status: "none", manaCost: 0, cooldown: 0, group: "skill", requiresAmmo: true },
+  "Rifle Shot":      { strMultiplier: 0.6,  magicMultiplier: 0,    skillMultiplier: 0.025, status: "none", manaCost: 0, cooldown: 0, group: "skill", requiresAmmo: true },
+  "Power Shot":      { strMultiplier: 0.8,  magicMultiplier: 0,    skillMultiplier: 0.030, status: "none", manaCost: 0, cooldown: 1, group: "skill", requiresAmmo: true },
+  "Silent Bolt":     { strMultiplier: 0.5,  magicMultiplier: 0,    skillMultiplier: 0.028, status: "none", manaCost: 0, cooldown: 0, group: "skill", requiresAmmo: true },
+  "Precision Cut":   { strMultiplier: 1.0,  magicMultiplier: 0,    skillMultiplier: 0.022, status: "none", manaCost: 0, cooldown: 2, group: "skill", requiresAmmo: false },
+  "Headshot":        { strMultiplier: 1.2,  magicMultiplier: 0,    skillMultiplier: 0.032, status: "none", manaCost: 0, cooldown: 2, group: "skill", requiresAmmo: true },
+  "Double Shot":     { strMultiplier: 0.9,  magicMultiplier: 0,    skillMultiplier: 0.024, status: "none", manaCost: 0, cooldown: 1, group: "skill", requiresAmmo: true },
+  
+  // ==================== UTILITY ATTACKS ====================
+  // Utility attacks have minimal/no damage multipliers, no mana cost or cooldown
+  // Used for buffs, healing, resting, etc.
+  
+  "enhance":         { strMultiplier: 0,    magicMultiplier: 0,    status: "player buff", manaCost: 0, cooldown: 0, group: "utility" },
+  "Rest":            { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, isRest: true, group: "utility" },
 };
 
 
@@ -2469,6 +3779,8 @@ const PARTY_STATS = {
     OFFHAND: null,
     LEVEL: 1,
     HEALTH: null,
+    SKILL: 0,
+    AMMO: 0,
   },
   'TWO': {
     NAME: 'Member 2',
@@ -2480,6 +3792,8 @@ const PARTY_STATS = {
     OFFHAND: null,
     LEVEL: 1,
     HEALTH: null,
+    SKILL: 0,
+    AMMO: 0,
   },
   'THREE': {
     NAME: 'Member 3',
@@ -2491,6 +3805,8 @@ const PARTY_STATS = {
     OFFHAND: null,
     LEVEL: 1,
     HEALTH: null,
+    SKILL: 0,
+    AMMO: 0,
   },
   'FOUR': {
     NAME: 'Member 4',
@@ -2502,6 +3818,8 @@ const PARTY_STATS = {
     OFFHAND: null,
     LEVEL: 1,
     HEALTH: null,
+    SKILL: 0,
+    AMMO: 0,
   },
   'FIVE': {
     NAME: 'Member 5',
@@ -2512,7 +3830,9 @@ const PARTY_STATS = {
     MAINHAND: null,
     OFFHAND: null,
     LEVEL: 1,
-    HEALTH: null
+    HEALTH: null,
+    SKILL: 0,
+    AMMO: 0,
   },
 };
 
@@ -2553,6 +3873,7 @@ function updateStats(){
     let equippedDefense = 0;
     let equippedHealth = 0;
     let equippedMana = 0;
+    let equippedSkill = 0;
 
     //Iterate through all equipment slots and add stat bonuses from equipped items
     const equipmentSlots = ['HELMET', 'CHEST', 'LEGS', 'BOOTS', 'MAINHAND', 'OFFHAND'];
@@ -2568,6 +3889,7 @@ function updateStats(){
       equippedDefense += item.defense;
       equippedHealth += item.health;
       equippedMana += (item.mana || 0);
+      equippedSkill += (item.skill || 0);
     }
   }
 }
@@ -2580,6 +3902,8 @@ function updateStats(){
     const totalMaxHealth = baseHealth + equippedHealth;
     // Mana doesn't scale with level - only from equipment
     const totalMaxMana = Math.max(50, equippedMana); // Base 50 mana minimum
+    // Skill doesn't have a base value - only from equipment
+    const totalSkill = equippedSkill;
 
     // 5. Update the party member's stats with the new totals
     // Store old max values to adjust current values proportionally
@@ -2591,6 +3915,7 @@ function updateStats(){
     member.MAGIC = totalMagic;
     member.DEFENSE = totalDefense;
     member.MAX_MANA = totalMaxMana;
+    member.SKILL = totalSkill;
     
     // Set the current HEALTH to MAX_HEALTH if it's currently null
     if (member.HEALTH === null) {
@@ -2914,3 +4239,4 @@ function ensureBaseAttacks() {
 
 // Call this after loading to ensure everyone has punch
 ensureBaseAttacks();
+
