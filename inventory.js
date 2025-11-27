@@ -1,3 +1,65 @@
+// ...existing code...
+
+function renderInventoryGrid() {
+  const inventory = document.getElementById("inventory");
+  if (!inventory) {
+    console.error("Inventory element not found!");
+    return;
+  }
+  inventory.innerHTML = "";
+  // ...existing code...
+  // Move page navigation to the right of the Inventory section title
+  setTimeout(() => {
+    let navDiv = document.getElementById('inventory-page-nav');
+    const sectionTitle = document.querySelector('.section-title');
+    if (!navDiv) {
+      navDiv = document.createElement('div');
+      navDiv.id = 'inventory-page-nav';
+      navDiv.style.display = 'inline-flex';
+      navDiv.style.justifyContent = 'flex-end';
+      navDiv.style.alignItems = 'center';
+      navDiv.style.gap = '14px';
+      navDiv.style.marginLeft = '18px';
+      navDiv.style.fontSize = '1.1em';
+      if (sectionTitle && sectionTitle.parentNode) {
+        sectionTitle.style.display = 'inline-block';
+        sectionTitle.parentNode.insertBefore(navDiv, sectionTitle.nextSibling);
+      }
+    }
+    navDiv.innerHTML = '';
+    // Page label
+    const pageLabel = document.createElement('span');
+    pageLabel.textContent = `Page ${inventoryPage} / ${maxPages}`;
+    pageLabel.style.fontWeight = 'bold';
+    pageLabel.style.color = '#e94560';
+    navDiv.appendChild(pageLabel);
+    // Prev button
+    const prevBtn = document.createElement('button');
+    prevBtn.textContent = '←';
+    prevBtn.className = 'nav-btn';
+    prevBtn.disabled = inventoryPage === 1;
+    prevBtn.onclick = () => {
+      if (inventoryPage > 1) {
+        inventoryPage--;
+        renderInventory();
+      }
+    };
+    navDiv.appendChild(prevBtn);
+    // Next button
+    const unequippedItems = INVENTORY.filter(i => i && !i.equipped);
+    const nextBtn = document.createElement('button');
+    nextBtn.textContent = '→';
+    nextBtn.className = 'nav-btn';
+    nextBtn.disabled = inventoryPage === maxPages || unequippedItems.length <= inventoryPage * slotsPerPage;
+    nextBtn.onclick = () => {
+      if (inventoryPage < maxPages && unequippedItems.length > inventoryPage * slotsPerPage) {
+        inventoryPage++;
+        renderInventory();
+      }
+    };
+    navDiv.appendChild(nextBtn);
+  }, 0);
+}
 // Helper to get the selected member (from script.js)
 function getSelectedMember() {
   return typeof SELECTED_MEMBER !== 'undefined' ? SELECTED_MEMBER : 'ONE';
@@ -13,8 +75,12 @@ function playSoundEffect(soundName) {
   audio.play().catch(err => console.log('Could not play sound:', err));
 }
 
-const invRows = 10;
+const invRows = 5;
 const invCols = 5;
+
+let inventoryPage = 1; // 1-based page index
+const maxPages = 5;
+const slotsPerPage = invRows * invCols;
 
 function renderInventoryGrid() {
   const inventory = document.getElementById("inventory");
@@ -26,8 +92,12 @@ function renderInventoryGrid() {
   
   // Filter to only unequipped items and pack them
   const unequippedItems = INVENTORY.filter(i => i && !i.equipped);
+  // Calculate start/end index for current page
+  const startIdx = (inventoryPage - 1) * slotsPerPage;
+  const endIdx = startIdx + slotsPerPage;
+  const pageItems = unequippedItems.slice(startIdx, endIdx);
   let itemIdx = 0;
-  
+
   for (let row = 0; row < invRows; row++) {
     for (let col = 0; col < invCols; col++) {
       const slot = document.createElement("div");
@@ -35,7 +105,7 @@ function renderInventoryGrid() {
       slot.dataset.row = row;
       slot.dataset.col = col;
 
-      const data = unequippedItems[itemIdx];
+      const data = pageItems[itemIdx];
       const img = document.createElement("img");
       img.className = "inv-img";
 
@@ -48,7 +118,7 @@ function renderInventoryGrid() {
           slot.style.border = `3px solid ${rarityColor}`;
           slot.style.boxShadow = `0 0 8px ${rarityColor}`;
         }
-        slot.addEventListener('click', () => displayItemInfo(data));
+        slot.addEventListener('click', (e) => displayItemInfo(data, e));
         itemIdx++;
       } else {
         img.src = "Assests/empty-slot.png";
@@ -77,6 +147,67 @@ function renderEquippedItems(memberKey = getSelectedMember()) {
   const equipDiv = document.getElementById("equipped-items");
   if (!equipDiv) return;
   equipDiv.innerHTML = "";
+
+  // --- CLASS GENERALIZATION LOGIC ---
+  function getClassGeneralization(stats) {
+    // Example logic: prioritize highest stat, then secondary, then defense/magic split
+    const statNames = ["STRENGTH", "MAGIC", "DEFENSE", "SPEED", "SKILL"];
+    const statLabels = {
+      STRENGTH: "Warrior",
+      MAGIC: "Mage",
+      DEFENSE: "Guardian",
+      SPEED: "Rogue",
+      SKILL: "Specialist"
+    };
+    // Get stat values
+    let statArr = statNames.map(s => ({ name: s, value: stats[s] || 0 }));
+    statArr.sort((a, b) => b.value - a.value);
+    const highest = statArr[0];
+    const second = statArr[1];
+    // Defensive Mage, Swift Warrior, etc.
+    let label = statLabels[highest.name];
+    // If second stat is close to highest, combine
+    if (second.value > 0 && second.value >= 0.7 * highest.value) {
+      label = `${statLabels[highest.name]} / ${statLabels[second.name]}`;
+    }
+    // If defense is highest, but magic is second, "Defensive Mage"
+    if (highest.name === "DEFENSE" && second.name === "MAGIC") {
+      label = "Defensive Mage";
+    }
+    // If magic is highest, but defense is second, "Defensive Mage"
+    if (highest.name === "MAGIC" && second.name === "DEFENSE") {
+      label = "Defensive Mage";
+    }
+    // If speed is highest, but strength is second, "Swift Warrior"
+    if (highest.name === "SPEED" && second.name === "STRENGTH") {
+      label = "Swift Warrior";
+    }
+    // If strength is highest, but speed is second, "Swift Warrior"
+    if (highest.name === "STRENGTH" && second.name === "SPEED") {
+      label = "Swift Warrior";
+    }
+    // If skill is highest, but magic is second, "Arcane Specialist"
+    if (highest.name === "SKILL" && second.name === "MAGIC") {
+      label = "Arcane Specialist";
+    }
+    // If skill is highest, but strength is second, "Battle Specialist"
+    if (highest.name === "SKILL" && second.name === "STRENGTH") {
+      label = "Battle Specialist";
+    }
+    return label;
+  }
+
+  // Display class generalization above equipped items
+  const classDiv = document.createElement('div');
+  classDiv.className = 'class-generalization';
+  classDiv.style.fontWeight = 'bold';
+  classDiv.style.fontSize = '1.2em';
+  classDiv.style.marginBottom = '8px';
+  classDiv.style.textAlign = 'center';
+  classDiv.textContent = `Class: ${getClassGeneralization(member)}`;
+  equipDiv.appendChild(classDiv);
+
+  // --- EQUIPPED ITEMS DISPLAY ---
   const slots = ["HELMET","CHEST","LEGS","BOOTS","MAINHAND","OFFHAND"];
   slots.forEach(s => {
     const itemName = member[s];
@@ -101,7 +232,35 @@ function renderEquippedItems(memberKey = getSelectedMember()) {
 
 function displayItemInfo(item) {
   const memberKey = getSelectedMember();
-  const infoItem = document.getElementById('info-item');
+  // Remove any existing popup
+  let oldPopup = document.getElementById('item-info-popup');
+  if (oldPopup) oldPopup.remove();
+
+  // Create popup div
+  const popup = document.createElement('div');
+  popup.id = 'item-info-popup';
+  popup.style.position = 'absolute';
+  popup.style.zIndex = '9999';
+  popup.style.background = 'rgba(15,52,96,0.98)';
+  popup.style.border = '2px solid #e94560';
+  popup.style.borderRadius = '12px';
+  popup.style.boxShadow = '0 8px 32px rgba(0,0,0,0.4)';
+  popup.style.padding = '28px 24px 18px 24px';
+  popup.style.minWidth = '320px';
+  popup.style.maxWidth = '400px';
+  popup.style.color = '#fff';
+  popup.style.fontSize = '1.08em';
+  popup.style.pointerEvents = 'auto';
+
+  // Position popup to the right of the clicked item
+  if (arguments.length > 1 && arguments[1] && arguments[1].target) {
+    const rect = arguments[1].target.getBoundingClientRect();
+    popup.style.top = `${rect.top + window.scrollY}px`;
+    popup.style.left = `${rect.right + 16 + window.scrollX}px`;
+  } else {
+    popup.style.top = '120px';
+    popup.style.left = '60vw';
+  }
   const rarityColor = (item.rarity && typeof window.getRarityColor === 'function') ? window.getRarityColor(item.rarity) : '#ffffff';
   
   // Ability descriptions
@@ -213,7 +372,7 @@ function displayItemInfo(item) {
     ? `<p style="color: #ff8c00; font-weight: bold;">✨ Enchanted: ${item.enchantment}</p>`
     : '';
   
-  infoItem.innerHTML = `
+  popup.innerHTML = `
     <h3 style="color: ${rarityColor}">${item.name} Level ${item.level||1}</h3>
     <img src="${item.image||'Assests/empty-slot.png'}" style="width:30%; border: 3px solid ${rarityColor}; box-shadow: 0 0 8px ${rarityColor}">
     <p>Strength: ${item.strength||0} Magic: ${item.magic||0} Speed: ${item.speed||0}</p>
@@ -224,9 +383,11 @@ function displayItemInfo(item) {
       <button id="equip-btn">Equip</button>
       <button id="unequip-btn">Unequip</button>
     </div>
+    <button id="close-item-popup" style="position:absolute;top:8px;right:12px;background:#e94560;color:#fff;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:1em;">✖</button>
   `;
-  const equipBtn = document.getElementById('equip-btn');
-  const unequipBtn = document.getElementById('unequip-btn');
+  document.body.appendChild(popup);
+  const equipBtn = popup.querySelector('#equip-btn');
+  const unequipBtn = popup.querySelector('#unequip-btn');
   
   // Determine equipped state: check item.equipped flag AND verify it's actually in a slot
   let isEquipped = item.equipped;
@@ -284,22 +445,33 @@ function displayItemInfo(item) {
             m[s] = null;
           }
         });
+        // Remove attacks from this item for every member
+        if (typeof PARTY_ATTACKS !== 'undefined' && PARTY_ATTACKS[mKey]) {
+          // Remove by UID if possible
+          if (item._uid) removeAttackBySourceUid(item._uid, mKey);
+          // Also remove by item name in case UID is missing
+          if (item.attack && item.attack !== 'none') {
+            removeAttackByItemName(item.name, mKey);
+          }
+        }
       }
-      // Remove attacks from this item
-      if (item._uid) removeAttackBySourceUid(item._uid, memberKey);
     }
     updateStats();
     renderInventory();
     if (typeof saveGameData === 'function') saveGameData();
     infoItem.innerHTML = '<p>Item deleted.</p>';
-    
     // Play delete sound
     playSoundEffect('delete');
   };
   
-  const btnContainer = infoItem.querySelector('div[style*="margin-top"]');
+  const btnContainer = popup.querySelector('div[style*="margin-top"]');
   if (btnContainer) {
     btnContainer.appendChild(deleteBtn);
+  }
+  // Add close button functionality
+  const closeBtn = popup.querySelector('#close-item-popup');
+  if (closeBtn) {
+    closeBtn.onclick = () => popup.remove();
   }
 }
 
@@ -539,6 +711,7 @@ function generateAndShowItem() {
 }
 
 renderInventory();
+window.addEventListener('DOMContentLoaded', renderInventoryGrid);
 
 // Create Reset Inventory button after DOM is ready
 /*function ensureResetButton() {
@@ -661,6 +834,15 @@ function renderEnchantmentInventory() {
 }
 
 // Add enchantment to inventory
+function addEnchantment(enchantName, count = 1) {
+  // Limit inventory to 125 unequipped items
+  const unequippedCount = INVENTORY.filter(i => i && !i.equipped).length;
+  if (unequippedCount >= maxPages * slotsPerPage) {
+    alert('Inventory is full! You cannot add more items.');
+    return;
+  }
+  // ...existing code...
+}
 function addEnchantment(enchantName, count = 1) {
   if (typeof ENCHANTMENT_INVENTORY === 'undefined') {
     window.ENCHANTMENT_INVENTORY = {};
@@ -866,6 +1048,18 @@ function applyEnchantmentToItem(enchantName, itemName) {
   // Update display
   updateStats();
   renderInventory();
+  // Add event listeners to party nav buttons
+  for (let i = 1; i <= 5; i++) {
+    const btn = document.getElementById(`inv-${i}`);
+    if (btn) {
+      btn.addEventListener('click', () => {
+        if (typeof SELECTED_MEMBER !== 'undefined') {
+          SELECTED_MEMBER = ['ONE','TWO','THREE','FOUR','FIVE'][i-1];
+        }
+        renderInventory();
+      });
+    }
+  }
   if (typeof saveGameData === 'function') saveGameData();
   
   // Close modal

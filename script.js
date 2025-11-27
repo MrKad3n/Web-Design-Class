@@ -1063,7 +1063,7 @@ const ITEM_TABLE = {
   },
   
   // COMMON - Early balanced items
-  "Wooden Sword": {
+  "Wooden Sword": {//this 
     slot: "Weapon",
     rarity: "Common",
     strength: 4,
@@ -1077,7 +1077,7 @@ const ITEM_TABLE = {
     image: "Items/woodenSword.png",
     role: "Physical damage starter - Good for learning strength-based combat with bleed status effects.",
   },
-  "Grass Staff": {
+  "Grass Staff": {//this 
     slot: "Weapon",
     rarity: "Common",
     strength: 0,
@@ -1091,7 +1091,7 @@ const ITEM_TABLE = {
     image: "Items/grassStaff.png",
     role: "Magic damage starter - Introduces spell-based combat with mana management and status effects.",
   },
-  "Iron Helmet": {
+  "Iron Helmet": {//this 
     slot: "Helmet",
     rarity: "Common",
     strength: 0,
@@ -1105,7 +1105,7 @@ const ITEM_TABLE = {
     image: "Items/ironHelmet.png",
     role: "Basic defense - Early game survival, protects against physical damage in the first dungeons.",
   },
-  "Iron Chestplate": {
+  "Iron Chestplate": {//this 
     slot: "Chest",
     rarity: "Common",
     strength: 0,
@@ -1119,7 +1119,7 @@ const ITEM_TABLE = {
     image: "Items/ironChest.png",
     role: "Tanking core - Essential for building defensive characters who can absorb enemy attacks.",
   },
-  "Iron Legging": {
+  "Iron Legging": {//this 
     slot: "Leg",
     rarity: "Common",
     strength: 0,
@@ -1130,10 +1130,10 @@ const ITEM_TABLE = {
     mana: 0,
     attack: "none",
     ability: 0,
-    image: "Items/ironPants.png",
+    image: "Items/ironLegging.png",
     role: "Defensive foundation - Complements tanky builds focusing on survival over damage.",
   },
-  "Iron Boots": {
+  "Iron Boots": {//this 
     slot: "Boot",
     rarity: "Common",
     strength: 0,
@@ -1149,7 +1149,7 @@ const ITEM_TABLE = {
   },
   
   // UNCOMMON - Specialization begins
-  "Coral Dagger": {
+  "Coral Dagger": {//this 
     slot: "Weapon",
     rarity: "Uncommon",
     strength: 5,
@@ -1163,7 +1163,7 @@ const ITEM_TABLE = {
     image: "Items/coralDagger.png",
     role: "Sustained DPS - Rewards consistent attacking with stacking damage bonuses, best for aggressive fighters.",
   },
-  "Sea Crystal": {
+  "Sea Crystal": {//this 
     slot: "Offhand",
     rarity: "Rare",
     strength: 0,
@@ -1177,7 +1177,7 @@ const ITEM_TABLE = {
     image: "Items/seaCrystal.png",
     role: "Status immunity - Perfect for magic users who want protection from debilitating status effects.",
   },
-  "Shell": {
+  "Shell": {//this 
     slot: "Offhand",
     rarity: "Uncommon",
     strength: 0,
@@ -1191,7 +1191,7 @@ const ITEM_TABLE = {
     image: "Items/shell.png",
     role: "Pure tank - Maximum defense for players who prioritize survival and protecting teammates.",
   },
-  "Water Skaters": {
+  "Water Skaters": {//this 
     slot: "Boots",
     rarity: "Uncommon",
     strength: 0,
@@ -1207,7 +1207,7 @@ const ITEM_TABLE = {
   },
   
   // RARE - Strong specialization
-  "Spiked Shield": {
+  "Spiked Shield": {//this 
     slot: "Weapon",
     rarity: "Rare",
     strength: 6,
@@ -1220,7 +1220,7 @@ const ITEM_TABLE = {
     image: "Items/spikedShield.png",
     role: "Counter-attacker - Tank who fights back, dealing damage while absorbing hits with high defense.",
   },
-  "Grimore": {
+  "Grimore": {//this 
     slot: "Weapon",
     rarity: "Rare",
     strength: 0,
@@ -1230,10 +1230,10 @@ const ITEM_TABLE = {
     health: 2,
     attack: "Plasma Blast",
     ability: 5,
-    image: "Items/grimoire.png",
+    image: "Items/grimore.png",
     role: "Burst mage - High magic damage with multi-target potential through random status effects.",
   },
-  "Ice Spear": {
+  "Ice Spear": {//this 
     slot: "Weapon",
     rarity: "Rare",
     strength: 7,
@@ -1246,7 +1246,7 @@ const ITEM_TABLE = {
     image: "Items/iceSpear.png",
     role: "Physical DPS - High strength and speed for rapid single-target elimination with bleed stacking.",
   },
-  "Forest Crown": {
+  "Forest Crown": {//this 
     slot: "Helmet",
     rarity: "Rare",
     strength: 0,
@@ -1259,7 +1259,7 @@ const ITEM_TABLE = {
     image: "Items/forestCrown.png",
     role: "Support utility - Balanced stats with moderate speed for players who assist teammates.",
   },
-  "Frosted Helmet": {
+  "Frosted Helmet": {//this 
     slot: "Helmet",
     rarity: "Rare",
     strength: 0,
@@ -1272,7 +1272,7 @@ const ITEM_TABLE = {
     image: "Items/frostHelmet.png",
     role: "Magic tank - Combines magical damage with defensive capabilities for spell-based tanks.",
   },
-  "Frosted Chest": {
+  "Frosted Chest": {//this 
     slot: "Chest",
     rarity: "Rare",
     strength: 0,
@@ -1285,7 +1285,7 @@ const ITEM_TABLE = {
     image: "Items/frostChest.png",
     role: "Magic defense - Core armor for mages who need survivability without sacrificing magical power.",
   },
-  "Frosted Leg": {
+  "Frosted Leg": {//this 
     slot: "Leg",
     rarity: "Rare",
     strength: 0,
@@ -1295,10 +1295,10 @@ const ITEM_TABLE = {
     health: 3,
     attack: "none",
     ability: 0,
-    image: "Items/frostPants.png",
+    image: "Items/frostLegs.png",
     role: "Balanced caster - Moderate defense and magic for mages who want some protection.",
   },
-  "Frosted Boots": {
+  "Frosted Boots": {//this 
     slot: "Boot",
     rarity: "Rare",
     strength: 0,
@@ -1313,7 +1313,7 @@ const ITEM_TABLE = {
   },
   
   // EPIC - Heavy specialization
-  "Shadow Staff": {
+  "Shadow Staff": {//this 
     slot: "Weapon",
     rarity: "Epic",
     strength: 0,
@@ -1326,7 +1326,7 @@ const ITEM_TABLE = {
     image: "Items/shadowStaff.png",
     role: "High-risk mage - Massive magic damage with recoil mechanic, rewards skilled play with consecutive attacks.",
   },
-  "Blaze Blade": {
+  "Blaze Blade": {//this 
     slot: "Weapon",
     rarity: "Epic",
     strength: 9,
@@ -1339,7 +1339,7 @@ const ITEM_TABLE = {
     image: "Items/blazeBlade.png",
     role: "Aggressive DPS - Speed and strength synergy with fire status for players who go all-in on offense.",
   },
-  "Spell Shield": {
+  "Spell Shield": {//this 
     slot: "Offhand",
     rarity: "Epic",
     strength: 0,
@@ -1352,7 +1352,7 @@ const ITEM_TABLE = {
     image: "Items/spellShield.png",
     role: "Hybrid defender - Combines magic power with defense, perfect for battle-mages who need protection.",
   },
-  "Gem Helmet": {
+  "Gem Helmet": {//this 
     slot: "Helmet",
     rarity: "Epic",
     strength: 1,
@@ -1365,7 +1365,7 @@ const ITEM_TABLE = {
     image: "Items/gemHelmet.png",
     role: "Magic tank hybrid - Magi Reflect ability counters magic enemies while providing solid defense.",
   },
-  "Gem Chest": {
+  "Gem Chest": {//this 
     slot: "Chest",
     rarity: "Epic",
     strength: 2,
@@ -1378,7 +1378,7 @@ const ITEM_TABLE = {
     image: "Items/gemChest.png",
     role: "Versatile defense - Strong armor with balanced stats for various build types.",
   },
-  "Gem Legs": {
+  "Gem Legs": {//this 
     slot: "Leg",
     rarity: "Epic",
     strength: 1,
@@ -1391,7 +1391,7 @@ const ITEM_TABLE = {
     image: "Items/gemLegs.png",
     role: "Hybrid protection - Mixed stats for characters balancing physical and magical approaches.",
   },
-  "Gem Boots": {
+  "Gem Boots": {//this 
     slot: "Boots",
     rarity: "Epic",
     strength: 0,
@@ -1406,7 +1406,7 @@ const ITEM_TABLE = {
   },
   
   // LEGENDARY - Extreme specialization with some versatility
-  "Energy Saber": {
+  "Energy Saber": {//this 
     slot: "Weapon",
     rarity: "Legendary",
     strength: 10,
@@ -1419,7 +1419,7 @@ const ITEM_TABLE = {
     image: "Items/energySaber.png",
     role: "Double striker - Attack twice per turn, ideal for builds maximizing attack count and on-hit effects.",
   },
-  "Demon Sythe": {
+  "Demon Sythe": {//this 
     slot: "Weapon",
     rarity: "Legendary",
     strength: 11,
@@ -1432,7 +1432,7 @@ const ITEM_TABLE = {
     image: "Items/demonSythe.png",
     role: "Grim reaper - Massive strength with grim status, devastating for players who capitalize on dead allies.",
   },
-  "Lightning Spear": {
+  "Lightning Spear": {//this 
     slot: "Offhand",
     rarity: "Legendary",
     strength: 8,
@@ -1445,7 +1445,7 @@ const ITEM_TABLE = {
     image: "Items/lightningSpear.png",
     role: "Speed striker - Combines high speed with After Shock defense, perfect for hit-and-run tactics.",
   },
-  "Pixel Sword": {
+  "Pixel Sword": {//this 
     slot: "Weapon",
     rarity: "Legendary",
     strength: 11,
@@ -1458,7 +1458,7 @@ const ITEM_TABLE = {
     image: "Items/pixelSword.png",
     role: "Combo master - Rewards skillful play with mini-game mechanics, scaling damage through perfect timing.",
   },
-  "Ice Cream Gun": {
+  "Ice Cream Gun": {//this 
     slot: "Weapon",
     rarity: "Legendary",
     strength: 0,
@@ -1474,7 +1474,7 @@ const ITEM_TABLE = {
   },
   
   // MYTHICAL - Peak specialization, balanced generalist option exists
-  "Running Spikes": {
+  "Running Spikes": {//this 
     slot: "Boots",
     rarity: "Mythical",
     strength: 1,
@@ -1487,7 +1487,7 @@ const ITEM_TABLE = {
     image: "Items/runningSpikes.png",
     role: "Maximum speed - Ensures turn priority in almost every fight, critical for speed-based strategies.",
   },
-  "Rulers Hand": {
+  "Rulers Hand": {//this 
     slot: "Weapon",
     rarity: "Mythical",
     strength: 9,
@@ -1500,7 +1500,7 @@ const ITEM_TABLE = {
     image: "Items/rulersHand.png",
     role: "Summoner - Arise ability for characters who want minion support and high physical damage.",
   },
-  "Muramasa": {
+  "Muramasa": {//this 
     slot: "Weapon",
     rarity: "Mythical",
     strength: 13,
@@ -1514,7 +1514,7 @@ const ITEM_TABLE = {
     image: "Items/muramasa.png",
     role: "Critical striker - Extreme strength with critical hit chance, best for all-or-nothing damage dealers.",
   },
-  "Spell Blade": {
+  "Spell Blade": {//this 
     slot: "Weapon",
     rarity: "Mythical",
     strength: 5,
@@ -1542,7 +1542,7 @@ const ITEM_TABLE = {
   },
   
   // ARTIFACT
-  "Divine Crown": {
+  "Divine Crown": {//this 
     slot: "Helmet",
     rarity: "Artifact",
     strength: 4,
@@ -1561,7 +1561,7 @@ const ITEM_TABLE = {
   // ========================================
   
   // COMMON SET 2
-  "Training Weights": {
+  "Training Weights": {//this 
     slot: "Leg",
     rarity: "Common",
     strength: 3,
@@ -1574,7 +1574,7 @@ const ITEM_TABLE = {
     image: "Items/trainingWeights.png",
     role: "Low HP berserker - Fury ability rewards staying at low health for massive damage scaling.",
   },
-  "Apprentice Robes": {
+  "Apprentice Robes": {//this 
     slot: "Chest",
     rarity: "Common",
     strength: 0,
@@ -1587,7 +1587,7 @@ const ITEM_TABLE = {
     image: "Items/apprenticeRobes.png",
     role: "Mana sustain - Arcane Surge keeps spell-casters in the fight with mana regeneration.",
   },
-  "Swift Gloves": {
+  "Swift Gloves": {//this 
     slot: "Offhand",
     rarity: "Common",
     strength: 0,
@@ -1602,7 +1602,7 @@ const ITEM_TABLE = {
   },
   
   // UNCOMMON SET 2
-  "Berserker Axe": {
+  "Berserker Axe": {//this 
     slot: "Weapon",
     rarity: "Uncommon",
     strength: 6,
@@ -1615,7 +1615,7 @@ const ITEM_TABLE = {
     image: "Items/berserkerAxe.png",
     role: "Rampage fighter - Stacking damage through consecutive attacks, devastating in prolonged fights.",
   },
-  "Arcane Focus": {
+  "Arcane Focus": {//this 
     slot: "Offhand",
     rarity: "Uncommon",
     strength: 0,
@@ -1628,7 +1628,7 @@ const ITEM_TABLE = {
     image: "Items/arcaneFocus.png",
     role: "AOE nuker - Meteor Strike ability for mages who want explosive multi-target damage.",
   },
-  "Assassin's Boots": {
+  "Assassin's Boots": {//this 
     slot: "Boot",
     rarity: "Uncommon",
     strength: 2,
@@ -1641,7 +1641,7 @@ const ITEM_TABLE = {
     image: "Items/assassinBoots.png",
     role: "Dodge tank - Ethereal ability for evasion-based defense rather than raw stats.",
   },
-  "Healer's Vestment": {
+  "Healer's Vestment": {//this 
     slot: "Chest",
     rarity: "Uncommon",
     strength: 0,
@@ -1657,7 +1657,7 @@ const ITEM_TABLE = {
   },
   
   // RARE SET 2
-  "Blood Reaver": {
+  "Blood Reaver": {//this 
     slot: "Weapon",
     rarity: "Rare",
     strength: 8,
@@ -1670,7 +1670,7 @@ const ITEM_TABLE = {
     image: "Items/bloodReaver.png",
     role: "Vampire fighter - Life Drain sustains aggressive fighters who convert damage into healing.",
   },
-  "Oracle's Vision": {
+  "Oracle's Vision": {//this 
     slot: "Helmet",
     rarity: "Rare",
     strength: 1,
@@ -1684,7 +1684,7 @@ const ITEM_TABLE = {
     image: "Items/oracleVision.png",
     role: "Team buffer - Precognition boosts ally performance, perfect for support-focused players.",
   },
-  "Titan Gauntlets": {
+  "Titan Gauntlets": {//this 
     slot: "Offhand",
     rarity: "Rare",
     strength: 7,
@@ -1697,7 +1697,7 @@ const ITEM_TABLE = {
     image: "Items/titanGauntlets.png",
     role: "Boss killer - Reaper ability deals percentage-based damage, shreds high-HP enemies.",
   },
-  "Sage's Codex": {
+  "Sage's Codex": { //this
     slot: "Offhand",
     rarity: "Rare",
     strength: 0,
@@ -1708,12 +1708,12 @@ const ITEM_TABLE = {
     mana: 25,
     attack: "Wisdom Beam",
     ability: 47, // Sage's Wisdom: Restore 5% max mana to both players per turn
-    image: "Items/sagesCodex.png",
+    image: "Items/sageCodex.png",
     role: "Mana battery - Restores team mana for sustained magical combat in long battles.",
   },
   
   // EPIC SET 2
-  "Executioner's Edge": {
+  "Executioner's Edge": { //this
     slot: "Weapon",
     rarity: "Epic",
     strength: 11,
@@ -1726,7 +1726,7 @@ const ITEM_TABLE = {
     image: "Items/executionerEdge.png",
     role: "Finisher - Execute ability delivers massive damage to low-HP enemies for quick eliminations.",
   },
-  "Void Catalyst": {
+  "Void Catalyst": { //this
     slot: "Weapon",
     rarity: "Epic",
     strength: 0,
@@ -3736,24 +3736,24 @@ const ATTACK_STATS = {
   "Blood Drain":     { strMultiplier: 1.3,  magicMultiplier: 0.7,  status: "none", manaCost: 7, cooldown: 1, group: "hybrid" },
   "Fortune Strike":  { strMultiplier: 1.1,  magicMultiplier: 0.6,  status: "none", manaCost: 6, cooldown: 1, group: "hybrid" },
   "Balance":         { strMultiplier: 1.0,  magicMultiplier: 1.0,  status: "none", manaCost: 10, cooldown: 0, group: "hybrid" },
-  "Explosive Round": { strMultiplier: 1.0,  magicMultiplier: 0.3,  skillMultiplier: 0.028, status: "none", manaCost: 3, cooldown: 1, group: "skill", requiresAmmo: true },
-  "Ghost Arrow":     { strMultiplier: 0.8,  magicMultiplier: 0.5,  skillMultiplier: 0.035, status: "none", manaCost: 5, cooldown: 1, group: "skill", requiresAmmo: true },
-  "Mana Bullet":     { strMultiplier: 0.3,  magicMultiplier: 1.0,  skillMultiplier: 0.025, status: "none", manaCost: 12, cooldown: 0, group: "skill", requiresAmmo: true },
+  "Explosive Round": { strMultiplier: 1.0,  magicMultiplier: 0.3,  skillMultiplier: 0.15, status: "none", manaCost: 3, cooldown: 1, group: "skill", requiresAmmo: true },
+  "Ghost Arrow":     { strMultiplier: 0.8,  magicMultiplier: 0.5,  skillMultiplier: 0.15, status: "none", manaCost: 5, cooldown: 1, group: "skill", requiresAmmo: true },
+  "Mana Bullet":     { strMultiplier: 0.3,  magicMultiplier: 1.0,  skillMultiplier: 0.15, status: "none", manaCost: 12, cooldown: 0, group: "skill", requiresAmmo: true },
   
   // ==================== SKILL ATTACKS ====================
   // Skill attacks use MULTIPLICATIVE scaling: (STR×strMult + MAG×magMult) × (1 + SKILL×sklMult)
   // Flat multipliers capped at 1.5x max, skill provides multiplicative bonus
   // All skill attacks can crit, guns/bows require ammo
   
-  "Chilled Cream":   { strMultiplier: 0,    magicMultiplier: 0.8,  skillMultiplier: 0.015, status: "chill", manaCost: 0, cooldown: 0, group: "skill", requiresAmmo: false },
-  "Pure skill":      { strMultiplier: 1.2,  magicMultiplier: 0,    skillMultiplier: 0.025, status: "bleed", manaCost: 0, cooldown: 3, group: "skill", requiresAmmo: false },
-  "Arrow Shot":      { strMultiplier: 0.4,  magicMultiplier: 0,    skillMultiplier: 0.020, status: "none", manaCost: 0, cooldown: 0, group: "skill", requiresAmmo: true },
-  "Rifle Shot":      { strMultiplier: 0.6,  magicMultiplier: 0,    skillMultiplier: 0.025, status: "none", manaCost: 0, cooldown: 0, group: "skill", requiresAmmo: true },
-  "Power Shot":      { strMultiplier: 0.8,  magicMultiplier: 0,    skillMultiplier: 0.030, status: "none", manaCost: 0, cooldown: 1, group: "skill", requiresAmmo: true },
-  "Silent Bolt":     { strMultiplier: 0.5,  magicMultiplier: 0,    skillMultiplier: 0.028, status: "none", manaCost: 0, cooldown: 0, group: "skill", requiresAmmo: true },
-  "Precision Cut":   { strMultiplier: 1.0,  magicMultiplier: 0,    skillMultiplier: 0.022, status: "none", manaCost: 0, cooldown: 2, group: "skill", requiresAmmo: false },
-  "Headshot":        { strMultiplier: 1.2,  magicMultiplier: 0,    skillMultiplier: 0.032, status: "none", manaCost: 0, cooldown: 2, group: "skill", requiresAmmo: true },
-  "Double Shot":     { strMultiplier: 0.9,  magicMultiplier: 0,    skillMultiplier: 0.024, status: "none", manaCost: 0, cooldown: 1, group: "skill", requiresAmmo: true },
+  "Chilled Cream":   { strMultiplier: 0,    magicMultiplier: 0.8,  skillMultiplier: 0.15, status: "chill", manaCost: 0, cooldown: 0, group: "skill", requiresAmmo: false },
+  "Pure skill":      { strMultiplier: 1.2,  magicMultiplier: 0,    skillMultiplier: 0.15, status: "bleed", manaCost: 0, cooldown: 3, group: "skill", requiresAmmo: false },
+  "Arrow Shot":      { strMultiplier: 0.4,  magicMultiplier: 0,    skillMultiplier: 0.15, status: "none", manaCost: 0, cooldown: 0, group: "skill", requiresAmmo: true },
+  "Rifle Shot":      { strMultiplier: 0.6,  magicMultiplier: 0,    skillMultiplier: 0.15, status: "none", manaCost: 0, cooldown: 0, group: "skill", requiresAmmo: true },
+  "Power Shot":      { strMultiplier: 0.8,  magicMultiplier: 0,    skillMultiplier: 0.15, status: "none", manaCost: 0, cooldown: 1, group: "skill", requiresAmmo: true },
+  "Silent Bolt":     { strMultiplier: 0.5,  magicMultiplier: 0,    skillMultiplier: 0.15, status: "none", manaCost: 0, cooldown: 0, group: "skill", requiresAmmo: true },
+  "Precision Cut":   { strMultiplier: 1.0,  magicMultiplier: 0,    skillMultiplier: 0.15, status: "none", manaCost: 0, cooldown: 2, group: "skill", requiresAmmo: false },
+  "Headshot":        { strMultiplier: 1.2,  magicMultiplier: 0,    skillMultiplier: 0.15, status: "none", manaCost: 0, cooldown: 2, group: "skill", requiresAmmo: true },
+  "Double Shot":     { strMultiplier: 0.9,  magicMultiplier: 0,    skillMultiplier: 0.15, status: "none", manaCost: 0, cooldown: 1, group: "skill", requiresAmmo: true },
   
   // ==================== UTILITY ATTACKS ====================
   // Utility attacks have minimal/no damage multipliers, no mana cost or cooldown

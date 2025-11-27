@@ -2294,17 +2294,17 @@
                     content += `<div class="tooltip-cooldown">⏳ Cooldown: ${cooldown} turn${cooldown > 1 ? 's' : ''}</div>`;
                 }
                 
-                // Show mana cost
+                // Show mana cost ONLY if magicMultiplier > 0
                 const manaCost = attackObj.manaCost || 0;
-                if (manaCost > 0) {
+                let magMult = attackObj.magicMultiplier || attackObj.magMult || 0;
+                if (manaCost > 0 && Number(magMult) > 0) {
                     content += `<div class="tooltip-mana">💧 Mana Cost: ${manaCost}</div>`;
                 } else if (attackObj.isRest) {
                     content += `<div class="tooltip-special">💤 Restores 30% Max Mana</div>`;
                 }
-                
                 // Calculate base damage from stats
                 const strMult = attackObj.strMultiplier || attackObj.strMult || 0;
-                const magMult = attackObj.magicMultiplier || attackObj.magMult || 0;
+                // magMult already declared above
                 const sklMult = attackObj.skillMultiplier || 0;
                 
                 if (strMult > 0 || magMult > 0 || sklMult > 0) {
@@ -3225,22 +3225,21 @@
                                     const isAOE = attackObj.aoe === true;
                                     const aliveEnemyCount = isAOE ? Array.from(getEnemyWrappers()).filter(e => Number(e.dataset.hp) > 0).length : 1;
                                     
-                                    // AOE attacks cost more mana based on number of targets
-                                    // Calculate effective multiplier for AOE: (strMult + magMult) × target count
+                                    // AOE attacks cost more mana ONLY if magic-based
+                                    // Strength-only attacks (magicMultiplier == 0) do NOT cost mana
                                     let finalManaCost = manaCost;
                                     let finalCooldown = cooldown;
-                                    
                                     if (isAOE && aliveEnemyCount > 1) {
                                         const strMult = Number(attackObj.strMultiplier || 0);
                                         const magMult = Number(attackObj.magicMultiplier || 0);
                                         const totalMult = strMult + magMult;
                                         const effectiveMult = totalMult * aliveEnemyCount;
-                                        
-                                        // Recalculate mana cost based on effective multiplier
+                                        // Only apply mana cost if magicMultiplier > 0
                                         if (magMult > 0) {
                                             finalManaCost = Math.round(effectiveMult * 10);
+                                        } else {
+                                            finalManaCost = 0;
                                         }
-                                        
                                         // Recalculate cooldown based on effective strength multiplier
                                         if (strMult > 0 && magMult === 0) {
                                             const effectiveStrMult = strMult * aliveEnemyCount;
@@ -3257,8 +3256,8 @@
                                         return false;
                                     }
                                     
-                                    // Deduct mana cost
-                                    if (finalManaCost > 0) {
+                                    // Deduct mana cost ONLY if magicMultiplier > 0
+                                    if (finalManaCost > 0 && Number(attackObj.magicMultiplier || 0) > 0) {
                                         attacker.MANA = currentMana - finalManaCost;
                                         updatePlayerArea();
                                         if (isAOE && aliveEnemyCount > 1) {
@@ -3422,10 +3421,19 @@
                     // Formula: (STR×strMult + MAG×magMult) × (1 + SKILL×sklMult) × bleedMult
                     let baseDmg;
                     if (sklMult > 0) {
-                        // Skill attack: flat damage × skill multiplier
-                        const flatDamage = (str * strMult + mag * magMult);
-                        const skillMultiplier = (1 + skill * sklMult);
-                        baseDmg = flatDamage * skillMultiplier * bleedMult;
+                        // Ensure sklMult is at least 0.15
+                        const effectiveSklMult = Math.max(sklMult, 0.15);
+                        // Skill attack: baseStat * (sklMult * skill)
+                        let skillDmg = 0;
+                        // If both strMult and magMult are present, use both
+                        if (strMult > 0 && magMult > 0) {
+                            skillDmg = (str * strMult) * (effectiveSklMult * skill) + (mag * magMult) * (effectiveSklMult * skill);
+                        } else if (strMult > 0) {
+                            skillDmg = (str * strMult) * (effectiveSklMult * skill);
+                        } else if (magMult > 0) {
+                            skillDmg = (mag * magMult) * (effectiveSklMult * skill);
+                        }
+                        baseDmg = skillDmg * bleedMult;
                     } else {
                         // Non-skill attack: additive damage
                         baseDmg = (mag * magMult + str * strMult) * bleedMult;
@@ -3733,6 +3741,7 @@
                                     // Decrement bleed duration
                                     decrementBleed('enemy', enemyIndex);
                                     
+                                    // Always apply damage to enemy when attacking
                                     const curHp = Number(currentEnemyWrap.dataset.hp) - dmg;
                                     currentEnemyWrap.dataset.hp = Math.max(0, curHp);
                                     updateEnemyBar(currentEnemyWrap);
@@ -4861,39 +4870,66 @@
                         function performPlayerAction(playerNum){
                             // Called by the scheduler when it's the player's turn. We set flags so the UI can accept a target click.
                             if (playerWaiting) return; // already waiting for the player's click
-                            
+
                             // Determine which player is acting
                             const memberKey = playerNum === 1 ? activeBattleMember : activeBattleMember2;
                             const target = PARTY_STATS[memberKey];
-                            
+
+                            // --- Passive Leech Aura (Leech Crown, ability 80) ---
+                            const equippedAbilities = getEquippedAbilities(memberKey);
+                            if (equippedAbilities.includes(80)) {
+                                let totalDrained = 0;
+                                const enemies = getEnemyWrappers().filter(e => Number(e.dataset.hp) > 0);
+                                enemies.forEach(enemyWrap => {
+                                    const maxHp = Number(enemyWrap.dataset.maxHp) || 1;
+                                    const drainAmt = Math.max(1, Math.round(maxHp * 0.03)); // 3% max HP, min 1
+                                    const curHp = Number(enemyWrap.dataset.hp);
+                                    enemyWrap.dataset.hp = Math.max(0, curHp - drainAmt);
+                                    updateEnemyBar(enemyWrap);
+                                    totalDrained += drainAmt;
+                                    // Show leech popup on enemy
+                                    const enemyImg = enemyWrap.querySelector('img');
+                                    if (enemyImg) showDamagePopup(enemyImg, drainAmt, 'leech');
+                                });
+                                if (totalDrained > 0) {
+                                    target.HEALTH = Math.min(Number(target.MAX_HEALTH), Number(target.HEALTH) + totalDrained);
+                                    updatePlayerArea();
+                                    // Show heal popup on player
+                                    const playerImgId = (memberKey === activeBattleMember2) ? 'player-2' : 'player-1';
+                                    const pimg = document.getElementById(playerImgId);
+                                    if (pimg) showDamagePopup(pimg, totalDrained, 'heal');
+                                    logCombat(`👑 Leeching Aura: Drained ${totalDrained} HP from all enemies and healed ${target.NAME}`);
+                                }
+                            }
+
                             // Process status effects on player at start of their turn
                             processStatusEffects(target, 'player', memberKey);
-                            
+
                             // Process ally support abilities at start of turn
                             processAllySupportAbilities(memberKey);
-                            
+
                             // Check if player died from status effects
                             if (Number(target.HEALTH) <= 0) {
                                 logCombat(`${target.NAME} was defeated by status effects!`);
                                 handleMemberDeath();
                                 return;
                             }
-                            
+
                             playerCanAct = true;
                             playerWaiting = true;
                             currentPlayerTurn = playerNum; // Store which player's turn it is
-                            
+
                             // Update attack list to show current player's attacks
                             renderAttacksForPlayer();
                             enableAttackSelection();
-                            
+
                             // Enable Rest button
                             if (typeof updateRestButton === 'function') {
                                 updateRestButton(true);
                             }
-                            
+
                             logCombat(`Player ${playerNum} turn: select an attack then click an enemy to perform the action.`);
-                            
+
                             // Auto-battle logic: automatically select and perform action
                             if (window.autoBattleEnabled) {
                                 setTimeout(() => {

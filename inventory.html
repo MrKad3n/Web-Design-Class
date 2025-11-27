@@ -2,177 +2,257 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <title>Kaden's Dungeon Game</title>
+        <title>Inventory - Kaden's Dungeon Game</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" type="text/css" href="style.css">
-        <link rel="stylesheet" href="https://www.w3schools.com/w3css/5/w3.css">
-        <link rel="stylesheet" href="https://www.w3schools.com/lib/w3-theme-blue.css">
         <style>
-        .enchant-slot {
-            background: rgba(0, 0, 0, 0.6);
-            border: 2px solid #666;
-            border-radius: 8px;
-            padding: 15px;
-            text-align: center;
-            min-height: 120px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            transition: all 0.3s;
-        }
-        
-        .enchant-slot.has-enchant {
-            border-color: #ffcc00;
-            background: rgba(255, 204, 0, 0.1);
-            cursor: pointer;
-        }
-        
-        .enchant-slot.has-enchant:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(255, 204, 0, 0.4);
-        }
-        
-        .enchant-slot.empty {
-            border-color: #444;
-            background: rgba(0, 0, 0, 0.3);
-        }
-        
-        .enchant-name {
-            color: #ffcc00;
-            font-weight: bold;
-            font-size: 1.1em;
-            margin-bottom: 8px;
-        }
-        
-        .enchant-count {
-            color: #fff;
-            font-size: 1.3em;
-            font-weight: bold;
-            background: rgba(233, 69, 96, 0.8);
-            border-radius: 50%;
-            width: 35px;
-            height: 35px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-top: 8px;
-        }
-        
-        .enchant-empty-text {
-            color: #666;
-            font-style: italic;
-        }
-    </style>
+            * { box-sizing: border-box; }
+            body {
+                font-family: 'Arial', sans-serif;
+                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+                color: #fff;
+                min-height: 100vh;
+                overflow-x: hidden;
+            }
+            .container {
+                max-width: 1400px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+            header {
+                text-align: left;
+                padding: 30px 0 10px 0;
+                border-bottom: 2px solid #0f3460;
+                margin-bottom: 30px;
+            }
+            header h1 {
+                font-size: 2.5em;
+                color: #e94560;
+                text-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
+                margin-bottom: 10px;
+            }
+            .nav-btn {
+                background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
+                color: #fff;
+                padding: 10px 24px;
+                border: 2px solid #e94560;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 1em;
+                font-weight: bold;
+                transition: all 0.3s;
+                text-decoration: none;
+                display: inline-block;
+                margin-bottom: 10px;
+            }
+            .nav-btn:hover {
+                background: linear-gradient(135deg, #e94560 0%, #ff6b88 100%);
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(233, 69, 96, 0.4);
+            }
+            .inventory-content {
+                background: rgba(15, 52, 96, 0.3);
+                border: 2px solid #0f3460;
+                border-radius: 15px;
+                padding: 30px;
+                min-height: 500px;
+            }
+            .party-nav {
+                display: flex;
+                gap: 10px;
+                justify-content: center;
+                margin-bottom: 25px;
+            }
+            .party-btn {
+                background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
+                color: #fff;
+                padding: 8px 18px;
+                border: 2px solid #e94560;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 1em;
+                font-weight: bold;
+                transition: all 0.3s;
+            }
+            .party-btn.active {
+                background: linear-gradient(135deg, #e94560 0%, #ff6b88 100%);
+                border-color: #fff;
+            }
+            .party-btn:hover {
+                background: linear-gradient(135deg, #e94560 0%, #ff6b88 100%);
+                box-shadow: 0 5px 15px rgba(233, 69, 96, 0.4);
+            }
+            .inventory-grid {
+                display: grid;
+                grid-template-columns: repeat(5, 1fr);
+                gap: 15px;
+                padding: 20px;
+            }
+            .item-slot {
+                background: rgba(0, 0, 0, 0.6);
+                border: 2px solid #666;
+                border-radius: 8px;
+                padding: 15px;
+                text-align: center;
+                min-height: 120px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                transition: all 0.3s;
+            }
+            .item-slot.equipped {
+                border-color: #ffcc00;
+                background: rgba(255, 204, 0, 0.1);
+                cursor: pointer;
+            }
+            .item-slot.equipped:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 5px 15px rgba(255, 204, 0, 0.4);
+            }
+            .item-slot.empty {
+                border-color: #444;
+                background: rgba(0, 0, 0, 0.3);
+            }
+            .item-name {
+                color: #ffcc00;
+                font-weight: bold;
+                font-size: 1.1em;
+                margin-bottom: 8px;
+            }
+            .item-count {
+                color: #fff;
+                font-size: 1.3em;
+                font-weight: bold;
+                background: rgba(233, 69, 96, 0.8);
+                border-radius: 50%;
+                width: 35px;
+                height: 35px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-top: 8px;
+            }
+            .item-empty-text {
+                color: #666;
+                font-style: italic;
+            }
+            .stats-section, .attacks-section, .enchant-section {
+                background: rgba(15, 52, 96, 0.3);
+                border: 2px solid #0f3460;
+                border-radius: 10px;
+                padding: 20px;
+                margin-bottom: 20px;
+            }
+            .section-title {
+                font-size: 1.5em;
+                color: #e94560;
+                margin-bottom: 15px;
+                font-weight: bold;
+            }
+            .enchant-slot {
+                background: rgba(0, 0, 0, 0.6);
+                border: 2px solid #666;
+                border-radius: 8px;
+                padding: 15px;
+                text-align: center;
+                min-height: 120px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                transition: all 0.3s;
+            }
+            .enchant-slot.has-enchant {
+                border-color: #ffcc00;
+                background: rgba(255, 204, 0, 0.1);
+                cursor: pointer;
+            }
+            .enchant-slot.has-enchant:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 5px 15px rgba(255, 204, 0, 0.4);
+            }
+            .enchant-slot.empty {
+                border-color: #444;
+                background: rgba(0, 0, 0, 0.3);
+            }
+            .enchant-name {
+                color: #ffcc00;
+                font-weight: bold;
+                font-size: 1.1em;
+                margin-bottom: 8px;
+            }
+            .enchant-count {
+                color: #fff;
+                font-size: 1.3em;
+                font-weight: bold;
+                background: rgba(233, 69, 96, 0.8);
+                border-radius: 50%;
+                width: 35px;
+                height: 35px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-top: 8px;
+            }
+            .enchant-empty-text {
+                color: #666;
+                font-style: italic;
+            }
+        </style>
     </head>
-<body style="background-color:black;">
-     <div class="w3-container w3-left" style="width:50%">
-
-            <a href="home.html"><h2 class="glow">Back</h2></a>
-
-        </div>
-    <br><br>
-    <div class="w3-container w3-auto">
-        <!--button hlights green if member is selected-->
-        <div id="inv-party-nav" class="w3-container w3-grey w3-border-black" style="font-size:21px">
-            <button id="inv-1">first member</button> | <button id="inv-2">Second member</button> | <button id="inv-3">Thrid member</button> | <button id="inv-4">Fourth member</button> | <button id="inv-5">fifth member</button>
-            
-
-
-        </div>
-        <div class="w3-row">
-            <!--Already test the w3 framework for errors none found-->
-            <div id="inventory" class="w3-col w3-grey w3-border" style="width:75%; box-sizing: border-box;">
-                
-
-                
+<body>
+    <div class="container">
+        <header>
+            <a href="home.html" class="nav-btn">← Back to Home</a>
+            <h1>🎒 Inventory</h1>
+        </header>
+        <div class="inventory-content">
+            <div class="party-nav" id="inv-party-nav">
+                <button id="inv-1" class="party-btn">First Member</button>
+                <button id="inv-2" class="party-btn">Second Member</button>
+                <button id="inv-3" class="party-btn">Third Member</button>
+                <button id="inv-4" class="party-btn">Fourth Member</button>
+                <button id="inv-5" class="party-btn">Fifth Member</button>
             </div>
-        
-
-            <div class="w3-col m3">
-                <!--Party member name input-->
-                <div class="w3-container w3-center w3-grey w3-border-grey w3-bottombar w3-topbar">
-                    <div class="w3-black w3-border-white w3-center">
-                        <label for="member-name-input" style="color: white; font-weight: bold;">Member Name:</label><br>
+            <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+                <div style="flex: 2; min-width: 350px;">
+                    <div class="section-title">Inventory</div>
+                    <div id="inventory" class="inventory-grid"></div>
+                </div>
+                <div style="flex: 1; min-width: 300px;">
+                    <div class="stats-section">
+                        <div class="section-title">Member Name</div>
                         <input id="member-name-input" type="text" placeholder="Enter name" style="width: 90%; padding: 8px; margin: 8px 0; box-sizing: border-box;">
-                        <button onclick="saveMemberName()" style="width: 90%; padding: 8px; margin: 4px 0; background: #4CAF50; color: white; border: none; cursor: pointer;">Save</button>
+                        <button onclick="saveMemberName()" class="nav-btn" style="width: 90%;">Save</button>
+                    </div>
+                    <div class="stats-section">
+                        <div class="section-title">Equipped Items</div>
+                        <div id="equipped-items"></div>
+                    </div>
+                    <div class="stats-section">
+                        <div class="section-title">Item Info</div>
+                        <div id="info-item"></div>
                     </div>
                 </div>
-                <br>
-                <!--Equiped items-->
-                <div id="equipped-items" class="w3-container w3-center w3-grey w3-border-grey w3-bottombar w3-topbar">
-                    <div id="helmet" class="w3-black w3-border-white w3-center">
-                        <img src="Items/frostHelmet.png" style="width:30%">
-                    </div>
-                    <div id="chestplate" class="w3-black w3-border-white w3-center">
-                        <img src="Items/frostChest.png" style="width:30%">
-                    </div>
-                    <div id="legs" class="w3-black w3-border-white w3-center">
-                        <img src="Items/frostPants.png" style="width:30%">
-                    </div>
-                    <div id="boots" class="w3-black w3-border-white w3-center">
-                        <img src="Items/frostBoots.png" style="width:30%">
-                    </div>
-                    <div class="w3-black w3-border-white w3-center">
-                        <img id="main-hand" src="Items/iceSpear.png" style="width:30%">
-                        <img id="off-hand" src="Items/spellShield.png" style="width:30%">
-                    </div>
-                </div>
-                <br>
-                <!--info of all the items-->
-                <div class="w3-container w3-center w3-grey w3-border-grey w3-bottombar w3-topbar">
-                    <div id="info-item" class="w3-black w3-border-white w3-center">
-                        <h3>Name Level</h3>
-                        <img src="Items/frostHelmet.png" style="width:30%">
-                        <p>Strength: # Magic: # Speed: #</p>
-                        <p>Health: # Defense: #</p>
-                    </div>
-                    
-                </div>
-
             </div>
-
-        </div>
-        <br>
-        <div class="w3-row">
-
-            <div class="w3-container w3-center w3-grey w3-border-grey w3-bottombar w3-topbar">
-                <div id="total-stats" class="w3-black w3-border-white w3-center">
-                    Health: #; Strength: #; Magic: #; Speed: #; Defense: #;
+            <div style="display: flex; gap: 30px; flex-wrap: wrap; margin-top: 30px;">
+                <div class="stats-section" style="flex: 1; min-width: 300px;">
+                    <div class="section-title">Total Stats</div>
+                    <div id="total-stats"></div>
                 </div>
-                    
+                <div class="attacks-section" style="flex: 1; min-width: 300px;">
+                    <div class="section-title">Equipped Attacks (Max 5)</div>
+                    <div id="equipped-attacks"></div>
+                </div>
+                <div class="attacks-section" style="flex: 1; min-width: 300px;">
+                    <div class="section-title">Inventory of Attacks</div>
+                    <div id="inventory-attacks"></div>
+                </div>
             </div>
-
-        </div>
-        <div class="w3-row">
-            <!--contains equiped attacks-->
-            <div class="w3-col m6 w3-container w3-grey w3-border-black">
-                <div class="w3-black w3-border-white w3-center">
-                    Equiped Attacks(Max of 5)
-                </div>
-                <div id="equipped-attacks" class="w3-container w3-grey w3-border-black" style="min-height:80px;padding:8px"></div>
-            
-            </div>
-            <!--contains all unequiped attacks-->
-            <!--can add ass many or less as you want-->
-            <div class="w3-col m6 w3-container w3-grey w3-border-black">
-                <div class="w3-black w3-border-white w3-center">
-                    Inventory of Attacks
-                </div>
-                <div id="inventory-attacks" class="w3-container w3-grey w3-border-black" style="min-height:80px;padding:8px"></div>
-                
-            </div>
-        </div>
-        
-        <!-- Enchantment Inventory Section -->
-        <br>
-        <div class="w3-row">
-            <div class="w3-container w3-grey w3-border-black">
-                <div class="w3-black w3-border-white w3-center" style="padding: 10px;">
-                    <h3 style="color: #ffcc00; margin: 0;">✨ Enchantment Inventory</h3>
-                </div>
-                <div id="enchantment-inventory" class="w3-container w3-grey" style="padding: 20px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; min-height: 150px;">
-                    <!-- Enchantment slots will be rendered here -->
-                </div>
+            <div class="enchant-section" style="margin-top: 30px;">
+                <div class="section-title" style="color: #ffcc00;">✨ Enchantment Inventory</div>
+                <div id="enchantment-inventory" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; min-height: 150px;"></div>
             </div>
         </div>
     </div>
@@ -183,32 +263,25 @@
         if (typeof loadGameData === 'function') {
             loadGameData();
         }
-        
         // Music system for inventory page
         let inventoryMusic = null;
-        
         function playInventoryMusic() {
             const musicEnabled = localStorage.getItem('musicEnabled') === 'true';
             if (!musicEnabled) return;
-            
             if (inventoryMusic) {
                 inventoryMusic.pause();
                 inventoryMusic = null;
             }
-            
             inventoryMusic = new Audio('audio/background/mainTheme.wav');
             inventoryMusic.loop = true;
             inventoryMusic.volume = 0.5;
-            
             // Restore playback position from localStorage
             const savedPosition = parseFloat(localStorage.getItem('mainTheme_position')) || 0;
             inventoryMusic.currentTime = savedPosition;
-            
             // Save position periodically
             inventoryMusic.addEventListener('timeupdate', () => {
                 localStorage.setItem('mainTheme_position', inventoryMusic.currentTime.toString());
             });
-            
             const playPromise = inventoryMusic.play();
             if (playPromise !== undefined) {
                 playPromise.then(() => {
@@ -227,14 +300,13 @@
                 });
             }
         }
-        
         // Start music when page loads
         window.addEventListener('DOMContentLoaded', () => {
             playInventoryMusic();
         });
     </script>
 </body>
-    <footer>
-        Kaden Cruts - 2025
-    </footer>
+<footer style="text-align:center; color:#888; padding:20px; font-size:1.1em;">
+    Kaden Cruts - 2025
+</footer>
 </html>
