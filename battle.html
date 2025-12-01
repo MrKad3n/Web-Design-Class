@@ -5857,6 +5857,21 @@
             btnRow.style.marginTop = '16px';
             btnRow.style.justifyContent = 'flex-end';
 
+            const replay = document.createElement('button');
+            replay.textContent = 'Replay';
+            replay.style.padding = '10px 14px';
+            replay.style.background = 'rgba(100,150,200,0.9)';
+            replay.style.border = '2px solid rgba(100,150,200,1)';
+            replay.style.borderRadius = '6px';
+            replay.style.color = 'white';
+            replay.style.cursor = 'pointer';
+            replay.onclick = ()=>{ 
+                overlay.remove();
+                // Save game data before replaying
+                if (typeof saveGameData === 'function') saveGameData();
+                window.location.reload(); // Reload the page to restart the battle
+            };
+
             const ok = document.createElement('button');
             ok.textContent = 'Return to Map';
             ok.style.padding = '10px 14px';
@@ -5872,6 +5887,7 @@
                 window.location.href = 'map.html'; 
             };
 
+            btnRow.appendChild(replay);
             btnRow.appendChild(ok);
             panel.appendChild(btnRow);
             overlay.appendChild(panel);
@@ -6018,6 +6034,21 @@
             btnRow.style.marginTop = '16px';
             btnRow.style.justifyContent = 'flex-end';
 
+            const replay = document.createElement('button');
+            replay.textContent = 'Replay';
+            replay.style.padding = '10px 14px';
+            replay.style.background = 'rgba(100,150,200,0.9)';
+            replay.style.border = '2px solid rgba(100,150,200,1)';
+            replay.style.borderRadius = '6px';
+            replay.style.color = 'white';
+            replay.style.cursor = 'pointer';
+            replay.onclick = ()=>{ 
+                overlay.remove();
+                // Save game data before replaying
+                if (typeof saveGameData === 'function') saveGameData();
+                window.location.reload(); // Reload the page to restart the battle
+            };
+
             const ok = document.createElement('button');
             ok.textContent = 'Return to Map';
             ok.style.padding = '10px 14px';
@@ -6033,6 +6064,7 @@
                 window.location.href = 'map.html'; 
             };
 
+            btnRow.appendChild(replay);
             btnRow.appendChild(ok);
             panel.appendChild(btnRow);
             overlay.appendChild(panel);
@@ -6286,6 +6318,38 @@
             btnRow.style.marginTop = '16px';
             btnRow.style.justifyContent = 'flex-end';
 
+            const replay = document.createElement('button');
+            replay.textContent = 'Replay';
+            replay.style.padding = '10px 14px';
+            replay.style.background = 'rgba(100,150,200,0.9)';
+            replay.style.border = '2px solid rgba(100,150,200,1)';
+            replay.style.borderRadius = '6px';
+            replay.style.color = 'white';
+            replay.style.cursor = 'pointer';
+            replay.onclick = ()=>{ 
+                // Remove marked items from INVENTORY before replaying
+                if (markedForDeletion.size > 0 && typeof INVENTORY !== 'undefined') {
+                    const itemsToDelete = [];
+                    lootArray.forEach((loot, index) => {
+                        if (markedForDeletion.has(index)) {
+                            itemsToDelete.push(loot);
+                        }
+                    });
+                    
+                    itemsToDelete.forEach(item => {
+                        const idx = INVENTORY.findIndex(i => i === item || (i._uid && item._uid && i._uid === item._uid));
+                        if (idx !== -1) {
+                            INVENTORY.splice(idx, 1);
+                        }
+                    });
+                    
+                    try { if (typeof saveGameData === 'function') saveGameData(); } catch(e){}
+                }
+                
+                overlay.remove();
+                window.location.reload(); // Reload the page to restart the battle
+            };
+
             const ok = document.createElement('button');
             ok.textContent = 'Continue';
             ok.style.padding = '10px 14px';
@@ -6324,6 +6388,7 @@
                 }
             };
 
+            btnRow.appendChild(replay);
             btnRow.appendChild(ok);
             panel.appendChild(btnRow);
             overlay.appendChild(panel);
