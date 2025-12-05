@@ -3002,7 +3002,7 @@ function loadGameData() {
                 itemName: starterStick.name,
                 strMultiplier: attackData.strMultiplier || 0,
                 magicMultiplier: attackData.magicMultiplier || 0,
-                sklMultiplier: attackData.sklMultiplier || 0,
+                sklMultiplier: attackData.skillMultiplier || 0,
                 status: attackData.status || 'none',
                 manaCost: attackData.manaCost || 0,
                 cooldown: attackData.cooldown || 0,
@@ -3118,6 +3118,7 @@ function resetInventory() {
           itemName: null,
           strMultiplier: 0.5,
           magicMultiplier: 0,
+          sklMultiplier: 0,
           status: 'none',
           manaCost: 0, // Free basic attack
         };
@@ -3132,6 +3133,7 @@ function resetInventory() {
           itemName: 'Rest',
           strMultiplier: 0,
           magicMultiplier: 0,
+          sklMultiplier: 0,
           status: 'none',
           manaCost: 0,
           isRest: true, // Special flag for rest action
@@ -3184,7 +3186,7 @@ function resetInventory() {
               itemName: starterStick.name,
               strMultiplier: attackData.strMultiplier || 0,
               magicMultiplier: attackData.magicMultiplier || 0,
-              sklMultiplier: attackData.sklMultiplier || 0,
+              sklMultiplier: attackData.skillMultiplier || 0,
               status: attackData.status || 'none',
               manaCost: attackData.manaCost || 0,
               cooldown: attackData.cooldown || 0,
@@ -3296,7 +3298,7 @@ const ENEMY_BASE_STATS = {
     strength:3.5,
     magic:0,
     speed:2,
-    defense: 2,
+    defense: 1.5,
     mana:100,
     hBars:1,
     image:"Enemies/corspe.png",
@@ -3318,16 +3320,16 @@ const ENEMY_BASE_STATS = {
       health: 8,
       strength:5,
       magic:0,
-      speed:7,
-      defense: 0
+      speed:12,
+      defense: 1
     }
   },
   'frozenCorspe': {
-    health: 20,
+    health: 25,
     strength:3,
     magic:4,
     speed:2,
-    defense: 3,
+    defense: 2.5,
     mana:160,
     hBars:1,
     image:"Enemies/frozenCorspe.png",
@@ -3340,7 +3342,7 @@ const ENEMY_BASE_STATS = {
     strength:0,
     magic:8,
     speed:3,
-    defense: 7,
+    defense: 6.5,
     mana:240,
     hBars:1,
     image:"Enemies/necromancer.png",
@@ -3348,7 +3350,7 @@ const ENEMY_BASE_STATS = {
     specialEffect: "Resurrection: While alive, dead allies resurrect as zombies"
   },
   'mutant': {
-    health: 41,
+    health: 44,
     strength:7,
     magic:1.5,
     speed:7,
@@ -3374,10 +3376,10 @@ const ENEMY_BASE_STATS = {
   },
   'vineLasher': {
     health: 22,
-    strength:4,
+    strength:5,
     magic:0,
-    speed:3,
-    defense: 3,
+    speed:4,
+    defense: 1.5,
     mana:100,
     hBars:1,
     image:"Enemies/vineLasher.png",
@@ -3389,7 +3391,7 @@ const ENEMY_BASE_STATS = {
     strength:5,
     magic:0,
     speed:2,
-    defense: 7,
+    defense: 6,
     mana:110,
     hBars:1,
     image:"Enemies/treant.png",
@@ -3401,7 +3403,7 @@ const ENEMY_BASE_STATS = {
     strength:0,
     magic:7,
     speed:3,
-    defense: 7,
+    defense: 4.5,
     mana:220,
     hBars:1,
     image:"Enemies/elderEnt.png",
@@ -3426,7 +3428,7 @@ const ENEMY_BASE_STATS = {
     strength:4,
     magic:0,
     speed:2,
-    defense: 4,
+    defense: 2.5,
     mana:100,
     hBars:1,
     image:"Enemies/knight.png",
@@ -3460,7 +3462,7 @@ const ENEMY_BASE_STATS = {
     strength:6,
     magic:0,
     speed:3.5,
-    defense: 6,
+    defense: 5.5,
     mana:140,
     hBars:1,
     image:"Enemies/kingsGuard.png",
@@ -3497,7 +3499,7 @@ const ENEMY_BASE_STATS = {
     strength:6,
     magic:1.5,
     speed:2,
-    defense: 6,
+    defense: 5.5,
     mana:120,
     hBars:1,
     image:"Enemies/coralMonster.png",
@@ -3509,7 +3511,7 @@ const ENEMY_BASE_STATS = {
     strength:7,
     magic:0,
     speed:5,
-    defense: 7,
+    defense: 5,
     mana:140,
     hBars:1,
     image:"Enemies/shark.png",
@@ -3747,12 +3749,12 @@ const ATTACK_STATS = {
   
   "Chilled Cream":   { strMultiplier: 0,    magicMultiplier: 0.8,  skillMultiplier: 0.15, status: "chill", manaCost: 0, cooldown: 0, group: "skill", requiresAmmo: false },
   "Pure skill":      { strMultiplier: 1.2,  magicMultiplier: 0,    skillMultiplier: 0.15, status: "bleed", manaCost: 0, cooldown: 3, group: "skill", requiresAmmo: false },
-  "Arrow Shot":      { strMultiplier: 0.4,  magicMultiplier: 0,    skillMultiplier: 0.15, status: "none", manaCost: 0, cooldown: 0, group: "skill", requiresAmmo: true },
-  "Rifle Shot":      { strMultiplier: 0.6,  magicMultiplier: 0,    skillMultiplier: 0.15, status: "none", manaCost: 0, cooldown: 0, group: "skill", requiresAmmo: true },
+  "Arrow Shot":      { strMultiplier: 0.6,  magicMultiplier: 0,    skillMultiplier: 0.15, status: "none", manaCost: 0, cooldown: 0, group: "skill", requiresAmmo: true },
+  "Rifle Shot":      { strMultiplier: 0.7,  magicMultiplier: 0,    skillMultiplier: 0.17, status: "none", manaCost: 0, cooldown: 0, group: "skill", requiresAmmo: true },
   "Power Shot":      { strMultiplier: 0.8,  magicMultiplier: 0,    skillMultiplier: 0.15, status: "none", manaCost: 0, cooldown: 1, group: "skill", requiresAmmo: true },
-  "Silent Bolt":     { strMultiplier: 0.5,  magicMultiplier: 0,    skillMultiplier: 0.15, status: "none", manaCost: 0, cooldown: 0, group: "skill", requiresAmmo: true },
-  "Precision Cut":   { strMultiplier: 1.0,  magicMultiplier: 0,    skillMultiplier: 0.15, status: "none", manaCost: 0, cooldown: 2, group: "skill", requiresAmmo: false },
-  "Headshot":        { strMultiplier: 1.2,  magicMultiplier: 0,    skillMultiplier: 0.15, status: "none", manaCost: 0, cooldown: 2, group: "skill", requiresAmmo: true },
+  "Silent Bolt":     { strMultiplier: 0.5,  magicMultiplier: 0,    skillMultiplier: 0.18, status: "none", manaCost: 0, cooldown: 0, group: "skill", requiresAmmo: true },
+  "Precision Cut":   { strMultiplier: 1.0,  magicMultiplier: 0,    skillMultiplier: 0.14, status: "none", manaCost: 0, cooldown: 2, group: "skill", requiresAmmo: false },
+  "Headshot":        { strMultiplier: 0.8,  magicMultiplier: 0,    skillMultiplier: 0.15, status: "none", manaCost: 0, cooldown: 2, group: "skill", requiresAmmo: true },
   "Double Shot":     { strMultiplier: 0.9,  magicMultiplier: 0,    skillMultiplier: 0.15, status: "none", manaCost: 0, cooldown: 1, group: "skill", requiresAmmo: true },
   
   // ==================== UTILITY ATTACKS ====================
@@ -3874,6 +3876,7 @@ function updateStats(){
     let equippedHealth = 0;
     let equippedMana = 0;
     let equippedSkill = 0;
+    let equippedProcChance = 0;
 
     //Iterate through all equipment slots and add stat bonuses from equipped items
     const equipmentSlots = ['HELMET', 'CHEST', 'LEGS', 'BOOTS', 'MAINHAND', 'OFFHAND'];
@@ -3890,6 +3893,7 @@ function updateStats(){
       equippedHealth += item.health;
       equippedMana += (item.mana || 0);
       equippedSkill += (item.skill || 0);
+      equippedProcChance += (item.procChance || 0);
     }
   }
 }
@@ -3904,6 +3908,8 @@ function updateStats(){
     const totalMaxMana = Math.max(50, equippedMana); // Base 50 mana minimum
     // Skill doesn't have a base value - only from equipment
     const totalSkill = equippedSkill;
+    // Proc chance has a base of 25% plus equipment bonuses
+    const totalProcChance = 25 + equippedProcChance;
 
     // 5. Update the party member's stats with the new totals
     // Store old max values to adjust current values proportionally
@@ -3916,6 +3922,7 @@ function updateStats(){
     member.DEFENSE = totalDefense;
     member.MAX_MANA = totalMaxMana;
     member.SKILL = totalSkill;
+    member.PROC_CHANCE = totalProcChance;
     
     // Set the current HEALTH to MAX_HEALTH if it's currently null
     if (member.HEALTH === null) {
@@ -4130,8 +4137,9 @@ function addAttackFromItem(item, memberKey = SELECTED_MEMBER) {
     sourceUid: item._uid,
     name: item.attack,
     itemName: item.name,
-    strMultiplier: attackStats.strMultiplier,
-    magicMultiplier: attackStats.magicMultiplier,
+    strMultiplier: attackStats.strMultiplier || 0,
+    magicMultiplier: attackStats.magicMultiplier || 0,
+    sklMultiplier: attackStats.skillMultiplier || 0,
     status: attackStats.status,
     manaCost: attackStats.manaCost || 10, // Default to 10 if not specified
     aoe: attackStats.aoe || false, // Copy AOE flag from attack stats
@@ -4226,6 +4234,7 @@ function ensureBaseAttacks() {
         itemName: null,
         strMultiplier: 0.5,
         magicMultiplier: 0,
+        sklMultiplier: 0,
         status: 'none',
       };
       PARTY_ATTACKS[k].ATTACK_INVENTORY.push(punchAttack);

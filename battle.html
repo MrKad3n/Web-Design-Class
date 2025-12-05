@@ -1185,6 +1185,9 @@
         // Ammo generation tracking - {memberKey: attacksSinceAmmo}
         let ammoGenerationCounter = {};
         
+        // Provoke tracking - {memberKey: turnsRemaining}
+        let provokeActive = {};
+        
         // Debug: Check what's available from script.js
         console.log('window.clearLevelAndUnlock:', typeof window.clearLevelAndUnlock);
         console.log('window object keys sample:', Object.keys(window).filter(k => k.includes('clear') || k.includes('Level')));
@@ -1625,11 +1628,20 @@
                 
                 // Scale stats for the given level
                 const scaleMultiplier = Math.pow(enemyLevel, 0.9);
-                scaled.health = Math.max(1, Math.round(base.health * scaleMultiplier));
+                
+                // Early game tankiness nerf: Reduce health for enemies below level 10
+                let healthMultiplier = scaleMultiplier;
+                if (enemyLevel < 10) {
+                    // Apply progressive health reduction: 50% at level 1, scaling up to 100% at level 10
+                    const nerfFactor = 0.5 + (enemyLevel / 20); // Range: 0.5 to 0.95
+                    healthMultiplier = scaleMultiplier * nerfFactor;
+                }
+                
+                scaled.health = Math.max(1, Math.round(base.health * healthMultiplier));
                 scaled.strength = Math.round(base.strength * scaleMultiplier);
                 scaled.magic = Math.round(base.magic * scaleMultiplier);
                 scaled.speed = Math.round(base.speed * scaleMultiplier);
-                scaled.defense = Math.round((base.defense || 0) * scaleMultiplier);
+                scaled.defense = Math.round((base.defense || 0) * scaleMultiplier * 0.5); // 50% defense nerf
                 
                 // Create enemy wrapper
                 const wrap = document.createElement('div');
@@ -1774,9 +1786,9 @@
                             const isSkillAttack = sklMult > 0;
                             if (isSkillAttack) {
                                 const baseCritChance = 0.05;
-                                const skillCritBonus = skill * 0.003;
+                                const skillCritBonus = skill * 0.005;
                                 const totalCritChance = baseCritChance + skillCritBonus;
-                                const critMultiplier = 1.5;
+                                const critMultiplier = 2.0 + (skill * 0.01);
                                 const avgDmg = Math.round(estimatedDmg * (1 - totalCritChance) + (estimatedDmg * critMultiplier * totalCritChance));
                                 damagePreview = `<div class="stat-row" style="color: #ffaa00; font-weight: bold;"><span>💥 Estimated Damage:</span><span>${estimatedDmg} (${Math.round(totalCritChance * 100)}% crit → avg ${avgDmg})</span></div>`;
                             } else {
@@ -1928,12 +1940,22 @@
                         }
                     }
                     
+                    // Early game tankiness nerf: Reduce health for enemies below level 10
+                    let healthMultiplier = scaleMultiplier;
+                    if (level < 10) {
+                        // Apply progressive health reduction: 50% at level 1, scaling up to 100% at level 10
+                        const nerfFactor = 0.5 + (level / 20); // Range: 0.5 to 0.95
+                        healthMultiplier = scaleMultiplier * nerfFactor;
+                    } else {
+                        healthMultiplier = scaleMultiplier;
+                    }
+                    
                     // Scale health and stats
-                    scaled.health = Math.max(1, Math.round(base.health * scaleMultiplier));
+                    scaled.health = Math.max(1, Math.round(base.health * healthMultiplier));
                     scaled.strength = Math.round(base.strength * scaleMultiplier);
                     scaled.magic = Math.round(base.magic * scaleMultiplier);
                     scaled.speed = Math.round(base.speed * scaleMultiplier);
-                    scaled.defense = Math.round((base.defense || 0) * scaleMultiplier);
+                    scaled.defense = Math.round((base.defense || 0) * scaleMultiplier * 0.5); // 50% defense nerf
                     
                     // Apply challenge modifiers if in challenge mode
                     if (isChallenge) {
@@ -2132,9 +2154,9 @@
                                 const isSkillAttack = sklMult > 0;
                                 if (isSkillAttack) {
                                     const baseCritChance = 0.05;
-                                    const skillCritBonus = skill * 0.003;
+                                    const skillCritBonus = skill * 0.005;
                                     const totalCritChance = baseCritChance + skillCritBonus;
-                                    const critMultiplier = 1.5;
+                                    const critMultiplier = 2.0 + (skill * 0.01);
                                     const avgDmg = Math.round(estimatedDmg * (1 - totalCritChance) + (estimatedDmg * critMultiplier * totalCritChance));
                                     damagePreview = `<div class="stat-row" style="color: #ffaa00; font-weight: bold;"><span>💥 Estimated Damage:</span><span>${estimatedDmg} (${Math.round(totalCritChance * 100)}% crit → avg ${avgDmg})</span></div>`;
                                 } else {
@@ -3478,7 +3500,7 @@
                     // Skill attacks ALWAYS have crit enabled
                     const isSkillAttack = (attackObj.group === 'skill' || sklMult > 0);
                     const baseCritChance = 0.05; // 5% base
-                    const skillCritBonus = skill * 0.003; // +0.3% per skill point
+                    const skillCritBonus = skill * 0.005; // +0.5% per skill point
                     const totalCritChance = baseCritChance + skillCritBonus;
                     
                     // Roll for critical hit (all skill attacks can crit)
@@ -3486,9 +3508,9 @@
                     const isCriticalHit = isSkillAttack && critRoll < totalCritChance;
                     
                     if (isCriticalHit) {
-                        const critMultiplier = 2.0; // 200% damage on crit
+                        const critMultiplier = 2.0 + (skill * 0.01); // 200% base + 1% per skill point
                         dmg = Math.round(dmg * critMultiplier);
-                        logCombat(`💥 CRITICAL HIT! (${Math.round(totalCritChance * 100)}% chance)`);
+                        logCombat(`💥 CRITICAL HIT! (${Math.round(totalCritChance * 100)}% chance, ${Math.round(critMultiplier * 100)}% damage)`);
                     }
                     
                     // Apply Blood Price damage bonus (ability 73) if active
@@ -3512,6 +3534,13 @@
                                         pixelComboMultiplier = pixelComboCount >= 8 ? 1.0 : 0.5;
                                     }
                                     dmg = Math.round(dmg * pixelComboMultiplier);
+                                    
+                                    // Ability 54: Provoke - All enemies target you for 2 turns, +20% defense (only when using Provoke Banner attack)
+                                    const isProvokeAttack = attackObj.itemName === 'Provoke Banner' || (attackSourceItem && attackSourceItem.name === 'Provoke Banner');
+                                    if (equippedAbilities.includes(54) && isProvokeAttack && targetIndex === 0) {
+                                        provokeActive[memberKey] = 2; // 2 turns of provoke
+                                        logCombat(`🎯 Provoke: All enemies will target ${attacker.NAME} for 2 turns! (+20% defense)`);
+                                    }
                                     
                                     // Ability 7: Overuse - Consecutive attacks deal 200% bonus but 20% recoil
                                     let overuseSelfDamage = 0;
@@ -4907,6 +4936,22 @@
 
                             // Process ally support abilities at start of turn
                             processAllySupportAbilities(memberKey);
+                            
+                            // Decrement provoke turns for both players at start of any player turn
+                            if (provokeActive[activeBattleMember] && provokeActive[activeBattleMember] > 0) {
+                                provokeActive[activeBattleMember]--;
+                                if (provokeActive[activeBattleMember] === 0) {
+                                    logCombat(`🎯 Provoke ended for ${PARTY_STATS[activeBattleMember].NAME}`);
+                                    delete provokeActive[activeBattleMember];
+                                }
+                            }
+                            if (provokeActive[activeBattleMember2] && provokeActive[activeBattleMember2] > 0) {
+                                provokeActive[activeBattleMember2]--;
+                                if (provokeActive[activeBattleMember2] === 0) {
+                                    logCombat(`🎯 Provoke ended for ${PARTY_STATS[activeBattleMember2].NAME}`);
+                                    delete provokeActive[activeBattleMember2];
+                                }
+                            }
 
                             // Check if player died from status effects
                             if (Number(target.HEALTH) <= 0) {
@@ -5203,7 +5248,18 @@
             const p1Alive = player1 && Number(player1.HEALTH) > 0;
             const p2Alive = player2 && Number(player2.HEALTH) > 0;
             
-            if (p1Alive && p2Alive) {
+            // Check for active Provoke (ability 54)
+            const p1Provoked = provokeActive[activeBattleMember] && provokeActive[activeBattleMember] > 0;
+            const p2Provoked = provokeActive[activeBattleMember2] && provokeActive[activeBattleMember2] > 0;
+            
+            // If a player has provoke active and is alive, they MUST be targeted
+            if (p1Provoked && p1Alive) {
+                target = player1;
+                targetKey = activeBattleMember;
+            } else if (p2Provoked && p2Alive) {
+                target = player2;
+                targetKey = activeBattleMember2;
+            } else if (p1Alive && p2Alive) {
                 // Both alive - calculate HP percentages
                 const p1HpPercent = Number(player1.HEALTH) / Number(player1.MAX_HEALTH || 1);
                 const p2HpPercent = Number(player2.HEALTH) / Number(player2.MAX_HEALTH || 1);
@@ -5248,6 +5304,13 @@
                                 logCombat(`${enemyName} #${enemyIndex + 1} (${attackType}:${attackStat}, SPD:${enemySpeed}) attacking ${targetName} — queue pos: ${queueIndex}/${actionQueue.length}`);
                             } catch(e){}
                             let defense = Number(target.DEFENSE || 0);
+                            
+                            // Ability 54: Provoke - +20% defense while provoke is active
+                            if (provokeActive[targetKey] && provokeActive[targetKey] > 0) {
+                                const provokeDefenseBonus = Math.round(defense * 0.2);
+                                defense += provokeDefenseBonus;
+                                logCombat(`🎯 Provoke Defense: +${provokeDefenseBonus} defense (20% bonus)`);
+                            }
                             
                             // Ability 20: Spell Shield - Add 25% of magic stat to defense
                             const activeAbilities = getEquippedAbilities(targetKey);

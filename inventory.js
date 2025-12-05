@@ -372,16 +372,79 @@ function displayItemInfo(item) {
     ? `<p style="color: #ff8c00; font-weight: bold;">✨ Enchanted: ${item.enchantment}</p>`
     : '';
   
+  // Build item stats display with colors
+  const statsHTML = `
+    <div style="display: flex; flex-direction: column; gap: 6px; margin: 12px 0; font-size: 0.95em;">
+      ${item.health ? `<div style="display: flex; justify-content: space-between; padding: 4px 8px; background: rgba(255, 0, 0, 0.15); border-left: 3px solid #ff4444; border-radius: 3px;">
+        <span style="color: #ff6666; font-weight: bold;">❤️ Health:</span>
+        <span style="color: #ffffff; font-weight: bold;">${item.health}</span>
+      </div>` : ''}
+      ${item.strength ? `<div style="display: flex; justify-content: space-between; padding: 4px 8px; background: rgba(255, 100, 0, 0.15); border-left: 3px solid #ff6644; border-radius: 3px;">
+        <span style="color: #ff8866; font-weight: bold;">⚔️ Strength:</span>
+        <span style="color: #ffffff; font-weight: bold;">${item.strength}</span>
+      </div>` : ''}
+      ${item.magic ? `<div style="display: flex; justify-content: space-between; padding: 4px 8px; background: rgba(100, 100, 255, 0.15); border-left: 3px solid #6666ff; border-radius: 3px;">
+        <span style="color: #8888ff; font-weight: bold;">✨ Magic:</span>
+        <span style="color: #ffffff; font-weight: bold;">${item.magic}</span>
+      </div>` : ''}
+      ${item.speed ? `<div style="display: flex; justify-content: space-between; padding: 4px 8px; background: rgba(255, 255, 0, 0.15); border-left: 3px solid #ffdd44; border-radius: 3px;">
+        <span style="color: #ffee66; font-weight: bold;">⚡ Speed:</span>
+        <span style="color: #ffffff; font-weight: bold;">${item.speed}</span>
+      </div>` : ''}
+      ${item.defense ? `<div style="display: flex; justify-content: space-between; padding: 4px 8px; background: rgba(100, 200, 255, 0.15); border-left: 3px solid #66ccff; border-radius: 3px;">
+        <span style="color: #88ddff; font-weight: bold;">🛡️ Defense:</span>
+        <span style="color: #ffffff; font-weight: bold;">${item.defense}</span>
+      </div>` : ''}
+      ${item.mana ? `<div style="display: flex; justify-content: space-between; padding: 4px 8px; background: rgba(0, 150, 255, 0.15); border-left: 3px solid #0096ff; border-radius: 3px;">
+        <span style="color: #44aaff; font-weight: bold;">💧 Mana:</span>
+        <span style="color: #ffffff; font-weight: bold;">${item.mana}</span>
+      </div>` : ''}
+      ${item.skill ? `<div style="display: flex; justify-content: space-between; padding: 4px 8px; background: rgba(255, 150, 255, 0.15); border-left: 3px solid #ff88ff; border-radius: 3px;">
+        <span style="color: #ffaaff; font-weight: bold;">🎯 Skill:</span>
+        <span style="color: #ffffff; font-weight: bold;">${item.skill}</span>
+      </div>` : ''}
+      ${item.procChance ? `<div style="display: flex; justify-content: space-between; padding: 4px 8px; background: rgba(150, 255, 150, 0.15); border-left: 3px solid #66ff66; border-radius: 3px;">
+        <span style="color: #88ff88; font-weight: bold;">🎲 Proc Chance:</span>
+        <span style="color: #ffffff; font-weight: bold;">+${item.procChance}%</span>
+      </div>` : ''}
+      ${item.attack ? `<div style="display: flex; justify-content: space-between; padding: 4px 8px; background: rgba(255, 200, 0, 0.15); border-left: 3px solid #ffcc00; border-radius: 3px;">
+        <span style="color: #ffdd44; font-weight: bold;">⚔️ Attack:</span>
+        <span style="color: #ffffff; font-weight: bold;">${item.attack}</span>
+      </div>` : ''}
+    </div>
+  `;
+  
   popup.innerHTML = `
-    <h3 style="color: ${rarityColor}">${item.name} Level ${item.level||1}</h3>
-    <img src="${item.image||'Assests/empty-slot.png'}" style="width:30%; border: 3px solid ${rarityColor}; box-shadow: 0 0 8px ${rarityColor}">
-    <p>Strength: ${item.strength||0} Magic: ${item.magic||0} Speed: ${item.speed||0}</p>
-    <p>Health: ${item.health||0} Defense: ${item.defense||0} Attack: ${item.attack||'none'}</p>
+    <h3 style="color: ${rarityColor}; margin-top: 0;">${item.name} <span style="font-size: 0.8em; color: #aaa;">Level ${item.level||1}</span></h3>
+    <img src="${item.image||'Assests/empty-slot.png'}" style="width:40%; display: block; margin: 12px auto; border: 3px solid ${rarityColor}; box-shadow: 0 0 8px ${rarityColor}; border-radius: 8px;">
+    ${statsHTML}
     ${abilityText}
     ${enchantText}
-    <div style="margin-top:8px">
-      <button id="equip-btn">Equip</button>
-      <button id="unequip-btn">Unequip</button>
+    <div style="margin-top:12px; display: flex; gap: 8px;">
+      <button id="equip-btn" style="
+        flex: 1;
+        padding: 10px 16px;
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border: 2px solid #28a745;
+        border-radius: 8px;
+        font-weight: bold;
+        cursor: pointer;
+        font-size: 1em;
+        transition: all 0.3s;
+      " onmouseover="this.style.background='linear-gradient(135deg, #20c997 0%, #28a745 100%)'; this.style.transform='scale(1.05)';" onmouseout="this.style.background='linear-gradient(135deg, #28a745 0%, #20c997 100%)'; this.style.transform='scale(1)';">Equip</button>
+      <button id="unequip-btn" style="
+        flex: 1;
+        padding: 10px 16px;
+        background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+        color: white;
+        border: 2px solid #ffc107;
+        border-radius: 8px;
+        font-weight: bold;
+        cursor: pointer;
+        font-size: 1em;
+        transition: all 0.3s;
+      " onmouseover="this.style.background='linear-gradient(135deg, #ff9800 0%, #ffc107 100%)'; this.style.transform='scale(1.05)';" onmouseout="this.style.background='linear-gradient(135deg, #ffc107 0%, #ff9800 100%)'; this.style.transform='scale(1)';">Unequip</button>
     </div>
     <button id="close-item-popup" style="position:absolute;top:8px;right:12px;background:#e94560;color:#fff;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:1em;">✖</button>
   `;
@@ -426,7 +489,26 @@ function displayItemInfo(item) {
   // Add Delete button
   const deleteBtn = document.createElement('button');
   deleteBtn.textContent = 'Delete';
-  deleteBtn.style.background = '#c0392b';
+  deleteBtn.style.cssText = `
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+    border: 2px solid #dc3545;
+    border-radius: 8px;
+    padding: 10px 16px;
+    margin-left: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 1em;
+    transition: all 0.3s;
+  `;
+  deleteBtn.onmouseover = () => {
+    deleteBtn.style.background = 'linear-gradient(135deg, #c82333 0%, #dc3545 100%)';
+    deleteBtn.style.transform = 'scale(1.05)';
+  };
+  deleteBtn.onmouseout = () => {
+    deleteBtn.style.background = 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)';
+    deleteBtn.style.transform = 'scale(1)';
+  };
   deleteBtn.style.color = 'white';
   deleteBtn.style.marginLeft = '8px';
   deleteBtn.onclick = () => {
@@ -641,10 +723,29 @@ function renderAttacks(memberKey = getSelectedMember()) {
       // Find source item for rarity color
       const sourceItem = INVENTORY.find(i => i._uid === a.sourceUid) || INVENTORY.find(i => i.name === a.itemName);
       const rarityColor = (sourceItem && sourceItem.rarity && typeof window.getRarityColor === 'function') ? window.getRarityColor(sourceItem.rarity) : '#ffffff';
-      attackContainer.innerHTML += '<div class="attack-entry" data-id="'+a.id+'" style="border-left: 4px solid '+rarityColor+'; padding-left: 8px; margin: 4px 0;">' +
-        '<strong style="color: '+rarityColor+'">'+a.name+'</strong> (from '+a.itemName+')<br>' +
-        'Str x'+a.strMultiplier+', Magic x'+a.magicMultiplier+', Status: '+a.status +
-      '</div>';
+      
+      // Build stat multipliers display
+      let statParts = [];
+      if (a.strMultiplier !== undefined && a.strMultiplier !== null) statParts.push(`<span style="color: #ff8866;">⚔️ Str x${a.strMultiplier}</span>`);
+      if (a.magicMultiplier !== undefined && a.magicMultiplier !== null) statParts.push(`<span style="color: #8888ff;">✨ Mag x${a.magicMultiplier}</span>`);
+      if (a.sklMultiplier !== undefined && a.sklMultiplier !== null) statParts.push(`<span style="color: #ffaaff;">🎯 Skl x${a.sklMultiplier}</span>`);
+      const statText = statParts.length > 0 ? statParts.join(' • ') : '';
+      const statusText = a.status && a.status !== 'none' ? `<span style="color: #ffdd44;">💫 ${a.status}</span>` : '';
+      
+      attackContainer.innerHTML += `<div class="attack-entry" data-id="${a.id}" style="
+        border-left: 4px solid ${rarityColor};
+        padding: 10px 12px;
+        margin: 6px 0;
+        background: rgba(0, 0, 0, 0.4);
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+      " onmouseover="this.style.background='rgba(0, 0, 0, 0.6)'; this.style.transform='translateX(4px)';" onmouseout="this.style.background='rgba(0, 0, 0, 0.4)'; this.style.transform='translateX(0)';">
+        <div style="font-weight: bold; color: ${rarityColor}; font-size: 1.1em; margin-bottom: 4px;">${a.name}</div>
+        <div style="font-size: 0.85em; color: #aaa; margin-bottom: 6px;">from ${a.itemName}</div>
+        <div style="font-size: 0.9em;">${statText}</div>
+        ${statusText ? `<div style="font-size: 0.9em; margin-top: 4px;">${statusText}</div>` : ''}
+      </div>`;
     });
     attackContainer.querySelectorAll('.attack-entry').forEach(el => {
       el.onclick = () => {
@@ -664,10 +765,29 @@ function renderAttacks(memberKey = getSelectedMember()) {
       // Find source item for rarity color
       const sourceItem = INVENTORY.find(i => i._uid === a.sourceUid) || INVENTORY.find(i => i.name === a.itemName);
       const rarityColor = (sourceItem && sourceItem.rarity && typeof window.getRarityColor === 'function') ? window.getRarityColor(sourceItem.rarity) : '#ffffff';
-      invContainer.innerHTML += '<div class="attack-entry inv" data-id="'+a.id+'" style="border-left: 4px solid '+rarityColor+'; padding-left: 8px; margin: 4px 0;">' +
-        '<strong style="color: '+rarityColor+'">'+a.name+'</strong> (from '+a.itemName+')<br>' +
-        'Str x'+a.strMultiplier+', Magic x'+a.magicMultiplier+', Status: '+a.status +
-      '</div>';
+      
+      // Build stat multipliers display
+      let statParts = [];
+      if (a.strMultiplier !== undefined && a.strMultiplier !== null) statParts.push(`<span style="color: #ff8866;">⚔️ Str x${a.strMultiplier}</span>`);
+      if (a.magicMultiplier !== undefined && a.magicMultiplier !== null) statParts.push(`<span style="color: #8888ff;">✨ Mag x${a.magicMultiplier}</span>`);
+      if (a.sklMultiplier !== undefined && a.sklMultiplier !== null) statParts.push(`<span style="color: #ffaaff;">🎯 Skl x${a.sklMultiplier}</span>`);
+      const statText = statParts.length > 0 ? statParts.join(' • ') : '';
+      const statusText = a.status && a.status !== 'none' ? `<span style="color: #ffdd44;">💫 ${a.status}</span>` : '';
+      
+      invContainer.innerHTML += `<div class="attack-entry inv" data-id="${a.id}" style="
+        border-left: 4px solid ${rarityColor};
+        padding: 10px 12px;
+        margin: 6px 0;
+        background: rgba(0, 0, 0, 0.4);
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+      " onmouseover="this.style.background='rgba(0, 0, 0, 0.6)'; this.style.transform='translateX(4px)';" onmouseout="this.style.background='rgba(0, 0, 0, 0.4)'; this.style.transform='translateX(0)';">
+        <div style="font-weight: bold; color: ${rarityColor}; font-size: 1.1em; margin-bottom: 4px;">${a.name}</div>
+        <div style="font-size: 0.85em; color: #aaa; margin-bottom: 6px;">from ${a.itemName}</div>
+        <div style="font-size: 0.9em;">${statText}</div>
+        ${statusText ? `<div style="font-size: 0.9em; margin-top: 4px;">${statusText}</div>` : ''}
+      </div>`;
     });
     invContainer.querySelectorAll('.attack-entry').forEach(el => {
       el.onclick = () => {
@@ -685,7 +805,57 @@ function updateStatsDisplay(memberKey = getSelectedMember()) {
   const member = PARTY_STATS[memberKey];
   const statsDiv = document.getElementById('total-stats');
   if (statsDiv && member) {
-    statsDiv.textContent = `Health: ${member.MAX_HEALTH}; Strength: ${member.STRENGTH}; Magic: ${member.MAGIC}; Speed: ${member.SPEED}; Defense: ${member.DEFENSE};`;
+    // Calculate hidden stats
+    const skill = Number(member.SKILL || 0);
+    const baseCritChance = 5; // 5% base
+    const skillCritBonus = skill * 0.5; // +0.5% per skill point
+    const totalCritChance = baseCritChance + skillCritBonus;
+    const baseCritDamage = 200; // 200% base
+    const skillCritDamageBonus = skill * 1; // +1% per skill point
+    const critDamage = baseCritDamage + skillCritDamageBonus;
+    const procChance = Number(member.PROC_CHANCE || 25); // 25% default
+    
+    // Build vertical stats display with colors
+    statsDiv.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 1.1em;">
+        <div style="display: flex; justify-content: space-between; padding: 6px 10px; background: rgba(255, 0, 0, 0.15); border-left: 3px solid #ff4444; border-radius: 4px;">
+          <span style="color: #ff6666; font-weight: bold;">❤️ Health:</span>
+          <span style="color: #ffffff; font-weight: bold;">${member.MAX_HEALTH}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 6px 10px; background: rgba(255, 100, 0, 0.15); border-left: 3px solid #ff6644; border-radius: 4px;">
+          <span style="color: #ff8866; font-weight: bold;">⚔️ Strength:</span>
+          <span style="color: #ffffff; font-weight: bold;">${member.STRENGTH}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 6px 10px; background: rgba(100, 100, 255, 0.15); border-left: 3px solid #6666ff; border-radius: 4px;">
+          <span style="color: #8888ff; font-weight: bold;">✨ Magic:</span>
+          <span style="color: #ffffff; font-weight: bold;">${member.MAGIC}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 6px 10px; background: rgba(255, 255, 0, 0.15); border-left: 3px solid #ffdd44; border-radius: 4px;">
+          <span style="color: #ffee66; font-weight: bold;">⚡ Speed:</span>
+          <span style="color: #ffffff; font-weight: bold;">${member.SPEED}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 6px 10px; background: rgba(100, 200, 255, 0.15); border-left: 3px solid #66ccff; border-radius: 4px;">
+          <span style="color: #88ddff; font-weight: bold;">🛡️ Defense:</span>
+          <span style="color: #ffffff; font-weight: bold;">${member.DEFENSE}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 6px 10px; background: rgba(255, 150, 255, 0.15); border-left: 3px solid #ff88ff; border-radius: 4px;">
+          <span style="color: #ffaaff; font-weight: bold;">🎯 Skill:</span>
+          <span style="color: #ffffff; font-weight: bold;">${skill}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 6px 10px; background: rgba(255, 215, 0, 0.15); border-left: 3px solid #ffd700; border-radius: 4px;">
+          <span style="color: #ffdd44; font-weight: bold;">💥 Crit Chance:</span>
+          <span style="color: #ffffff; font-weight: bold;">${totalCritChance.toFixed(1)}%</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 6px 10px; background: rgba(255, 100, 100, 0.15); border-left: 3px solid #ff6666; border-radius: 4px;">
+          <span style="color: #ff8888; font-weight: bold;">💢 Crit Damage:</span>
+          <span style="color: #ffffff; font-weight: bold;">${critDamage}%</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 6px 10px; background: rgba(150, 255, 150, 0.15); border-left: 3px solid #66ff66; border-radius: 4px;">
+          <span style="color: #88ff88; font-weight: bold;">🎲 Proc Chance:</span>
+          <span style="color: #ffffff; font-weight: bold;">${procChance}%</span>
+        </div>
+      </div>
+    `;
   }
 }
 
