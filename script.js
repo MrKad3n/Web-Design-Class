@@ -3220,97 +3220,104 @@ const ENEMY_BASE_STATS = {
   //Unknown Type Enemy Stats
   'skull': {
     health: 15,
-    strength:3,
+    strength:2,
     magic:0,
     speed:3,
-    defense: 2,
+    defense: 1.3,
     mana:100,
     hBars:1,
     image:"Enemies/skull.png",
     tier:1,
     role: "Early threat - Low health but decent speed, teaches players basic combat mechanics and attack timing.",
+    attacks: ['Bone Toss', 'Rattling Strike', 'Death Rattle']
   },
   'slime': {
     health: 22,
-    strength:3.5,
+    strength:2.3,
     magic:0,
     speed:2,
-    defense: 2.5,
+    defense: 1.6,
     mana:100,
     hBars:1,
     image:"Enemies/slime.png",
     tier:2,
     role: "Tanky starter - Higher HP and defense than skulls, introduces the need for sustained damage.",
+    attacks: ['Acid Splash', 'Engulf', 'Split Attack']
   },
   'alien': {
     health: 19,
     strength:0,
-    magic:6,
+    magic:3.9,
     speed:3.5,
-    defense: 3,
+    defense: 2,
     mana:180,
     hBars:1,
     image:"Enemies/alien.png",
     tier:3,
-    specialEffect: "Alien Fire: Applies burn status on attack"
+    specialEffect: "Alien Fire: Applies burn status on attack",
+    attacks: ['Laser Beam', 'Alien Fire', 'Plasma Overload', 'Energy Shield']
   },
   'cursedKnight': {
     health: 29,
-    strength:6,
+    strength:3.9,
     magic:0,
     speed:4,
-    defense: 9,
+    defense: 5.9,
     mana:120,
     hBars:1,
     image:"Enemies/cursedKnight.png",
     tier:4,
-    specialEffect: "Cursed Blade: Applies grim status on attack (2% max HP damage per turn)"
+    specialEffect: "Cursed Blade: Applies grim status on attack (2% max HP damage per turn)",
+    attacks: ['Dark Slash', 'Cursed Blade', 'Shadow Strike']
   },
   'Shadow': {
     health: 33,
-    strength:4,
-    magic:3,
+    strength:2.6,
+    magic:2,
     speed:12,
-    defense: 6,
+    defense: 3.9,
     mana:150,
     hBars:1,
     image:"Enemies/shadow.png",
     tier:5,
     role: "Speed demon - Extremely fast enemy that attacks frequently, tests player defense and speed builds.",
+    attacks: ['Shadow Strike Boss', 'Void Step', 'Dark Pulse', 'Shadow Clone', 'Umbral Assault']
   },
   //Creature Type Enemy Stats
   'dragon': {
     health: 45,
-    strength:6,
-    magic:7,
+    strength:3.9,
+    magic:4.6,
     speed:5,
-    defense: 9,
+    defense: 5.9,
     mana:220,
     hBars:1,
     image:"Enemies/dragon.png",
     tier:5,
     specialEffect: "BOSS: Dragon's Inferno - All attacks apply burn status (3% max HP damage per turn)",
-    attackStatus: "burn"
+    attackStatus: "burn",
+    attacks: ['Claw Swipe', 'Dragon\'s Inferno', 'Flame Breath', 'Draconic Fury', 'Scales of Fire', 'Inferno Nova']
   },
   //Zombie Type Enemy Stats
   'corspe': {
     health: 17,
-    strength:3.5,
+    strength:2.3,
     magic:0,
     speed:2,
-    defense: 1.5,
+    defense: 1,
     mana:100,
     hBars:1,
     image:"Enemies/corspe.png",
     tier:1,
-    specialEffect: "Undead: Slow shambling corpse"
+    specialEffect: "Undead: Slow shambling corpse",
+    attacks: ['Shambling Swipe', 'Infected Bite']
   },
   'crawler': {
     health: 24,
-    strength:5,
+    strength:3.3,
     magic:0,
     speed:1.5,
-    defense: 4,
+    defense: 2.6,
     mana:110,
     hBars:2,
     image:"Enemies/crawler.png",
@@ -3318,327 +3325,354 @@ const ENEMY_BASE_STATS = {
     specialEffect: "Venomous Bite: Applies bleed status on attack + Two Lives (slow/tanky then fast/fragile)",
     secondForm: {
       health: 8,
-      strength:5,
+      strength:3.3,
       magic:0,
       speed:12,
-      defense: 1
-    }
+      defense: 0.7
+    },
+    attacks: ['Frenzy Slash', 'Venomous Bite', 'Death Throes']
   },
   'frozenCorspe': {
     health: 25,
-    strength:3,
-    magic:4,
+    strength:2,
+    magic:2.6,
     speed:2,
-    defense: 2.5,
+    defense: 1.6,
     mana:160,
     hBars:1,
     image:"Enemies/frozenCorspe.png",
     tier:3,
     specialEffect: "Frozen Touch: Applies chill status on attack",
-    attackStatus: "chill"
+    attackStatus: "chill",
+    attacks: ['Frozen Touch', 'Ice Spike', 'Frostbite', 'Permafrost']
   },
   'necromancer': {
     health: 27,
     strength:0,
-    magic:8,
+    magic:5.2,
     speed:3,
-    defense: 6.5,
+    defense: 4.2,
     mana:240,
     hBars:1,
     image:"Enemies/necromancer.png",
     tier:4,
-    specialEffect: "Resurrection: While alive, dead allies resurrect as zombies"
+    specialEffect: "Resurrection: While alive, dead allies resurrect as zombies",
+    attacks: ['Death Bolt', 'Resurrection', 'Life Drain', 'Curse of Undeath', 'Bone Shield']
   },
   'mutant': {
     health: 44,
-    strength:7,
-    magic:1.5,
+    strength:4.6,
+    magic:1,
     speed:7,
-    defense: 5,
+    defense: 3.3,
     mana:180,
     hBars:1,
     image:"Enemies/mutant.png",
     tier:5,
-    specialEffect: "BOSS: Mutated Strength - Fast and powerful zombie with high strength and speed"
+    specialEffect: "BOSS: Mutated Strength - Fast and powerful zombie with high strength and speed",
+    attacks: ['Mutated Strike', 'Toxic Bite', 'Regenerative Flesh', 'Berserk Mode', 'Plague Slam', 'Adaptive Evolution']
   },
   //Forest Type Enemy Stats
   'Sapling': {
     health: 19,
     strength:0,
-    magic:3.5,
+    magic:2.3,
     speed:1.5,
-    defense: 2,
+    defense: 1.3,
     mana:140,
     hBars:1,
     image:"Enemies/sapling.png",
     tier:1,
     role: "Magic seedling - Low HP forest caster, introduces nature-themed enemies.",
+    attacks: ['Thorn Shot', 'Photosynthesis', 'Root Whip']
   },
   'vineLasher': {
     health: 22,
-    strength:5,
+    strength:3.3,
     magic:0,
     speed:4,
-    defense: 1.5,
+    defense: 1,
     mana:100,
     hBars:1,
     image:"Enemies/vineLasher.png",
     tier:2,
-    specialEffect: "Draining Vines: Applies leech status on attack (drains HP over time)"
+    specialEffect: "Draining Vines: Applies leech status on attack (drains HP over time)",
+    attacks: ['Vine Whip', 'Draining Thorns', 'Entangle']
   },
   'Treant': {
     health: 26,
-    strength:5,
+    strength:3.3,
     magic:0,
     speed:2,
-    defense: 6,
+    defense: 3.9,
     mana:110,
     hBars:1,
     image:"Enemies/treant.png",
     tier:3,
-    specialEffect: "Rooted Defender: High defense, slow but steady"
+    specialEffect: "Rooted Defender: High defense, slow but steady",
+    attacks: ['Root Smash', 'Bark Armor', 'Nature\'s Wrath', 'Regeneration']
   },
   'elderEnt': {
     health: 30,
     strength:0,
-    magic:7,
+    magic:4.6,
     speed:3,
-    defense: 4.5,
+    defense: 2.9,
     mana:220,
     hBars:1,
     image:"Enemies/elderEnt.png",
     tier:4,
-    specialEffect: "Ancient Growth: Gains 10% bonus magic each turn (compounds) + high defense"
+    specialEffect: "Ancient Growth: Gains 10% bonus magic each turn (compounds) + high defense",
+    attacks: ['Ancient Roots', 'Ancient Growth', 'Overgrowth', 'Forest\'s Blessing', 'Petrify']
   },
   'Worldroot': {
     health: 46,
-    strength:3,
-    magic:8,
+    strength:2,
+    magic:5.2,
     speed:6,
-    defense: 8,
+    defense: 5.2,
     mana:260,
     hBars:1,
     image:"Enemies/worldroot.png",
     tier:5,
-    specialEffect: "BOSS: Nature's Call - Summons Vine Lasher (15 lvls lower) every attack"
+    specialEffect: "BOSS: Nature's Call - Summons Vine Lasher (15 lvls lower) every attack",
+    attacks: ['Root Strike Boss', 'Nature\'s Call', 'Photosynthesis Boss', 'Worldroot Crush', 'Verdant Shield', 'Gaia\'s Wrath']
   },
   //Army Enemy Stats
   'Knight': {
     health: 20,
-    strength:4,
+    strength:2.6,
     magic:0,
     speed:2,
-    defense: 2.5,
+    defense: 1.6,
     mana:100,
     hBars:1,
     image:"Enemies/knight.png",
     tier:1,
+    attacks: ['Sword Slash', 'Shield Fortify', 'Overhead Chop']
   },
   'Archer': {
     health: 17,
-    strength:4,
+    strength:2.6,
     magic:0,
     speed:3.5,
-    defense: 2,
+    defense: 1.3,
     mana:100,
     hBars:1,
     image:"Enemies/archer.png",
     tier:2,
+    attacks: ['Piercing Shot', 'Rapid Fire', 'Quick Bite']
   },
   'Mage': {
     health: 19,
     strength:0,
-    magic:6,
+    magic:3.9,
     speed:3.5,
-    defense: 3,
+    defense: 2,
     mana:200,
     hBars:1,
     image:"Enemies/mage.png",
     tier:3,
-    specialEffect: "Arcane Curse: Applies random status effect (burn/bleed/chill) on attack"
+    specialEffect: "Arcane Curse: Applies random status effect (burn/bleed/chill) on attack",
+    attacks: ['Magic Missile', 'Arcane Curse', 'Mana Shield', 'Spell Burst']
   },
   'kingsGuard': {
     health: 30,
-    strength:6,
+    strength:3.9,
     magic:0,
     speed:3.5,
-    defense: 5.5,
+    defense: 3.6,
     mana:140,
     hBars:1,
     image:"Enemies/kingsGuard.png",
     tier:4,
-    specialEffect: "Royal Protector: Balanced high-tier warrior"
+    specialEffect: "Royal Protector: Balanced high-tier warrior",
+    attacks: ['Royal Strike', 'Defensive Stance', 'Punish', 'Honor Bound']
   },
   'King': {
     health: 46,
-    strength:8,
-    magic:8,
+    strength:5.2,
+    magic:5.2,
     speed:3,
-    defense: 8,
+    defense: 5.2,
     mana:240,
     hBars:1,
     image:"Enemies/king.png",
     tier:5,
-    specialEffect: "BOSS: Royal Command - Summons King's Guard (15 lvls lower) + gains 10% stats per guard alive"
+    specialEffect: "BOSS: Royal Command - Summons King's Guard (15 lvls lower) + gains 10% stats per guard alive",
+    attacks: ['Royal Strike', 'Defensive Stance', 'Punish', 'Honor Bound']
   },
   //Ocean Type Enemy Stats
   'piranha': {
     health: 19,
-    strength:6,
+    strength:3.9,
     magic:0,
     speed:4,
-    defense: 2,
+    defense: 1.3,
     mana:100,
     hBars:1,
     image:"Enemies/piranha.png",
     tier:2,
-    specialEffect: "Death Bite: Fast first strike, performs one final attack when defeated"
+    specialEffect: "Death Bite: Fast first strike, performs one final attack when defeated",
+    attacks: ['Quick Bite', 'Feeding Frenzy', 'Death Bite']
   },
   'coralMonster': {
     health: 24,
-    strength:6,
-    magic:1.5,
+    strength:3.9,
+    magic:1,
     speed:2,
-    defense: 5.5,
+    defense: 3.6,
     mana:120,
     hBars:1,
     image:"Enemies/coralMonster.png",
     tier:3,
-    specialEffect: "Coral Armor: Big tanky enemy with high defense and coral-enhanced durability"
+    specialEffect: "Coral Armor: Big tanky enemy with high defense and coral-enhanced durability",
+    attacks: ['Coral Punch', 'Calcified Shell', 'Reef Slam', 'Coral Growth']
   },
   'shark': {
     health: 28,
-    strength:7,
+    strength:4.6,
     magic:0,
     speed:5,
-    defense: 5,
+    defense: 3.3,
     mana:140,
     hBars:1,
     image:"Enemies/shark.png",
     tier:4,
-    specialEffect: "Blood Frenzy: Gains 15% strength for each bleeding enemy (stacks)"
+    specialEffect: "Blood Frenzy: Gains 15% strength for each bleeding enemy + all attacks apply bleed",
+    attacks: ['Bite', 'Blood Frenzy', 'Savage Maul', 'Feeding Time', 'Bloodthirst']
   },
   //Final Boss Enemy Stats
   'divineKing': {
     health: 287,
-    strength:18,
-    magic:18,
+    strength:11.7,
+    magic:11.7,
     speed:4,
-    defense: 15,
+    defense: 9.8,
     mana:500,
     hBars:1,
     image:"Enemies/divineKing.png",
     tier:6,
-    specialEffect: "FINAL BOSS Phase 1: Divine power incarnate"
+    specialEffect: "FINAL BOSS Phase 1: Divine power incarnate",
+    attacks: ['Divine Smite', 'Holy Judgment', 'Divine Protection', 'Celestial Storm', 'Righteous Fury', 'Resurrection Divine', 'Heaven\'s Light', 'God\'s Wrath']
   },
   'demonKing': {
     health: 492,
-    strength:25,
-    magic:25,
+    strength:16.3,
+    magic:16.3,
     speed:5,
-    defense: 16,
+    defense: 10.4,
     mana:600,
     hBars:1,
     image:"Enemies/demonKing.png",
     tier:6,
-    specialEffect: "FINAL BOSS Phase 2: Demonic transformation - ultimate power"
+    specialEffect: "FINAL BOSS Phase 2: Demonic transformation - ultimate power",
+    attacks: ['Demon Claw', 'Hellfire', 'Demonic Rage', 'Apocalypse Boss', 'Soul Rend', 'Infernal Shield', 'Damnation']
   },
   'lightning_shark': {
     health: 328,
-    strength:20,
-    magic:20,
+    strength:13,
+    magic:13,
     speed:6,
-    defense: 12,
+    defense: 7.8,
     mana:450,
     hBars:1,
     image:"Enemies/lightningShark.png",
     tier:6,
-    specialEffect: "LEGENDARY BOSS: Lightning Shock - Gives player lightning status (ignores next attack, 2 turn cooldown)"
+    specialEffect: "LEGENDARY BOSS: Lightning Shock - Gives player lightning status (ignores next attack, 2 turn cooldown)",
+    attacks: ['Electric Bite', 'Lightning Shock', 'Thunder Storm', 'Blood Hunt', 'Voltaic Shield', 'Feeding Frenzy Boss', 'Lightning Speed', 'Megavolt']
   },
   // Hell Mode - Unknown Enemies
   'dino': {
     health: 74,
-    strength:12,
-    magic:5,
+    strength:7.8,
+    magic:3.3,
     speed:8,
-    defense: 16,
+    defense: 10.4,
     mana:180,
     hBars:1,
     image:"Enemies/dino.png",
     tier:'unknown',
-    specialEffect: "UNKNOWN: Prehistoric Rampage - High defense and strength, charges with devastating force"
+    specialEffect: "UNKNOWN: Prehistoric Rampage - High defense and strength, charges with devastating force",
+    attacks: ['Savage Maul', 'Bite', 'Blood Frenzy']
   },
   'flamelingSmall': {
     health: 48,
-    strength:8,
-    magic:12,
+    strength:5.2,
+    magic:7.8,
     speed:10,
-    defense: 7,
+    defense: 4.6,
     mana:250,
     hBars:1,
     image:"Enemies/flamelingSmall.png",
     tier:'unknown',
-    specialEffect: "UNKNOWN: Ember Spark - Fast and agile, applies burn on every attack"
+    specialEffect: "UNKNOWN: Ember Spark - Fast and agile, applies burn on every attack",
+    attacks: ['Thorn Shot', 'Photosynthesis']
   },
   'flamelingMedium': {
     health: 61,
-    strength:10,
-    magic:14,
+    strength:6.5,
+    magic:9.1,
     speed:7,
-    defense: 10,
+    defense: 6.5,
     mana:280,
     hBars:1,
     image:"Enemies/flamelingMedium.png",
     tier:'unknown',
-    specialEffect: "UNKNOWN: Flame Burst - Balanced fire elemental, burn damage scales with magic"
+    specialEffect: "UNKNOWN: Flame Burst - Balanced fire elemental, burn damage scales with magic",
+    attacks: ['Alien Fire', 'Laser Beam', 'Energy Shield']
   },
   'flamelingBig': {
     health: 84,
-    strength:14,
-    magic:18,
+    strength:9.1,
+    magic:11.7,
     speed:6,
-    defense: 15,
+    defense: 9.8,
     mana:320,
     hBars:2,
     image:"Enemies/flamelingBig.png",
     tier:'unknown',
-    specialEffect: "UNKNOWN: Inferno Titan - Massive flameling with two health bars, devastating fire magic"
+    specialEffect: "UNKNOWN: Inferno Titan - Massive flameling with two health bars, devastating fire magic",
+    attacks: ['Alien Fire', 'Plasma Overload', 'Inferno Nova']
   },
   'sotrak': {
     health: 68,
-    strength:15,
-    magic:11,
+    strength:9.8,
+    magic:7.2,
     speed:11,
-    defense: 11,
+    defense: 7.2,
     mana:240,
     hBars:1,
     image:"Enemies/sotrak.png",
     tier:'unknown',
-    specialEffect: "UNKNOWN: Void Walker - Teleports and strikes with void energy, applies random status effects"
+    specialEffect: "UNKNOWN: Void Walker - Teleports and strikes with void energy, applies random status effects",
+    attacks: ['Reality Warp', 'Void Step', 'Dark Pulse']
   },
   'monstruousFish': {
     health: 89,
-    strength:16,
-    magic:12,
+    strength:10.4,
+    magic:7.8,
     speed:10,
-    defense: 17,
+    defense: 11.1,
     mana:280,
     hBars:2,
     image:"Enemies/monstruousFish.png",
     tier:'unknown',
-    specialEffect: "UNKNOWN: Abyssal Terror - Deadly ocean predator, gains power from bleeding enemies"
+    specialEffect: "UNKNOWN: Abyssal Terror - Deadly ocean predator, gains power from bleeding enemies",
+    attacks: ['Electric Bite', 'Savage Maul', 'Feeding Frenzy Boss', 'Megavolt']
   },
   'overseer': {
     health: 656,
-    strength:30,
-    magic:30,
+    strength:19.5,
+    magic:19.5,
     speed:8,
-    defense: 33,
+    defense: 21.5,
     mana:800,
     hBars:3,
     image:"Enemies/overseer.png",
     tier:7,
-    specialEffect: "ANCIENT BOSS: Omniscient Watcher - Commands reality itself, applies all status effects and summons minions"
+    specialEffect: "ANCIENT BOSS: Omniscient Watcher - 3 phases with different attacks",
+    attacks: ['Reality Warp', 'Omniscient Strike', 'Existence Erasure']
   }
 };
 
@@ -3652,7 +3686,7 @@ const ATTACK_STATS = {
   "punch":           { strMultiplier: 0.5,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "strength" },
   "stap":            { strMultiplier: 1,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "strength" },
   "coral leech":     { strMultiplier: 1.1,  magicMultiplier: 0,    status: "leech", manaCost: 0, cooldown: 1, group: "strength" },
-  "Charge":          { strMultiplier: 1.4,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 1, group: "strength" },
+  "Charge":          { strMultiplier:  1.4,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 1, group: "strength" },
   "plunge":          { strMultiplier: 1.5,  magicMultiplier: 0,    status: "bleed", manaCost: 0, cooldown: 1, group: "strength" },
   "Combo":           { strMultiplier: 2.3,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "strength" },
   "Grim slice":      { strMultiplier: 3,    magicMultiplier: 0,    status: "grim", manaCost: 0, cooldown: 3, group: "strength" },
@@ -3763,6 +3797,146 @@ const ATTACK_STATS = {
   
   "enhance":         { strMultiplier: 0,    magicMultiplier: 0,    status: "player buff", manaCost: 0, cooldown: 0, group: "utility" },
   "Rest":            { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, isRest: true, group: "utility" },
+  
+  // ==================== ENEMY ATTACKS ====================
+  // Tier 1 Enemy Attacks
+  "Bone Toss":              { strMultiplier: 0.8,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "strength" },
+  "Rattling Strike":        { strMultiplier: 1.2,  magicMultiplier: 0,    status: "vulnerable", manaCost: 0, cooldown: 1, group: "strength" },
+  "Death Rattle":           { strMultiplier: 2.0,  magicMultiplier: 0,    status: "bleed", manaCost: 0, cooldown: 2, group: "strength" },
+  "Shambling Swipe":        { strMultiplier: 0.7,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "strength" },
+  "Infected Bite":          { strMultiplier: 1.1,  magicMultiplier: 0,    status: "corruption", manaCost: 0, cooldown: 1, group: "strength" },
+  "Undead Grasp":           { strMultiplier: 1.5,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "strength", heals: 0.25 },
+  "Thorn Shot":             { strMultiplier: 0,    magicMultiplier: 1.0,  status: "none", manaCost: 10, cooldown: 0, group: "magic" },
+  "Photosynthesis":         { strMultiplier: 0,    magicMultiplier: 0.5,  status: "none", manaCost: 5, cooldown: 0, group: "magic", heals: 1.0 },
+  "Root Whip":              { strMultiplier: 0.6,  magicMultiplier: 0.6,  status: "vulnerable", manaCost: 6, cooldown: 0, group: "hybrid" },
+  "Sword Slash":            { strMultiplier: 1.0,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "strength" },
+  "Shield Fortify":         { strMultiplier: 1.3,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 1, group: "strength", fortifySelf: 0.2 },
+  "Overhead Chop":          { strMultiplier: 1.8,  magicMultiplier: 0,    status: "bleed", manaCost: 0, cooldown: 2, group: "strength" },
+  
+  // Tier 2 Enemy Attacks
+  "Acid Splash":            { strMultiplier: 0,    magicMultiplier: 0.9,  status: "vulnerable", manaCost: 9, cooldown: 0, group: "magic" },
+  "Engulf":                 { strMultiplier: 0.8,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "strength", heals: 0.15 },
+  "Split Attack":           { strMultiplier: 1.2,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "strength", fortifySelf: 0.2 },
+  "Venomous Bite":          { strMultiplier: 1.1,  magicMultiplier: 0,    status: "bleed", manaCost: 0, cooldown: 1, group: "strength" },
+  "Leech Life":             { strMultiplier: 0.9,  magicMultiplier: 0,    status: "leech", manaCost: 0, cooldown: 0, group: "strength" },
+  "Molt":                   { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", isTransform: true },
+  "Frenzy Slash":           { strMultiplier: 1.5,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "strength" },
+  "Death Throes":           { strMultiplier: 2.5,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "strength", isOnDeath: true },
+  "Vine Whip":              { strMultiplier: 0.9,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "strength" },
+  "Draining Thorns":        { strMultiplier: 1.2,  magicMultiplier: 0,    status: "leech", manaCost: 0, cooldown: 1, group: "strength" },
+  "Entangle":               { strMultiplier: 1.5,  magicMultiplier: 0,    status: "vulnerable", manaCost: 0, cooldown: 2, group: "strength", applyLeech: true },
+  "Piercing Shot":          { strMultiplier: 0,    magicMultiplier: 0,    skillMultiplier: 0.25, status: "vulnerable", manaCost: 0, cooldown: 1, group: "skill", requiresAmmo: true },
+  "Rapid Fire":             { strMultiplier: 0,    magicMultiplier: 0,    skillMultiplier: 0.12, status: "none", manaCost: 0, cooldown: 2, group: "skill", requiresAmmo: true, hits: 3 },
+  "Quick Bite":             { strMultiplier: 1.3,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "strength" },
+  "Feeding Frenzy":         { strMultiplier: 1.7,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 1, group: "strength", bleedBonus: 0.2 },
+  "Death Bite":             { strMultiplier: 2.0,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "strength", isOnDeath: true },
+  
+  // Tier 3 Enemy Attacks  
+  "Laser Beam":             { strMultiplier: 0,    magicMultiplier: 1.2,  status: "none", manaCost: 12, cooldown: 0, group: "magic" },
+  "Alien Fire":             { strMultiplier: 0,    magicMultiplier: 1.5,  status: "burn", manaCost: 15, cooldown: 0, group: "magic" },
+  "Plasma Overload":        { strMultiplier: 0,    magicMultiplier: 2.3,  status: "burn", manaCost: 23, cooldown: 1, group: "magic", applyVulnerable: true },
+  "Energy Shield":          { strMultiplier: 0,    magicMultiplier: 0.8,  status: "none", manaCost: 8, cooldown: 0, group: "magic", fortifySelf: 0.5 },
+  "Frozen Touch":           { strMultiplier: 0.8,  magicMultiplier: 0.8,  status: "chill", manaCost: 8, cooldown: 0, group: "hybrid" },
+  "Ice Spike":              { strMultiplier: 0,    magicMultiplier: 1.4,  status: "chill", manaCost: 14, cooldown: 0, group: "magic" },
+  "Frostbite":              { strMultiplier: 0,    magicMultiplier: 1.8,  status: "chill", manaCost: 18, cooldown: 1, group: "magic", applyVulnerable: true },
+  "Permafrost":             { strMultiplier: 0,    magicMultiplier: 1.0,  status: "none", manaCost: 10, cooldown: 0, group: "magic", barrierSelf: true },
+  "Root Smash":             { strMultiplier: 1.1,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 1, group: "strength" },
+  "Bark Armor":             { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", fortifySelf: 50, isPassive: true },
+  "Nature's Wrath":         { strMultiplier: 1.8,  magicMultiplier: 0.5,  status: "none", manaCost: 5, cooldown: 2, group: "hybrid" },
+  "Regeneration":           { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", healPercent: 0.05, isPassive: true },
+  "Magic Missile":          { strMultiplier: 0,    magicMultiplier: 1.3,  status: "none", manaCost: 13, cooldown: 0, group: "magic" },
+  "Arcane Curse":           { strMultiplier: 0,    magicMultiplier: 1.6,  status: "random", manaCost: 16, cooldown: 0, group: "magic" },
+  "Mana Shield":            { strMultiplier: 0,    magicMultiplier: 0.5,  status: "none", manaCost: 5, cooldown: 0, group: "magic", fortifySelf: 0.4 },
+  "Spell Burst":            { strMultiplier: 0,    magicMultiplier: 2.4,  status: "vulnerable", manaCost: 24, cooldown: 1, group: "magic" },
+  "Coral Punch":            { strMultiplier: 1.2,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 1, group: "strength" },
+  "Calcified Shell":        { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", fortifySelf: 75, isPassive: true },
+  "Reef Slam":              { strMultiplier: 1.9,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "strength", stunIfShielded: true },
+  "Coral Growth":           { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 3, group: "utility", healPercent: 0.1, fortifySelf: 20 },
+  
+  // Tier 4 Enemy Attacks
+  "Dark Slash":             { strMultiplier: 1.4,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 1, group: "strength" },
+  "Cursed Blade":           { strMultiplier: 1.8,  magicMultiplier: 0,    status: "grim", manaCost: 0, cooldown: 2, group: "strength" },
+  "Shadow Strike":          { strMultiplier: 2.2,  magicMultiplier: 0,    status: "vulnerable", manaCost: 0, cooldown: 2, group: "strength", applyGrim: true },
+  "Death Bolt":             { strMultiplier: 0,    magicMultiplier: 1.5,  status: "none", manaCost: 15, cooldown: 0, group: "magic" },
+  "Resurrection":           { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 3, group: "utility", isRevive: true, isPassive: true },
+  "Life Drain":             { strMultiplier: 0,    magicMultiplier: 1.8,  status: "leech", manaCost: 18, cooldown: 0, group: "magic", heals: 1.0 },
+  "Curse of Undeath":       { strMultiplier: 0,    magicMultiplier: 2.0,  status: "corruption", manaCost: 20, cooldown: 2, group: "magic", applyGrim: true },
+  "Bone Shield":            { strMultiplier: 0,    magicMultiplier: 0.6,  status: "none", manaCost: 6, cooldown: 0, group: "magic", barrierAlly: true },
+  "Ancient Roots":          { strMultiplier: 0,    magicMultiplier: 1.4,  status: "vulnerable", manaCost: 14, cooldown: 0, group: "magic" },
+  "Ancient Growth":         { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", magicGrowth: 0.1, isPassive: true },
+  "Overgrowth":             { strMultiplier: 0,    magicMultiplier: 2.0,  status: "none", manaCost: 20, cooldown: 1, group: "magic", scalesWithStacks: true },
+  "Forest's Blessing":      { strMultiplier: 0,    magicMultiplier: 0.8,  status: "none", manaCost: 8, cooldown: 0, group: "magic", heals: 2.0 },
+  "Petrify":                { strMultiplier: 0,    magicMultiplier: 1.2,  status: "none", manaCost: 12, cooldown: 0, group: "magic", fortifySelf: 60 },
+  "Royal Strike":           { strMultiplier: 1.5,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 1, group: "strength" },
+  "Defensive Stance":       { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 3, group: "utility", fortifySelf: 80, barrierSelf: true },
+  "Punish":                 { strMultiplier: 2.1,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "strength", counterBonus: 0.5 },
+  "Honor Bound":            { strMultiplier: 2.4,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "strength", resolveAlly: true },
+  "Bite":                   { strMultiplier: 1.6,  magicMultiplier: 0,    status: "bleed", manaCost: 0, cooldown: 1, group: "strength" },
+  "Blood Frenzy":           { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", bleedStrBonus: 0.15, isPassive: true },
+  "Savage Maul":            { strMultiplier: 2.3,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "strength", bleedBonus: 1.0 },
+  "Feeding Time":           { strMultiplier: 1.2,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "strength", heals: 0.5, requiresBleed: true },
+  "Bloodthirst":            { strMultiplier: 0,    magicMultiplier: 0,    status: "bleed", manaCost: 0, cooldown: 0, group: "utility", isPassive: true, allAttacksBleed: true },
+  
+  // Tier 5 Boss Attacks
+  "Shadow Strike Boss":     { strMultiplier: 1.8,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "strength" },
+  "Void Step":              { strMultiplier: 2.2,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 1, group: "strength", extraTurn: true },
+  "Dark Pulse":             { strMultiplier: 0,    magicMultiplier: 1.5,  status: "vulnerable", manaCost: 15, cooldown: 0, group: "magic" },
+  "Shadow Clone":           { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", dodgeChance: 0.25, isPassive: true },
+  "Umbral Assault":         { strMultiplier: 2.8,  magicMultiplier: 1.0,  status: "bleed", manaCost: 10, cooldown: 2, group: "hybrid", applyCorruption: true },
+  "Claw Swipe":             { strMultiplier: 1.7,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 1, group: "strength" },
+  "Dragon's Inferno":       { strMultiplier: 0,    magicMultiplier: 2.0,  status: "burn", manaCost: 20, cooldown: 0, group: "magic" },
+  "Flame Breath":           { strMultiplier: 0,    magicMultiplier: 2.5,  status: "burn", manaCost: 25, cooldown: 0, group: "magic", isAOE: true },
+  "Draconic Fury":          { strMultiplier: 2.2,  magicMultiplier: 1.5,  status: "burn", manaCost: 15, cooldown: 2, group: "hybrid", applyVulnerable: true },
+  "Scales of Fire":         { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", damageReduction: 0.3, burnReflect: true, isPassive: true },
+  "Inferno Nova":           { strMultiplier: 0,    magicMultiplier: 3.5,  status: "burn", manaCost: 35, cooldown: 3, group: "magic", applyCorruption: true },
+  "Mutated Strike":         { strMultiplier: 2.0,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 1, group: "strength" },
+  "Toxic Bite":             { strMultiplier: 1.8,  magicMultiplier: 0,    status: "corruption", manaCost: 0, cooldown: 1, group: "strength", applyBleed: true },
+  "Regenerative Flesh":     { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "utility", healPercent: 0.15 },
+  "Berserk Mode":           { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", lowHpBonus: 0.5, isPassive: true },
+  "Plague Slam":            { strMultiplier: 2.8,  magicMultiplier: 0,    status: "corruption", manaCost: 0, cooldown: 2, group: "strength", applyVulnerable: true, applyGrim: true },
+  "Adaptive Evolution":     { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 4, group: "utility", fortifySelf: 100, barrierSelf: 2 },
+  "Root Strike Boss":       { strMultiplier: 1.5,  magicMultiplier: 1.5,  status: "none", manaCost: 15, cooldown: 1, group: "hybrid" },
+  "Nature's Call":          { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", summonAlly: "vineLasher", isPassive: true },
+  "Photosynthesis Boss":    { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 3, group: "utility", healPercent: 0.2, restoreMana: 10 },
+  "Worldroot Crush":        { strMultiplier: 2.5,  magicMultiplier: 1.0,  status: "vulnerable", manaCost: 10, cooldown: 2, group: "hybrid", applyLeech: true },
+  "Verdant Shield":         { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 3, group: "utility", fortifySelf: 150, fortifyAllies: true },
+  "Gaia's Wrath":           { strMultiplier: 0,    magicMultiplier: 3.2,  status: "vulnerable", manaCost: 32, cooldown: 3, group: "magic", isAOE: true, applyCorruption: true },
+  "Royal Decree":           { strMultiplier: 1.8,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 1, group: "strength" },
+  "Royal Command":          { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 4, group: "utility", summonAlly: "kingsGuard", isPassive: true },
+  "Sovereign's Might":      { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", allyStatBonus: 0.1, isPassive: true },
+  "Execute":                { strMultiplier: 3.0,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "strength", lowHpTargetBonus: 1.0 },
+  "King's Blessing":        { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 3, group: "utility", healPercent: 0.15, barrierAll: true },
+  "Throne Shaker":          { strMultiplier: 2.2,  magicMultiplier: 2.2,  status: "vulnerable", manaCost: 22, cooldown: 3, group: "hybrid", isAOE: true, applyGrim: true },
+  
+  // Tier 6 Legendary Boss Attacks
+  "Divine Smite":           { strMultiplier: 2.5,  magicMultiplier: 2.5,  status: "none", manaCost: 25, cooldown: 1, group: "hybrid" },
+  "Holy Judgment":          { strMultiplier: 0,    magicMultiplier: 3.0,  status: "vulnerable", manaCost: 30, cooldown: 2, group: "magic", applyCorruption: true },
+  "Divine Protection":      { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 4, group: "utility", fortifySelf: 200, barrierSelf: 3, resolveSelf: true },
+  "Celestial Storm":        { strMultiplier: 0,    magicMultiplier: 3.8,  status: "burn", manaCost: 38, cooldown: 3, group: "magic", isAOE: true, applyVulnerable: true },
+  "Righteous Fury":         { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", lowHpVulnerable: true, isPassive: true },
+  "Resurrection Divine":    { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", transformToDemonKing: true, isPassive: true },
+  "Heaven's Light":         { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 3, group: "utility", healMagicMultiplier: 1.5, removesDebuffs: true },
+  "God's Wrath":            { strMultiplier: 3.5,  magicMultiplier: 3.5,  status: "burn", manaCost: 35, cooldown: 4, group: "hybrid", applyAllStatus: true },
+  "Demon Claw":             { strMultiplier: 3.0,  magicMultiplier: 0,    status: "bleed", manaCost: 0, cooldown: 1, group: "strength", applyCorruption: true },
+  "Hellfire":               { strMultiplier: 0,    magicMultiplier: 3.5,  status: "burn", manaCost: 35, cooldown: 0, group: "magic", applyGrim: true },
+  "Demonic Rage":           { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", stackingDamage: 0.05, isPassive: true },
+  "Apocalypse Boss":        { strMultiplier: 0,    magicMultiplier: 5.0,  status: "burn", manaCost: 50, cooldown: 4, group: "magic", isAOE: true, applyAllStatus: true },
+  "Soul Rend":              { strMultiplier: 3.2,  magicMultiplier: 3.2,  status: "corruption", manaCost: 32, cooldown: 2, group: "hybrid", heals: 1.0, applyGrim: true },
+  "Infernal Shield":        { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 5, group: "utility", fortifySelf: 300, barrierSelf: 5, resolveSelf: true },
+  "Damnation":              { strMultiplier: 4.0,  magicMultiplier: 4.0,  status: "none", manaCost: 40, cooldown: 3, group: "hybrid", ignoresDefense: true },
+  "Electric Bite":          { strMultiplier: 2.8,  magicMultiplier: 0,    status: "vulnerable", manaCost: 0, cooldown: 1, group: "strength" },
+  "Lightning Shock":        { strMultiplier: 0,    magicMultiplier: 3.2,  status: "none", manaCost: 32, cooldown: 2, group: "magic", shockStatus: true },
+  "Thunder Storm":          { strMultiplier: 0,    magicMultiplier: 3.5,  status: "burn", manaCost: 35, cooldown: 3, group: "magic", isAOE: true, applyVulnerable: true },
+  "Blood Hunt":             { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", bleedStrBonus: 0.2, isPassive: true },
+  "Voltaic Shield":         { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 3, group: "utility", fortifySelf: 180, damageReflect: 0.5 },
+  "Feeding Frenzy Boss":    { strMultiplier: 3.5,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "strength", heals: 1.0, requiresBleed: true },
+  "Lightning Speed":        { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", doubleTurn: true, isPassive: true },
+  "Megavolt":               { strMultiplier: 3.0,  magicMultiplier: 4.0,  status: "burn", manaCost: 40, cooldown: 4, group: "hybrid", shockStatus: true, applyCorruption: true },
+  
+  // Tier 7 & Unknown Attacks
+  "Reality Warp":           { strMultiplier: 0,    magicMultiplier: 4.0,  status: "random", manaCost: 40, cooldown: 0, group: "magic", randomStatusCount: 3 },
+  "Omniscient Strike":      { strMultiplier: 3.5,  magicMultiplier: 3.5,  status: "none", manaCost: 35, cooldown: 0, group: "hybrid", alwaysCrits: true },
+  "Existence Erasure":      { strMultiplier: 5.0,  magicMultiplier: 5.0,  status: "none", manaCost: 50, cooldown: 0, group: "hybrid", ignoresDefense: true },
 };
 
 
@@ -3964,8 +4138,9 @@ function updateHealth(amount, member) {
  * @param {number} level - The level to scale the item to.
  * @returns {object} The generated item object.
  */
-function generateRandomItem(level, forceRarity = null) {
+function generateRandomItem(level, forceRarity = null, luckBonus = 0) {
   // Determine allowed rarities and weights based on level
+  // luckBonus: percentage boost (e.g., 50 for +50% luck) that shifts weights toward higher rarities
   const lvl = Math.max(1, Number(level) || 1);
   const R = {
     Base: 'Base',
@@ -4036,6 +4211,26 @@ function generateRandomItem(level, forceRarity = null) {
     delete weights[R.Base];
     delete weights[R.Mythical];
     delete weights[R.Artifact];
+    
+    // Apply luck bonus: shift weight from lower to higher rarities
+    if (luckBonus > 0) {
+      const rarityOrder = [R.Common, R.Uncommon, R.Rare, R.Epic, R.Legendary];
+      const luckMultiplier = luckBonus / 100; // 50 -> 0.5
+      
+      // Transfer weight from lower rarities to higher ones
+      for (let i = 0; i < rarityOrder.length - 1; i++) {
+        const lowerRarity = rarityOrder[i];
+        const higherRarity = rarityOrder[i + 1];
+        
+        if (weights[lowerRarity] && weights[higherRarity] !== undefined) {
+          const transferAmount = weights[lowerRarity] * luckMultiplier;
+          weights[lowerRarity] -= transferAmount;
+          weights[higherRarity] = (weights[higherRarity] || 0) + transferAmount;
+        }
+      }
+      
+      console.log(`[LUCK BONUS] Applied +${luckBonus}% luck. Adjusted weights:`, weights);
+    }
 
     // Pick a rarity by weighted random among available items
     function pickWeighted(weightsMap) {

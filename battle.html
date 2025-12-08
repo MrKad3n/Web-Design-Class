@@ -461,6 +461,50 @@
                 filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.6)) drop-shadow(0 0 15px rgba(100, 200, 255, 0.8)) brightness(0.9) sepia(0.3) hue-rotate(180deg) saturate(2) !important;
             }
             
+            /* Corruption effect - purple/dark overlay */
+            .corrupted {
+                filter: drop-shadow(0 0 10px rgba(100, 0, 100, 0.8)) brightness(0.7) sepia(0.5) hue-rotate(270deg) saturate(3) !important;
+                animation: corruption-pulse 2s ease-in-out infinite;
+            }
+            
+            @keyframes corruption-pulse {
+                0%, 100% { filter: drop-shadow(0 0 10px rgba(100, 0, 100, 0.8)) brightness(0.7) sepia(0.5) hue-rotate(270deg) saturate(3); }
+                50% { filter: drop-shadow(0 0 20px rgba(150, 0, 150, 1)) brightness(0.6) sepia(0.6) hue-rotate(270deg) saturate(3.5); }
+            }
+            
+            /* Vulnerable effect - red glow */
+            .vulnerable {
+                filter: drop-shadow(0 0 15px rgba(255, 0, 0, 0.9)) brightness(1.1) !important;
+                animation: vulnerable-glow 1.5s ease-in-out infinite;
+            }
+            
+            @keyframes vulnerable-glow {
+                0%, 100% { filter: drop-shadow(0 0 15px rgba(255, 0, 0, 0.9)) brightness(1.1); }
+                50% { filter: drop-shadow(0 0 25px rgba(255, 50, 50, 1)) brightness(1.2); }
+            }
+            
+            /* Fortify effect - golden shield overlay */
+            .fortified {
+                filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.9)) brightness(1.2) sepia(0.3) saturate(1.5) !important;
+                animation: fortify-shimmer 2.5s ease-in-out infinite;
+            }
+            
+            @keyframes fortify-shimmer {
+                0%, 100% { filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.9)) brightness(1.2) sepia(0.3) saturate(1.5); }
+                50% { filter: drop-shadow(0 0 20px rgba(255, 230, 100, 1)) brightness(1.3) sepia(0.4) saturate(1.8); }
+            }
+            
+            /* Resolve effect - bright yellow/white aura */
+            .resolved {
+                filter: drop-shadow(0 0 20px rgba(255, 255, 100, 1)) brightness(1.4) !important;
+                animation: resolve-radiance 1s ease-in-out infinite;
+            }
+            
+            @keyframes resolve-radiance {
+                0%, 100% { filter: drop-shadow(0 0 20px rgba(255, 255, 100, 1)) brightness(1.4); }
+                50% { filter: drop-shadow(0 0 30px rgba(255, 255, 200, 1)) brightness(1.6); }
+            }
+            
             /* Enemy spawn animation */
             @keyframes enemy-spawn {
                 0% {
@@ -1188,6 +1232,11 @@
         // Provoke tracking - {memberKey: turnsRemaining}
         let provokeActive = {};
         
+        // Enemy AI: Track cooldowns and ammo for each enemy's attacks
+        // Structure: { enemyIndex: { attackName: cooldownTurns, ... } }
+        let enemyCooldowns = {};
+        let enemyAmmo = {}; // For skill-based attacks
+        
         // Debug: Check what's available from script.js
         console.log('window.clearLevelAndUnlock:', typeof window.clearLevelAndUnlock);
         console.log('window object keys sample:', Object.keys(window).filter(k => k.includes('clear') || k.includes('Level')));
@@ -1309,6 +1358,9 @@
             let currentPlayerTurn = 1; // Tracks which player's turn it is (1 or 2)
             let battleEnemyStates = {}; // Store enemy HP across member switches
             const battleParticipants = new Set(); // Track members who participated this battle
+            
+            // Store resurrection flag (only one resurrection per battle across all resurrection abilities)
+            window.resurrectionUsed = false;
             
             // Status effect tracking: each enemy/player has arrays of effects
             // Effect format: { type: 'burn'|'leech'|'bleed'|'grim', turnsLeft: N, stacks: N, sourceData: {} }
@@ -4503,6 +4555,11 @@
                             
                             if (!effectType || effectType === 'none' || effectType === 'player buff') return;
                             
+                            // Check for barrier first - blocks status effects
+                            if (checkBarrier(targetType, targetKey)) {
+                                return; // Barrier blocked this status effect
+                            }
+                            
                             // Check for ability 21 (Sea Shield) immunity to leech, burn, and chill
                             if (targetType === 'player') {
                                 const memberKey = targetKey;
@@ -4581,6 +4638,73 @@
                                     applyStatusEffect(target, targetType, targetKey, effect, baseDamage);
                                 });
                                 logCombat(`🌀 Chaos applied ${numEffects} status effects!`);
+                            } else if (effectType === 'corruption') {
+                                // Corruption: Healing effects reversed for 4 turns
+                                effectsArray.push({ type: 'corruption', turnsLeft: 4 });
+                                logCombat(`Applied CORRUPTION (healing reversed for 4 turns)`);
+                                
+                                // Add visual corruption effect (purple/dark overlay)
+                                if (targetType === 'enemy') {
+                                    const enemyImg = target.querySelector('img');
+                                    if (enemyImg) enemyImg.classList.add('corrupted');
+                                } else {
+                                    const playerImgId = (targetKey === activeBattleMember2) ? 'player-2' : 'player-1';
+                                    const playerImg = document.getElementById(playerImgId);
+                                    if (playerImg) playerImg.classList.add('corrupted');
+                                }
+                            } else if (effectType === 'vulnerable') {
+                                // Vulnerable: Takes 25% more damage for 3 turns
+                                effectsArray.push({ type: 'vulnerable', turnsLeft: 3 });
+                                logCombat(`Applied VULNERABLE (25% more damage taken for 3 turns)`);
+                                
+                                // Add visual vulnerable effect (red glow)
+                                if (targetType === 'enemy') {
+                                    const enemyImg = target.querySelector('img');
+                                    if (enemyImg) enemyImg.classList.add('vulnerable');
+                                } else {
+                                    const playerImgId = (targetKey === activeBattleMember2) ? 'player-2' : 'player-1';
+                                    const playerImg = document.getElementById(playerImgId);
+                                    if (playerImg) playerImg.classList.add('vulnerable');
+                                }
+                            } else if (effectType === 'fortify') {
+                                // Fortify: Shield absorbs damage, stacks
+                                const shieldAmount = Math.round(baseDamage * 0.5); // 50% of attack damage
+                                const existingFortify = effectsArray.find(e => e.type === 'fortify');
+                                if (existingFortify) {
+                                    existingFortify.shieldHP = (existingFortify.shieldHP || 0) + shieldAmount;
+                                    logCombat(`🛡️ FORTIFY stacked! Shield now has ${existingFortify.shieldHP} HP`);
+                                } else {
+                                    effectsArray.push({ type: 'fortify', shieldHP: shieldAmount, turnsLeft: 999 }); // Lasts until broken
+                                    logCombat(`🛡️ Applied FORTIFY (${shieldAmount} HP shield)`);
+                                }
+                                
+                                // Add visual fortify effect (golden shield overlay)
+                                if (targetType === 'enemy') {
+                                    const enemyImg = target.querySelector('img');
+                                    if (enemyImg) enemyImg.classList.add('fortified');
+                                } else {
+                                    const playerImgId = (targetKey === activeBattleMember2) ? 'player-2' : 'player-1';
+                                    const playerImg = document.getElementById(playerImgId);
+                                    if (playerImg) playerImg.classList.add('fortified');
+                                }
+                            } else if (effectType === 'barrier') {
+                                // Barrier: Negates next status effect
+                                effectsArray.push({ type: 'barrier', turnsLeft: 999, charges: 1 }); // Lasts until consumed
+                                logCombat(`✨ Applied BARRIER (blocks next status effect)`);
+                            } else if (effectType === 'resolve') {
+                                // Resolve: Cannot be reduced below 1 HP, single use
+                                effectsArray.push({ type: 'resolve', turnsLeft: 3, charges: 1 });
+                                logCombat(`💪 Applied RESOLVE (survive fatal blow once, 3 turns)`);
+                                
+                                // Add visual resolve effect (bright yellow aura)
+                                if (targetType === 'enemy') {
+                                    const enemyImg = target.querySelector('img');
+                                    if (enemyImg) enemyImg.classList.add('resolved');
+                                } else {
+                                    const playerImgId = (targetKey === activeBattleMember2) ? 'player-2' : 'player-1';
+                                    const playerImg = document.getElementById(playerImgId);
+                                    if (playerImg) playerImg.classList.add('resolved');
+                                }
                             }
                         }
                         
@@ -4734,7 +4858,59 @@
                                             if (playerImg) playerImg.classList.remove('chilled');
                                         }
                                     }
+                                } else if (effect.type === 'corruption') {
+                                    // Corruption just needs to decrement duration
+                                    effect.turnsLeft--;
+                                    if (effect.turnsLeft <= 0) {
+                                        toRemove.push(idx);
+                                        logCombat('CORRUPTION expired');
+                                        
+                                        // Remove visual corruption effect
+                                        if (targetType === 'enemy') {
+                                            const enemyImg = target.querySelector('img');
+                                            if (enemyImg) enemyImg.classList.remove('corrupted');
+                                        } else {
+                                            const playerImgId = (targetKey === activeBattleMember2) ? 'player-2' : 'player-1';
+                                            const playerImg = document.getElementById(playerImgId);
+                                            if (playerImg) playerImg.classList.remove('corrupted');
+                                        }
+                                    }
+                                } else if (effect.type === 'vulnerable') {
+                                    // Vulnerable just needs to decrement duration
+                                    effect.turnsLeft--;
+                                    if (effect.turnsLeft <= 0) {
+                                        toRemove.push(idx);
+                                        logCombat('VULNERABLE expired');
+                                        
+                                        // Remove visual vulnerable effect
+                                        if (targetType === 'enemy') {
+                                            const enemyImg = target.querySelector('img');
+                                            if (enemyImg) enemyImg.classList.remove('vulnerable');
+                                        } else {
+                                            const playerImgId = (targetKey === activeBattleMember2) ? 'player-2' : 'player-1';
+                                            const playerImg = document.getElementById(playerImgId);
+                                            if (playerImg) playerImg.classList.remove('vulnerable');
+                                        }
+                                    }
+                                } else if (effect.type === 'resolve') {
+                                    // Resolve just needs to decrement duration
+                                    effect.turnsLeft--;
+                                    if (effect.turnsLeft <= 0) {
+                                        toRemove.push(idx);
+                                        logCombat('RESOLVE expired');
+                                        
+                                        // Remove visual resolve effect
+                                        if (targetType === 'enemy') {
+                                            const enemyImg = target.querySelector('img');
+                                            if (enemyImg) enemyImg.classList.remove('resolved');
+                                        } else {
+                                            const playerImgId = (targetKey === activeBattleMember2) ? 'player-2' : 'player-1';
+                                            const playerImg = document.getElementById(playerImgId);
+                                            if (playerImg) playerImg.classList.remove('resolved');
+                                        }
+                                    }
                                 }
+                                // Fortify and Barrier are handled when damage/status is applied, not as DoT
                                 // Bleed is applied as damage multiplier during attack, not as DoT
                             });
                             
@@ -4765,6 +4941,120 @@
                                     logCombat('BLEED expired');
                                 }
                             }
+                        }
+                        
+                        // Get vulnerable multiplier for damage taken
+                        function getVulnerableMultiplier(targetType, targetKey) {
+                            const effectsArray = targetType === 'enemy' ? enemyStatusEffects[targetKey] : playerStatusEffects[targetKey];
+                            if (!effectsArray) return 1.0;
+                            const vulnerable = effectsArray.find(e => e.type === 'vulnerable');
+                            return vulnerable ? 1.25 : 1.0; // 25% more damage taken
+                        }
+                        
+                        // Check if target has corruption (healing reversed)
+                        function hasCorruption(targetType, targetKey) {
+                            const effectsArray = targetType === 'enemy' ? enemyStatusEffects[targetKey] : playerStatusEffects[targetKey];
+                            if (!effectsArray) return false;
+                            return effectsArray.some(e => e.type === 'corruption');
+                        }
+                        
+                        // Check and consume barrier if present (blocks status effects)
+                        function checkBarrier(targetType, targetKey) {
+                            const effectsArray = targetType === 'enemy' ? enemyStatusEffects[targetKey] : playerStatusEffects[targetKey];
+                            if (!effectsArray) return false;
+                            const barrier = effectsArray.find(e => e.type === 'barrier' && e.charges > 0);
+                            if (barrier) {
+                                barrier.charges--;
+                                if (barrier.charges <= 0) {
+                                    const idx = effectsArray.indexOf(barrier);
+                                    if (idx >= 0) effectsArray.splice(idx, 1);
+                                }
+                                logCombat('✨ BARRIER blocked status effect!');
+                                return true; // Barrier blocked the effect
+                            }
+                            return false; // No barrier
+                        }
+                        
+                        // Apply damage through fortify shield first
+                        function applyDamageThroughFortify(targetType, targetKey, damage) {
+                            const effectsArray = targetType === 'enemy' ? enemyStatusEffects[targetKey] : playerStatusEffects[targetKey];
+                            if (!effectsArray) return damage;
+                            
+                            const fortify = effectsArray.find(e => e.type === 'fortify');
+                            if (!fortify) return damage;
+                            
+                            let remainingDamage = damage;
+                            if (fortify.shieldHP > 0) {
+                                if (fortify.shieldHP >= damage) {
+                                    // Shield absorbs all damage
+                                    fortify.shieldHP -= damage;
+                                    logCombat(`🛡️ FORTIFY absorbed ${damage} damage! (${fortify.shieldHP} HP remaining)`);
+                                    remainingDamage = 0;
+                                } else {
+                                    // Shield breaks, some damage goes through
+                                    remainingDamage = damage - fortify.shieldHP;
+                                    logCombat(`🛡️ FORTIFY absorbed ${fortify.shieldHP} damage and broke! ${remainingDamage} damage dealt`);
+                                    fortify.shieldHP = 0;
+                                }
+                                
+                                // Remove fortify if shield is broken
+                                if (fortify.shieldHP <= 0) {
+                                    const idx = effectsArray.indexOf(fortify);
+                                    if (idx >= 0) effectsArray.splice(idx, 1);
+                                    
+                                    // Remove visual fortify effect
+                                    if (targetType === 'enemy') {
+                                        const enemyWrappers = Array.from(getEnemyWrappers());
+                                        const target = enemyWrappers[targetKey];
+                                        if (target) {
+                                            const enemyImg = target.querySelector('img');
+                                            if (enemyImg) enemyImg.classList.remove('fortified');
+                                        }
+                                    } else {
+                                        const playerImgId = (targetKey === activeBattleMember2) ? 'player-2' : 'player-1';
+                                        const playerImg = document.getElementById(playerImgId);
+                                        if (playerImg) playerImg.classList.remove('fortified');
+                                    }
+                                }
+                            }
+                            
+                            return remainingDamage;
+                        }
+                        
+                        // Check and consume resolve if taking fatal damage
+                        function checkResolve(targetType, targetKey, currentHP, damage) {
+                            if (currentHP - damage > 0) return damage; // Not fatal, no need for resolve
+                            
+                            const effectsArray = targetType === 'enemy' ? enemyStatusEffects[targetKey] : playerStatusEffects[targetKey];
+                            if (!effectsArray) return damage;
+                            
+                            const resolve = effectsArray.find(e => e.type === 'resolve' && e.charges > 0);
+                            if (resolve) {
+                                resolve.charges--;
+                                if (resolve.charges <= 0) {
+                                    const idx = effectsArray.indexOf(resolve);
+                                    if (idx >= 0) effectsArray.splice(idx, 1);
+                                    
+                                    // Remove visual resolve effect
+                                    if (targetType === 'enemy') {
+                                        const enemyWrappers = Array.from(getEnemyWrappers());
+                                        const target = enemyWrappers[targetKey];
+                                        if (target) {
+                                            const enemyImg = target.querySelector('img');
+                                            if (enemyImg) enemyImg.classList.remove('resolved');
+                                        }
+                                    } else {
+                                        const playerImgId = (targetKey === activeBattleMember2) ? 'player-2' : 'player-1';
+                                        const playerImg = document.getElementById(playerImgId);
+                                        if (playerImg) playerImg.classList.remove('resolved');
+                                    }
+                                }
+                                logCombat('💪 RESOLVE prevented fatal damage!');
+                                // Reduce damage so target survives at 1 HP
+                                return currentHP - 1;
+                            }
+                            
+                            return damage; // No resolve, take full damage
                         }
                         
                         // Pixel Combo mini-game (ability 13)
@@ -5225,18 +5515,118 @@
                                 return;
                             }
                             
-                            // Deduct mana for enemy attack
-                            enemyWrap.dataset.mana = enemyMana - enemyManaCost;
-                            updateEnemyBar(enemyWrap); // Update mana bar immediately after deduction
+                            // ===== ENEMY AI: ATTACK SELECTION =====
+                            const enemyStr = Number(enemyWrap.dataset.str) || 1;
+                            const enemyMag = Number(enemyWrap.dataset.mag) || 0;
                             
-            // Enemy attack: use whichever stat is higher (strength or magic)
-            const enemyStr = Number(enemyWrap.dataset.str) || 1;
-            const enemyMag = Number(enemyWrap.dataset.mag) || 0;
-            
-            // Determine which stat is stronger and build attack accordingly
-            const atk = enemyStr >= enemyMag 
-                ? { strMultiplier: 1, magicMultiplier: 0 } 
-                : { strMultiplier: 0, magicMultiplier: 1 };
+                            // Initialize cooldown tracking for this enemy if needed
+                            if (!enemyCooldowns[enemyIndex]) {
+                                enemyCooldowns[enemyIndex] = {};
+                            }
+                            
+                            // Get enemy's attack pool from ENEMY_BASE_STATS
+                            const enemyStats = ENEMY_BASE_STATS[enemyKey];
+                            const attackPool = enemyStats && enemyStats.attacks ? enemyStats.attacks : [];
+                            
+                            let selectedAttack = null;
+                            let atk = null;
+                            let attackName = 'Basic Attack';
+                            
+                            if (attackPool.length > 0) {
+                                // Filter available attacks based on resources and cooldowns
+                                const availableAttacks = attackPool.filter(attackName => {
+                                    const attackData = ATTACK_STATS[attackName];
+                                    if (!attackData) return false;
+                                    
+                                    // Check cooldown
+                                    if (enemyCooldowns[enemyIndex][attackName] && enemyCooldowns[enemyIndex][attackName] > 0) {
+                                        return false;
+                                    }
+                                    
+                                    // Check mana cost
+                                    const manaCost = attackData.manaCost || 0;
+                                    if (manaCost > enemyMana) {
+                                        return false;
+                                    }
+                                    
+                                    // Check ammo for skill attacks
+                                    if (attackData.requiresAmmo) {
+                                        if (!enemyAmmo[enemyIndex]) enemyAmmo[enemyIndex] = 10; // Start with 10 ammo
+                                        if (enemyAmmo[enemyIndex] <= 0) return false;
+                                    }
+                                    
+                                    return true;
+                                });
+                                
+                                // AI decision: Prioritize high-damage attacks when available
+                                if (availableAttacks.length > 0) {
+                                    // Calculate "value" for each attack (damage potential / cost)
+                                    const attackScores = availableAttacks.map(name => {
+                                        const attackData = ATTACK_STATS[name];
+                                        const strDmg = (attackData.strMultiplier || 0) * enemyStr;
+                                        const magDmg = (attackData.magicMultiplier || 0) * enemyMag;
+                                        const totalDmg = strDmg + magDmg;
+                                        
+                                        // Bonus score for status effects
+                                        let statusBonus = 0;
+                                        if (attackData.status && attackData.status !== 'none') statusBonus = 10;
+                                        
+                                        // Bonus for utility abilities (healing, buffs, shields)
+                                        let utilityBonus = 0;
+                                        if (attackData.heals || attackData.fortifySelf || attackData.barrierSelf) utilityBonus = 15;
+                                        
+                                        const score = totalDmg + statusBonus + utilityBonus;
+                                        return { name, score, attackData };
+                                    });
+                                    
+                                    // Sort by score and pick from top attacks with some randomness
+                                    attackScores.sort((a, b) => b.score - a.score);
+                                    
+                                    // 70% chance to pick best, 20% second best, 10% third best (or random if fewer)
+                                    const rand = Math.random();
+                                    let pickIndex = 0;
+                                    if (attackScores.length > 1 && rand > 0.7) pickIndex = 1;
+                                    if (attackScores.length > 2 && rand > 0.9) pickIndex = 2;
+                                    
+                                    selectedAttack = attackScores[pickIndex];
+                                    attackName = selectedAttack.name;
+                                    atk = selectedAttack.attackData;
+                                    
+                                    // Deduct mana cost
+                                    const manaCost = atk.manaCost || 0;
+                                    enemyWrap.dataset.mana = enemyMana - manaCost;
+                                    
+                                    // Deduct ammo for skill attacks
+                                    if (atk.requiresAmmo) {
+                                        if (!enemyAmmo[enemyIndex]) enemyAmmo[enemyIndex] = 10;
+                                        enemyAmmo[enemyIndex]--;
+                                    }
+                                    
+                                    // Set cooldown
+                                    if (atk.cooldown && atk.cooldown > 0) {
+                                        enemyCooldowns[enemyIndex][attackName] = atk.cooldown;
+                                    }
+                                    
+                                    updateEnemyBar(enemyWrap);
+                                } else {
+                                    // No attacks available - enemy must rest
+                                    const manaRestore = Math.round(enemyMaxMana * 0.4);
+                                    enemyWrap.dataset.mana = Math.min(enemyMaxMana, enemyMana + manaRestore);
+                                    updateEnemyBar(enemyWrap);
+                                    const enemyName = enemyWrap.querySelector('img') ? enemyWrap.querySelector('img').alt : 'Enemy';
+                                    logCombat(`💤 ${enemyName} #${enemyIndex + 1} recovers resources (+${manaRestore} mana)!`);
+                                    return;
+                                }
+                            } else {
+                                // Fallback: No attack pool defined, use simple attack
+                                atk = enemyStr >= enemyMag 
+                                    ? { strMultiplier: 1, magicMultiplier: 0, status: 'none' } 
+                                    : { strMultiplier: 0, magicMultiplier: 1, status: 'none' };
+                                
+                                // Deduct default mana cost
+                                enemyWrap.dataset.mana = enemyMana - enemyManaCost;
+                                updateEnemyBar(enemyWrap);
+                            }
             
             // Smart targeting: choose between both players
             const player1 = PARTY_STATS[activeBattleMember];
@@ -5298,10 +5688,8 @@
                             try {
                                 const enemyName = enemyWrap.querySelector('img') ? enemyWrap.querySelector('img').alt : 'Unknown Enemy';
                                 const enemySpeed = getEffectiveSpeed('enemy', enemyIndex, Number(enemyWrap.dataset.speed) || 1);
-                                const attackType = enemyStr >= enemyMag ? 'STR' : 'MAG';
-                                const attackStat = enemyStr >= enemyMag ? enemyStr : enemyMag;
                                 const targetName = target.NAME || 'Player';
-                                logCombat(`${enemyName} #${enemyIndex + 1} (${attackType}:${attackStat}, SPD:${enemySpeed}) attacking ${targetName} — queue pos: ${queueIndex}/${actionQueue.length}`);
+                                logCombat(`⚔️ ${enemyName} #${enemyIndex + 1} uses ${attackName} on ${targetName}!`);
                             } catch(e){}
                             let defense = Number(target.DEFENSE || 0);
                             
@@ -5518,6 +5906,20 @@
                                 logCombat(`🩸 Vampiric: Enemy heals ${healAmount} HP from attack!`);
                             }
             
+            // ===== APPLY ATTACK STATUS EFFECTS =====
+            // Apply status from the selected attack first
+            if (atk && atk.status && atk.status !== 'none' && dmg > 0) {
+                if (atk.status === 'random') {
+                    // Random status effect
+                    const randomStatuses = ['burn', 'bleed', 'chill', 'grim', 'corruption', 'vulnerable'];
+                    const randomStatus = randomStatuses[Math.floor(Math.random() * randomStatuses.length)];
+                    applyStatusEffect(targetKey, 'player', null, randomStatus);
+                    logCombat(`🎲 Random status: ${randomStatus} applied!`);
+                } else if (atk.status !== 'player buff') {
+                    applyStatusEffect(targetKey, 'player', null, atk.status);
+                }
+            }
+            
             // Apply special enemy status effects using the targeted player's key
             // (enemyKey already declared at function scope)
             const enemyBaseStats = ENEMY_BASE_STATS[enemyKey];
@@ -5575,7 +5977,48 @@
                     window.playerLightningCooldown = 2;
                     logCombat(`⚡ Lightning Shock: Player's next enemy attack will be ignored!`);
                 }
-            }                            // Update player health UI
+            }
+            
+            // ===== SPECIAL ATTACK MECHANICS =====
+            if (atk) {
+                // Healing attacks (heal enemy based on multiplier)
+                if (atk.heals && dmg > 0) {
+                    const healAmount = Math.round(dmg * atk.heals);
+                    const currentHp = Number(enemyWrap.dataset.hp);
+                    const maxHp = Number(enemyWrap.dataset.maxHp);
+                    enemyWrap.dataset.hp = Math.min(maxHp, currentHp + healAmount);
+                    updateEnemyBar(enemyWrap);
+                    logCombat(`💚 Enemy heals ${healAmount} HP from life drain!`);
+                }
+                
+                // Fortify attacks (give enemy shield)
+                if (atk.fortifySelf) {
+                    const shieldAmount = typeof atk.fortifySelf === 'number' ? atk.fortifySelf : Math.round(enemyMag * atk.fortifySelf);
+                    applyStatusEffect(enemyWrap, 'enemy', enemyIndex, 'fortify', shieldAmount);
+                    logCombat(`🛡️ Enemy gains ${shieldAmount} shield!`);
+                }
+                
+                // Barrier attacks (block status effects)
+                if (atk.barrierSelf) {
+                    const barrierStacks = typeof atk.barrierSelf === 'number' ? atk.barrierSelf : 1;
+                    applyStatusEffect(enemyWrap, 'enemy', enemyIndex, 'barrier', barrierStacks);
+                    logCombat(`✨ Enemy gains barrier (blocks ${barrierStacks} status effects)!`);
+                }
+                
+                // Resolve attacks (survive fatal blow)
+                if (atk.resolveSelf) {
+                    applyStatusEffect(enemyWrap, 'enemy', enemyIndex, 'resolve');
+                    logCombat(`⚔️ Enemy gains resolve (will survive one fatal blow)!`);
+                }
+                
+                // Apply bleed to all attacks (Shark's Bloodthirst passive)
+                if (enemyKey === 'shark' && dmg > 0) {
+                    applyStatusEffect(targetKey, 'player', null, 'bleed');
+                    logCombat(`🩸 Bloodthirst: Shark's attack applies bleed!`);
+                }
+            }
+            
+                            // Update player health UI
                             updatePlayerArea();
                                         // Play hit animation on player image
                                         try {
@@ -5612,6 +6055,16 @@
                                             enemyWrap.dataset.hp = Math.max(0, curEnemyHp - reflectDmg);
                                             updateEnemyBar(enemyWrap);
                                             logCombat(`🔮 Magi Reflect: ${reflectDmg} magic damage reflected!`);
+                                        }
+                                        
+                                        // ===== ENEMY AI: DECREMENT COOLDOWNS =====
+                                        // Reduce all cooldowns for this enemy by 1 at end of turn
+                                        if (enemyCooldowns[enemyIndex]) {
+                                            for (const atkName in enemyCooldowns[enemyIndex]) {
+                                                if (enemyCooldowns[enemyIndex][atkName] > 0) {
+                                                    enemyCooldowns[enemyIndex][atkName]--;
+                                                }
+                                            }
                                         }
                                         
                                         // Ability 4: Spikes - Counter with 20% STR damage + apply bleed
@@ -6021,7 +6474,9 @@
                             }
                         } else {
                             // All other stages use normal rarity distribution based on level
-                            item = window.generateRandomItem(level);
+                            // First clear bonus: +50% luck for better rarity chances
+                            const luckBonus = isFirstClear ? 50 : 0;
+                            item = window.generateRandomItem(level, null, luckBonus);
                         }
                         if (item) items.push(item);
                     }
