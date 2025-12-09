@@ -343,10 +343,60 @@ function showEnemyDetails(enemyName, encountered) {
             </table>
         `;
 
+        // Attacks section
+        if (enemy.attacks && enemy.attacks.length > 0) {
+            html += `
+                <div class="special-section">
+                    <div class="section-title">⚔️ Attack Pool</div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 15px;">
+            `;
+            
+            enemy.attacks.forEach(attackName => {
+                const attackData = ATTACK_STATS[attackName];
+                if (!attackData) return;
+                
+                const emoji = attackData.emoji || '⚔️';
+                const isPassive = attackData.isPassive || false;
+                
+                let damageText = '';
+                if (attackData.strMultiplier > 0) damageText += `💪${attackData.strMultiplier}x `;
+                if (attackData.magicMultiplier > 0) damageText += `✨${attackData.magicMultiplier}x `;
+                if (attackData.skillMultiplier > 0) damageText += `🎯${attackData.skillMultiplier}x `;
+                
+                let costs = [];
+                if (attackData.manaCost > 0) costs.push(`${attackData.manaCost} MP`);
+                if (attackData.cooldown > 0 && !isPassive) costs.push(`CD: ${attackData.cooldown}`);
+                if (attackData.requiresAmmo) costs.push(`Ammo`);
+                
+                html += `
+                    <div style="
+                        padding: 10px;
+                        background: rgba(0, 0, 0, 0.4);
+                        border: 2px solid ${isPassive ? '#ffa500' : color};
+                        border-radius: 8px;
+                        text-align: center;
+                    ">
+                        <div style="font-weight: bold; color: ${isPassive ? '#ffa500' : color}; margin-bottom: 4px;">
+                            ${emoji} ${attackName}${isPassive ? ' (Passive)' : ''}
+                        </div>
+                        ${isPassive && attackData.description ? `<div style="color: #ffcc99; font-size: 0.85em; margin-bottom: 4px; font-style: italic;">${attackData.description}</div>` : ''}
+                        ${!isPassive && damageText ? `<div style="color: #ff8787; font-size: 0.9em; margin-bottom: 4px;">${damageText.trim()}</div>` : ''}
+                        ${costs.length > 0 ? `<div style="color: #aaa; font-size: 0.85em;">${costs.join(' • ')}</div>` : ''}
+                        ${attackData.status && attackData.status !== 'none' && !isPassive ? `<div style="color: #51cf66; font-size: 0.8em; margin-top: 2px;">+ ${attackData.status.toUpperCase()}</div>` : ''}
+                    </div>
+                `;
+            });
+            
+            html += `
+                    </div>
+                </div>
+            `;
+        }
+
         // Special ability section
         if (enemy.specialEffect) {
             html += `
-                <div class="ability-section">
+                <div class="special-section">
                     <div class="section-title">⚡ Special Ability</div>
                     <p style="color: #ffcc00; font-size: 1.1em;">${enemy.specialEffect}</p>
                 </div>
@@ -356,7 +406,7 @@ function showEnemyDetails(enemyName, encountered) {
         // Role/Strategy section
         if (enemy.role) {
             html += `
-                <div class="ability-section" style="background: rgba(233, 69, 96, 0.15); border-color: #e94560;">
+                <div class="special-section" style="background: rgba(233, 69, 96, 0.15); border-color: #e94560;">
                     <div class="section-title" style="color: #ff6b88;">⚔️ Combat Strategy</div>
                     <p style="font-size: 1.15em; color: #ffd4dc; line-height: 1.6;">${enemy.role}</p>
                 </div>

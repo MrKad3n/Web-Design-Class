@@ -1,0 +1,125 @@
+ENEMY AI ART GENERATION PROMPTS
+=================================
+
+TIER 1 - COMMON ENEMIES
+------------------------
+
+SKULL:
+64x64 pixel art of an undead floating skull enemy. Bleached white bone texture with hollow eye sockets glowing faint green. Jawbone slightly open showing sharp teeth. Small cracks and weathering on skull surface. Dark shadowy aura surrounding it. Simple floating animation pose. Clean pixel clusters, crisp shading, dramatic rim lighting, no background.
+
+SAPLING:
+64x64 pixel art of a small animated tree sapling enemy. Young green leaves sprouting from wooden branches. Small expressive face made of bark knots. Tiny root tendrils at base giving appearance of standing. Vibrant natural green and brown tones. Cute but threatening appearance. Highly detailed wood grain texture, clean outline, soft natural lighting, no background.
+
+KNIGHT:
+64x64 pixel art of a basic medieval knight enemy. Full plate armor in silver-grey metal. Simple round shield with basic emblem. Short sword at ready position. Rectangular visor helmet concealing face. Battle-worn armor with minor dents. Standing guard pose. Polished metal surfaces, crisp armor detailing, heroic proportions, no background.
+
+CORSPE:
+64x64 pixel art of a shambling zombie corpse enemy. Rotting flesh in grey-green tones with exposed bone. Tattered cloth remnants hanging from body. One arm outstretched in grasping pose. Slouched posture conveying slow movement. Decayed features, sunken eyes. Grimy texture details, dramatic shadows, horror aesthetic, no background.
+
+
+TIER 2 - UNCOMMON ENEMIES
+--------------------------
+
+SLIME:
+64x64 pixel art of a gelatinous slime enemy. Translucent blue-green blob body with glossy sheen. Semi-transparent with visible darker core inside. Two simple dot eyes and curved smile expression. Puddle-like base spreading on ground. Liquid ripple effects. Vibrant color gradient, gel-like reflections, bubbly texture, no background.
+
+VINE LASHER:
+64x64 pixel art of an aggressive vine creature enemy. Thick green vines coiled in serpentine form. Thorny protrusions along length. Leafy fronds at ends resembling whips. Central bulb with glowing eyes. Animated whipping pose. Rich green tones, sharp thorn details, organic flowing movement, no background.
+
+ARCHER:
+64x64 pixel art of a skilled archer enemy, full body sprite. Complete figure from head to feet visible. Leather armor in brown tones with green cloak. Longbow drawn with arrow nocked. Quiver of arrows on back. Light helmet showing focused eyes. Athletic build in shooting stance. Both legs firmly planted on ground. Full character proportions, entire body in frame, detailed bow string tension, polished leather texture, dynamic pose, no background.
+
+CRAWLER:
+64x64 pixel art of a two-phase crawler zombie enemy. Phase 1: Bulky crawling corpse with thick limbs, slow and tanky appearance. Mottled flesh with visible mutations. Multiple eyes. Phase 2 (ghostly overlay): Skeletal fast form breaking free, elongated limbs, exposed bones. Transformation energy wisps. Dual-nature design, eerie mutation effects, horror detail, no background.
+
+PIRANHA:
+64x64 pixel art of a vicious piranha fish enemy. Streamlined silver body with red-tinted fins. Razor-sharp triangular teeth visible in open mouth. Large aggressive eyes. Scales gleaming with water droplets. Dynamic swimming lunge pose. Metallic scales, sharp tooth definition, predatory energy, no background.
+
+
+TIER 3 - RARE ENEMIES
+----------------------
+
+ALIEN:
+64x64 pixel art of an alien visitor enemy. Sleek grey-skinned humanoid with large black eyes. Thin elongated limbs and fingers. Advanced energy weapon held in hand. Bio-mechanical suit details. Otherworldly tech glow accents in blue. Hovering pose suggesting anti-gravity. Smooth alien texture, sci-fi tech details, mysterious aura, no background.
+
+FROZEN CORPSE:
+64x64 pixel art of an ice-encased zombie enemy. Corpse frozen in blue ice with frost covering body. Icicle formations growing from limbs. Pale blue-white frozen flesh. Visible through translucent ice layer. Shambling frozen pose. Crystalline ice texture, cold vapor effects, frigid atmosphere, no background.
+
+TREANT:
+64x64 pixel art of a tree-man warrior enemy. Large trunk body with thick bark texture. Branch arms capable of combat. Face formed in wood grain with glowing amber eyes. Moss and leaves growing on shoulders. Root feet planted firmly. Massive presence, highly detailed bark patterns, ancient forest guardian, no background.
+
+MAGE:
+64x64 pixel art of a wizard mage enemy. Long flowing robes in deep purple with gold trim. Pointed hat with mystical runes. Glowing staff topped with crystal orb. Arcane energy swirling around hands. Bearded face showing magical focus. Spell-casting pose. Detailed fabric folds, magical particle effects, mystical energy glow, no background.
+
+CORAL MONSTER:
+64x64 pixel art of a coral reef creature enemy. Body formed from living coral in vibrant colors. Calcified shell armor with pink and orange hues. Tentacle-like polyps extending outward. Barnacle and shell growths. Aquatic predator stance. Textured coral surface, underwater bioluminescence, oceanic creature detail, no background.
+
+
+TIER 4 - ELITE ENEMIES
+-----------------------
+
+CURSED KNIGHT:
+64x64 pixel art of a dark corrupted knight enemy. Black armor with purple corruption veins pulsing through metal. Wickedly curved dark blade emanating shadow. Cracked helmet showing glowing red eyes beneath. Cursed purple energy dripping from weapon. Menacing combat stance. Corrupted metal texture, dark aura effects, ominous presence, no background.
+
+NECROMANCER:
+64x64 pixel art of a death mage necromancer enemy. Skeletal hands emerging from tattered black robes. Skull face with green spectral fire in eye sockets. Staff topped with skull and dark crystal. Swirling necrotic energy around figure. Floating bones orbiting body. Undead summoner pose. Bone texture detail, death magic effects, sinister atmosphere, no background.
+
+ELDER ENT:
+64x64 pixel art of an ancient tree elder enemy. Massive gnarled trunk with centuries of growth rings. Thick branch arms resembling ancient weapons. Wise but stern face in bark with glowing green eyes. Moss, vines, and small saplings growing on body. Mushrooms at base. Commanding presence. Intricate wood grain, nature magic glow, primordial forest power, no background.
+
+KING'S GUARD:
+64x64 pixel art of an elite royal guard enemy. Pristine golden-trimmed ceremonial armor. Large decorated kite shield with royal crest. Ornate longsword at ready. Plumed helmet with face guard. Perfect military posture. Cape flowing behind. Polished gold and steel, heraldic details, elite warrior bearing, no background.
+
+SHARK:
+64x64 pixel art of a great shark predator enemy. Massive shark with scarred grey skin. Rows of razor teeth in wide-open jaws. Battle scars across body. Blood-red eyes showing predatory focus. Powerful muscular build. Aggressive hunting lunge pose. Rough skin texture, tooth detail, apex predator energy, no background.
+
+
+TIER 5 - MINI-BOSS ENEMIES
+---------------------------
+
+SHADOW:
+64x64 pixel art of a shadowy assassin boss enemy. Humanoid form made of living darkness and shadow wisps. Red glowing eyes in featureless black face. Shadow tendrils extending from body. Dual shadow daggers in hands. Partially transparent with void energy. Speed blur effects. Ethereal shadow texture, dark energy particles, supernatural menace, no background.
+
+DRAGON:
+64x64 pixel art of a fearsome dragon boss enemy. Classic western dragon with red scales. Large wings spread in intimidating display. Long serpentine neck and tail. Horned head with flames emerging from mouth. Clawed feet and sharp talons. Treasure-guarding pose. Detailed scale patterns, fire breath effects, majestic monster presence, no background.
+
+MUTANT:
+64x64 pixel art of a mutated zombie boss enemy. Grotesque muscular zombie with mutations. Exposed muscle tissue and bone. Multiple eyes and limbs in wrong places. Toxic green ooze dripping from wounds. Veins pulsing with corruption. Aggressive charging stance. Horrific anatomy, biological horror, plague-bearer aura, no background.
+
+WORLDROOT:
+64x64 pixel art of a massive world tree boss enemy. Enormous ancient tree with glowing core. Multiple thick root-tentacles as weapons. Trunk covered in mystical runes and glowing symbols. Crown of leaves radiating life energy. Nature spirits circling. Commanding earth magic pose. Intricate root system, magical energy glow, guardian of nature, no background.
+
+KING:
+64x64 pixel art of a royal king boss enemy. Regal monarch in ornate golden crown with jewels. Luxurious royal robes in purple and gold with ermine trim. Scepter of command in one hand. Distinguished bearded face showing authority. Jeweled royal sword at hip. Commanding presence on throne or standing. Full body visible from head to feet. Detailed royal regalia, majestic bearing, sovereign power, crisp pixel detail, no background.
+
+
+TIER 6 - LEGENDARY BOSS ENEMIES
+--------------------------------
+
+DIVINE KING (Phase 1):
+64x64 pixel art of a holy divine king boss enemy. Radiant angelic figure in brilliant white and gold armor. Large feathered wings spread majestically. Crown of light hovering above head. Holy sword blazing with divine fire. Pristine robes with golden embroidery. Righteous judgment stance. Gleaming armor, radiant holy aura, celestial power, no background.
+
+DEMON KING (Phase 2):
+64x64 pixel art of a corrupted demon king boss enemy. Transformed dark form with demonic features. Black armor with hellfire cracks glowing red. Massive curved demon horns. Burning red eyes with malevolent intelligence. Clawed hands wreathed in flames. Demonic wings with tattered membranes. Apocalyptic power pose. Corrupted metal texture, infernal fire effects, ultimate evil, no background.
+
+LIGHTNING SHARK:
+64x64 pixel art of an electric legendary shark boss enemy. Cybernetic enhanced great white shark. Lightning arcing between mechanical implants. Metallic jaw with energy teeth. Glowing electric blue patterns along body. Thruster fins propelling through water. Storm energy crackling around. Predatory strike pose. Metal-organic hybrid, electrical discharge, technological apex predator, no background.
+
+
+TIER UNKNOWN - MYSTERIOUS ENEMIES
+----------------------------------
+
+DINO:
+64x64 pixel art of a prehistoric dinosaur enemy. Velociraptor-like predator with scaled hide. Brown and green camouflage patterns. Sharp curved claws on feet. Intelligent eyes tracking prey. Muscular build built for speed. Hunting crouch pose. Detailed reptilian scales, primal hunter, prehistoric threat, no background.
+
+FLAMELING SMALL:
+64x64 pixel art of a small fire sprite enemy. Tiny humanoid form made of living flames. Orange and yellow fire body with sparking embers. Simple cheerful face in flames. Dancing flame animation. Small but energetic. Hovering above ground. Flame texture, heat shimmer, playful fire spirit, no background.
+
+FLAMELING MEDIUM:
+64x64 pixel art of a balanced fire elemental enemy. Medium-sized flame being with more defined form. Red-orange fire core with yellow flame corona. Flame hands capable of casting fire magic. More aggressive expression than small variant. Combat ready stance. Detailed fire layers, magical flame control, elemental power, no background.
+
+FLAMELING BIG:
+64x64 pixel art of a massive fire titan enemy. Huge inferno giant with intense blue-white core. Massive flame body towering presence. Arms like burning pillars. Face of concentrated heat and fury. Ground scorching beneath. Devastating power pose. Intense heat distortion, layered flame effects, destructive inferno, no background.
+
+SOTRAK:
+64x64 pixel art of a void walker mysterious enemy. Otherworldly being phasing between dimensions. Purple and black void energy forming body. Reality distortion around figure. Multiple eyes opening in void substance. Tentacle-like void appendages. Teleporting particle effects. Cosmic horror texture, dimensional tears, unknowable entity, no background.

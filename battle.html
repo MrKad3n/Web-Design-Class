@@ -364,7 +364,7 @@
                 z-index: 10000;
                 pointer-events: none;
                 box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
-                max-width: 300px;
+                max-width: 500px;
                 display: none;
             }
             
@@ -396,7 +396,7 @@
             
             @media (max-width: 768px) {
                 .enemy-tooltip {
-                    max-width: 250px;
+                    max-width: 90vw;
                     font-size: 12px;
                 }
             }
@@ -1849,6 +1849,70 @@
                         }
                     }
                     
+                    // Get enemy attacks
+                    const enemyStats = ENEMY_BASE_STATS[enemyKey];
+                    const attackPool = enemyStats && enemyStats.attacks ? enemyStats.attacks : [];
+                    let attacksHTML = '';
+                    
+                    if (attackPool.length > 0) {
+                        attacksHTML = '<div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255, 215, 0, 0.3);"><div style="font-weight: bold; color: #FFD700; margin-bottom: 6px;">⚔️ Attacks:</div>';
+                        attacksHTML += '<div style="display: flex; flex-wrap: wrap; gap: 6px;">';
+                        
+                        attackPool.forEach(attackName => {
+                            const attackData = ATTACK_STATS[attackName];
+                            if (!attackData) return;
+                            
+                            const emoji = attackData.emoji || '⚔️';
+                            const enemyIdx = idx;
+                            const onCooldown = enemyCooldowns[enemyIdx] && enemyCooldowns[enemyIdx][attackName] > 0;
+                            const cooldownTurns = onCooldown ? enemyCooldowns[enemyIdx][attackName] : 0;
+                            
+                            // Build damage multiplier text
+                            let damageText = '';
+                            if (attackData.strMultiplier > 0) damageText += `💪${attackData.strMultiplier}x `;
+                            if (attackData.magicMultiplier > 0) damageText += `✨${attackData.magicMultiplier}x `;
+                            if (attackData.skillMultiplier > 0) damageText += `🎯${attackData.skillMultiplier}x `;
+                            
+                            attacksHTML += `<div style="
+                                display: inline-block;
+                                padding: 6px 8px;
+                                background: ${onCooldown ? 'rgba(255, 107, 107, 0.2)' : 'rgba(81, 207, 102, 0.2)'};
+                                border: 2px solid ${onCooldown ? '#ff6b6b' : '#51cf66'};
+                                border-radius: 6px;
+                                font-size: 0.8em;
+                                min-width: 120px;
+                                text-align: center;
+                                ${onCooldown ? 'opacity: 0.7;' : ''}
+                            ">`;
+                            
+                            attacksHTML += `<div style="font-weight: bold; color: ${onCooldown ? '#ff6b6b' : '#ffd700'}; margin-bottom: 2px;">${emoji} ${attackName}</div>`;
+                            
+                            if (damageText) {
+                                attacksHTML += `<div style="color: #ff8787; font-size: 0.9em; margin-bottom: 2px;">${damageText.trim()}</div>`;
+                            }
+                            
+                            // Show costs
+                            let costs = [];
+                            if (attackData.manaCost > 0) costs.push(`<span style="color: #74c0fc">${attackData.manaCost}MP</span>`);
+                            if (attackData.cooldown > 0) {
+                                if (onCooldown) {
+                                    costs.push(`<span style="color: #ff6b6b">CD:${cooldownTurns}/${attackData.cooldown}</span>`);
+                                } else {
+                                    costs.push(`<span style="color: #ffa94d">CD:${attackData.cooldown}</span>`);
+                                }
+                            }
+                            if (attackData.requiresAmmo) costs.push(`<span style="color: #ffc078">Ammo</span>`);
+                            
+                            if (costs.length > 0) {
+                                attacksHTML += `<div style="font-size: 0.85em;">${costs.join(' ')}</div>`;
+                            }
+                            
+                            attacksHTML += `</div>`;
+                        });
+                        
+                        attacksHTML += '</div></div>';
+                    }
+                    
                     tooltip.innerHTML = `
                         <h4>${enemyKey} (Level ${enemyLevel})</h4>
                         <div class="stat-row"><span>Health:</span><span>${currentHp}/${currentMaxHp}</span></div>
@@ -1858,16 +1922,56 @@
                         <div class="stat-row"><span>Defense:</span><span>${currentDef}</span></div>
                         ${damagePreview}
                         ${specialEffect !== 'No special effect' ? `<div class="special-effect">${specialEffect}</div>` : ''}
+                        ${attacksHTML}
                     `;
                     
                     tooltip.classList.add('active');
                     
+                    // Smart positioning to keep tooltip on screen
+                    const tooltipRect = tooltip.getBoundingClientRect();
+                    const viewportWidth = window.innerWidth;
+                    const viewportHeight = window.innerHeight;
+                    
                     if (isMobile) {
-                        tooltip.style.left = Math.max(10, rect.left) + 'px';
-                        tooltip.style.top = (rect.bottom + 10) + 'px';
+                        // Below enemy on mobile
+                        let left = Math.max(10, rect.left);
+                        let top = rect.bottom + 10;
+                        
+                        // Keep within viewport
+                        if (left + tooltipRect.width > viewportWidth - 10) {
+                            left = viewportWidth - tooltipRect.width - 10;
+                        }
+                        if (top + tooltipRect.height > viewportHeight - 10) {
+                            top = rect.top - tooltipRect.height - 10;
+                        }
+                        
+                        tooltip.style.left = left + 'px';
+                        tooltip.style.top = top + 'px';
                     } else {
-                        tooltip.style.left = (rect.right + 15) + 'px';
-                        tooltip.style.top = rect.top + 'px';
+                        // To the right on desktop, but check if it fits
+                        let left = rect.right + 15;
+                        let top = rect.top;
+                        
+                        // If tooltip goes off right edge, show on left side instead
+                        if (left + tooltipRect.width > viewportWidth - 10) {
+                            left = rect.left - tooltipRect.width - 15;
+                        }
+                        
+                        // If still off screen, center it
+                        if (left < 10) {
+                            left = Math.max(10, (viewportWidth - tooltipRect.width) / 2);
+                        }
+                        
+                        // Keep vertical position on screen
+                        if (top + tooltipRect.height > viewportHeight - 10) {
+                            top = viewportHeight - tooltipRect.height - 10;
+                        }
+                        if (top < 10) {
+                            top = 10;
+                        }
+                        
+                        tooltip.style.left = left + 'px';
+                        tooltip.style.top = top + 'px';
                     }
                 };
                 
@@ -2217,6 +2321,71 @@
                             }
                         }
                         
+                        // Get enemy attacks
+                        const enemyStats = ENEMY_BASE_STATS[currentKey];
+                        const attackPool = enemyStats && enemyStats.attacks ? enemyStats.attacks : [];
+                        let attacksHTML = '';
+                        
+                        if (attackPool.length > 0) {
+                            attacksHTML = '<div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255, 215, 0, 0.3);"><div style="font-weight: bold; color: #FFD700; margin-bottom: 6px;">⚔️ Attacks:</div>';
+                            attacksHTML += '<div style="display: flex; flex-wrap: wrap; gap: 6px;">';
+                            
+                            const allEnemies = getEnemyWrappers();
+                            const enemyIdx = allEnemies.indexOf(wrap);
+                            
+                            attackPool.forEach(attackName => {
+                                const attackData = ATTACK_STATS[attackName];
+                                if (!attackData) return;
+                                
+                                const emoji = attackData.emoji || '⚔️';
+                                const onCooldown = enemyCooldowns[enemyIdx] && enemyCooldowns[enemyIdx][attackName] > 0;
+                                const cooldownTurns = onCooldown ? enemyCooldowns[enemyIdx][attackName] : 0;
+                                
+                                // Build damage multiplier text
+                                let damageText = '';
+                                if (attackData.strMultiplier > 0) damageText += `💪${attackData.strMultiplier}x `;
+                                if (attackData.magicMultiplier > 0) damageText += `✨${attackData.magicMultiplier}x `;
+                                if (attackData.skillMultiplier > 0) damageText += `🎯${attackData.skillMultiplier}x `;
+                                
+                                attacksHTML += `<div style="
+                                    display: inline-block;
+                                    padding: 6px 8px;
+                                    background: ${onCooldown ? 'rgba(255, 107, 107, 0.2)' : 'rgba(81, 207, 102, 0.2)'};
+                                    border: 2px solid ${onCooldown ? '#ff6b6b' : '#51cf66'};
+                                    border-radius: 6px;
+                                    font-size: 0.8em;
+                                    min-width: 120px;
+                                    text-align: center;
+                                    ${onCooldown ? 'opacity: 0.7;' : ''}
+                                ">`;
+                                
+                                attacksHTML += `<div style="font-weight: bold; color: ${onCooldown ? '#ff6b6b' : '#ffd700'}; margin-bottom: 2px;">${emoji} ${attackName}</div>`;
+                                
+                                if (damageText) {
+                                    attacksHTML += `<div style="color: #ff8787; font-size: 0.9em; margin-bottom: 2px;">${damageText.trim()}</div>`;
+                                }
+                                
+                                let costs = [];
+                                if (attackData.manaCost > 0) costs.push(`<span style="color: #74c0fc">${attackData.manaCost}MP</span>`);
+                                if (attackData.cooldown > 0) {
+                                    if (onCooldown) {
+                                        costs.push(`<span style="color: #ff6b6b">CD:${cooldownTurns}/${attackData.cooldown}</span>`);
+                                    } else {
+                                        costs.push(`<span style="color: #ffa94d">CD:${attackData.cooldown}</span>`);
+                                    }
+                                }
+                                if (attackData.requiresAmmo) costs.push(`<span style="color: #ffc078">Ammo</span>`);
+                                
+                                if (costs.length > 0) {
+                                    attacksHTML += `<div style="font-size: 0.85em;">${costs.join(' ')}</div>`;
+                                }
+                                
+                                attacksHTML += `</div>`;
+                            });
+                            
+                            attacksHTML += '</div></div>';
+                        }
+                        
                         tooltip.innerHTML = `
                             <h4>${currentKey} (Level ${level})</h4>
                             <div class="stat-row"><span>Health:</span><span>${currentHp}/${currentMaxHp}</span></div>
@@ -2227,19 +2396,56 @@
                             ${statusHtml}
                             ${damagePreview}
                             ${specialEffect !== 'No special effect' ? `<div class="special-effect">${specialEffect}</div>` : ''}
+                            ${attacksHTML}
                         `;
                         
                         tooltip.classList.add('active');
                         
-                        // Position tooltip
+                        // Smart positioning to keep tooltip on screen
+                        const tooltipRect = tooltip.getBoundingClientRect();
+                        const viewportWidth = window.innerWidth;
+                        const viewportHeight = window.innerHeight;
+                        
                         if (isMobile) {
                             // Below enemy on mobile
-                            tooltip.style.left = Math.max(10, rect.left) + 'px';
-                            tooltip.style.top = (rect.bottom + 10) + 'px';
+                            let left = Math.max(10, rect.left);
+                            let top = rect.bottom + 10;
+                            
+                            // Keep within viewport
+                            if (left + tooltipRect.width > viewportWidth - 10) {
+                                left = viewportWidth - tooltipRect.width - 10;
+                            }
+                            if (top + tooltipRect.height > viewportHeight - 10) {
+                                top = rect.top - tooltipRect.height - 10;
+                            }
+                            
+                            tooltip.style.left = left + 'px';
+                            tooltip.style.top = top + 'px';
                         } else {
-                            // To the right on desktop
-                            tooltip.style.left = (rect.right + 15) + 'px';
-                            tooltip.style.top = rect.top + 'px';
+                            // To the right on desktop, but check if it fits
+                            let left = rect.right + 15;
+                            let top = rect.top;
+                            
+                            // If tooltip goes off right edge, show on left side instead
+                            if (left + tooltipRect.width > viewportWidth - 10) {
+                                left = rect.left - tooltipRect.width - 15;
+                            }
+                            
+                            // If still off screen, center it
+                            if (left < 10) {
+                                left = Math.max(10, (viewportWidth - tooltipRect.width) / 2);
+                            }
+                            
+                            // Keep vertical position on screen
+                            if (top + tooltipRect.height > viewportHeight - 10) {
+                                top = viewportHeight - tooltipRect.height - 10;
+                            }
+                            if (top < 10) {
+                                top = 10;
+                            }
+                            
+                            tooltip.style.left = left + 'px';
+                            tooltip.style.top = top + 'px';
                         }
                     };
                     
