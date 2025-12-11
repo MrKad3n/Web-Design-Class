@@ -99,7 +99,7 @@
         .tier-header.tier-4 { background: linear-gradient(135deg, #a335ee 0%, #7d28bb 100%); color: #fff; }
         .tier-header.tier-5 { background: linear-gradient(135deg, #ff8000 0%, #cc6600 100%); color: #fff; }
         .tier-header.tier-6 { background: linear-gradient(135deg, #e91e63 0%, #b0153f 100%); color: #fff; }
-        .tier-header.tier-unknown { background: linear-gradient(135deg, #00ffff 0%, #00cccc 100%); color: #000; }
+        .tier-header.tier-Chaos { background: linear-gradient(135deg, #00ffff 0%, #00cccc 100%); color: #000; }
         .tier-header.tier-7 { background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%); color: #fff; }
 
         .enemies-grid {
@@ -130,7 +130,6 @@
 
         .enemy-card.obtained:hover {
             transform: scale(1.1);
-            box-shadow: 0 0 20px currentColor;
             z-index: 10;
         }
 
@@ -147,6 +146,97 @@
             max-width: 90%;
             max-height: 90%;
             object-fit: contain;
+        }
+
+        /* Animated glow effects for each enemy type */
+        @keyframes glowUndead {
+            0%, 100% { box-shadow: 0 0 10px #8b4789, 0 0 20px #8b4789, 0 0 30px #8b4789; }
+            50% { box-shadow: 0 0 15px #b565b8, 0 0 30px #b565b8, 0 0 45px #b565b8; }
+        }
+
+        @keyframes glowAberration {
+            0%, 100% { box-shadow: 0 0 10px #9b59b6, 0 0 20px #9b59b6, 0 0 30px #9b59b6; }
+            50% { box-shadow: 0 0 15px #c77ce3, 0 0 30px #c77ce3, 0 0 45px #c77ce3; }
+        }
+
+        @keyframes glowBeast {
+            0%, 100% { box-shadow: 0 0 10px #8b4513, 0 0 20px #8b4513, 0 0 30px #8b4513; }
+            50% { box-shadow: 0 0 15px #b8601a, 0 0 30px #b8601a, 0 0 45px #b8601a; }
+        }
+
+        @keyframes glowElemental {
+            0%, 100% { box-shadow: 0 0 10px #e67e22, 0 0 20px #e67e22, 0 0 30px #e67e22; }
+            50% { box-shadow: 0 0 15px #ff9f4f, 0 0 30px #ff9f4f, 0 0 45px #ff9f4f; }
+        }
+
+        @keyframes glowNature {
+            0%, 100% { box-shadow: 0 0 10px #2ecc71, 0 0 20px #2ecc71, 0 0 30px #2ecc71; }
+            50% { box-shadow: 0 0 15px #5effa1, 0 0 30px #5effa1, 0 0 45px #5effa1; }
+        }
+
+        @keyframes glowHumanoid {
+            0%, 100% { box-shadow: 0 0 10px #3498db, 0 0 20px #3498db, 0 0 30px #3498db; }
+            50% { box-shadow: 0 0 15px #5dbbff, 0 0 30px #5dbbff, 0 0 45px #5dbbff; }
+        }
+
+        @keyframes glowAquatic {
+            0%, 100% { box-shadow: 0 0 10px #1abc9c, 0 0 20px #1abc9c, 0 0 30px #1abc9c; }
+            50% { box-shadow: 0 0 15px #4aeac9, 0 0 30px #4aeac9, 0 0 45px #4aeac9; }
+        }
+
+        @keyframes glowConstruct {
+            0%, 100% { box-shadow: 0 0 10px #7f8c8d, 0 0 20px #7f8c8d, 0 0 30px #7f8c8d; }
+            50% { box-shadow: 0 0 15px #abb7b8, 0 0 30px #abb7b8, 0 0 45px #abb7b8; }
+        }
+
+        @keyframes glowDemiGod {
+            0%, 100% { box-shadow: 0 0 10px #f1c40f, 0 0 20px #f1c40f, 0 0 30px #f1c40f; }
+            50% { box-shadow: 0 0 15px #ffeb3b, 0 0 30px #ffeb3b, 0 0 45px #ffeb3b; }
+        }
+
+        @keyframes glowUnknown {
+            0%, 100% { box-shadow: 0 0 10px #ffffff, 0 0 20px #ffffff, 0 0 30px #ffffff; }
+            50% { box-shadow: 0 0 15px #dddddd, 0 0 30px #dddddd, 0 0 45px #dddddd; }
+        }
+
+        .enemy-card.obtained[data-type="Undead"]:hover {
+            animation: glowUndead 2s ease-in-out infinite;
+        }
+
+        .enemy-card.obtained[data-type="Aberration"]:hover {
+            animation: glowAberration 2s ease-in-out infinite;
+        }
+
+        .enemy-card.obtained[data-type="Beast"]:hover {
+            animation: glowBeast 2s ease-in-out infinite;
+        }
+
+        .enemy-card.obtained[data-type="Elemental"]:hover {
+            animation: glowElemental 2s ease-in-out infinite;
+        }
+
+        .enemy-card.obtained[data-type="Nature"]:hover {
+            animation: glowNature 2s ease-in-out infinite;
+        }
+
+        .enemy-card.obtained[data-type="Humanoid"]:hover {
+            animation: glowHumanoid 2s ease-in-out infinite;
+        }
+
+        .enemy-card.obtained[data-type="Aquatic"]:hover {
+            animation: glowAquatic 2s ease-in-out infinite;
+        }
+
+        .enemy-card.obtained[data-type="Construct"]:hover {
+            animation: glowConstruct 2s ease-in-out infinite;
+        }
+
+        .enemy-card.obtained[data-type="Demi-God"]:hover {
+            animation: glowDemiGod 2s ease-in-out infinite;
+        }
+
+        .enemy-card.obtained:hover {
+            box-shadow: 0 0 20px currentColor;
         }
 
         .tooltip {

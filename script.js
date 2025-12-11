@@ -129,8 +129,8 @@ const popupContent = document.getElementById("popup-content");
 
 const rows = 20;
 const cols = 20;
-let pathLength = 100; // Default for normal mode
-let currentGameMode = 'normal'; // Track current game mode
+let pathLength = 100; // Default path length
+let currentGameMode = 'main'; // Track current game mode
 let tileData = {};
 
 // Initialize game mode from URL or localStorage
@@ -139,19 +139,33 @@ function initializeGameMode() {
     const modeParam = urlParams.get('mode');
     
     if (modeParam) {
-        currentGameMode = modeParam;
-        localStorage.setItem('selectedGameMode', modeParam);
+        // Map 'normal' to 'main' for internal consistency
+        currentGameMode = (modeParam === 'normal') ? 'main' : modeParam;
+        localStorage.setItem('selectedGameMode', currentGameMode);
     } else {
-        currentGameMode = localStorage.getItem('selectedGameMode') || 'normal';
+        const savedMode = localStorage.getItem('selectedGameMode');
+        currentGameMode = (savedMode === 'normal') ? 'main' : (savedMode || 'main');
     }
     
-    // Set pathLength based on mode
-    if (currentGameMode === 'hard') {
-        pathLength = 50; // Hard mode is levels 51-100, so 50 tiles
-    } else if (currentGameMode === 'hell') {
-        pathLength = 50; // Hell mode is levels 101-150, so 50 tiles
-    } else {
-        pathLength = 50; // Normal mode is levels 1-50
+    // Set pathLength and add portal tiles based on mode
+    if (currentGameMode === 'main') {
+        pathLength = 100; // Main path: levels 1-100
+    } else if (currentGameMode === 'undead') {
+        pathLength = 11; // Dimension has 11 levels (10-20)
+    } else if (currentGameMode === 'nature') {
+        pathLength = 11; // 25-35
+    } else if (currentGameMode === 'elemental') {
+        pathLength = 11; // 40-50
+    } else if (currentGameMode === 'beast') {
+        pathLength = 11; // 55-65
+    } else if (currentGameMode === 'aquatic') {
+        pathLength = 11; // 70-80
+    } else if (currentGameMode === 'construct') {
+        pathLength = 11; // 85-95
+    } else if (currentGameMode === 'aberration') {
+        pathLength = 11; // 90-100
+    } else if (currentGameMode === 'chaos') {
+        pathLength = 50; // Chaos Realm: levels 101-150
     }
     
     return currentGameMode;
@@ -197,6 +211,85 @@ function clearLevelAndUnlock(level) {
     progression.unlockedUpToLevel = level + 1;
   }
   
+  // Special: If level 100 (Divine King) is defeated, create chaos portal at level 101
+  if (level === 100 && currentGameMode === 'main') {
+    // Find an empty cell for the chaos portal (adjacent to level 100 if possible)
+    if (typeof tileData !== 'undefined' && Object.keys(tileData).length > 0) {
+      // Find level 100 position
+      let level100Key = null;
+      for (const key in tileData) {
+        if (tileData[key].level === 100) {
+          level100Key = key;
+          break;
+        }
+      }
+      
+      if (level100Key) {
+        const [row100, col100] = level100Key.split(',').map(Number);
+        
+        // Try to find an adjacent empty cell
+        const adjacentCells = [
+          [row100 - 1, col100], [row100 + 1, col100],
+          [row100, col100 - 1], [row100, col100 + 1]
+        ];
+        
+        let portalPlaced = false;
+        for (const [r, c] of adjacentCells) {
+          const adjacentKey = `${r},${c}`;
+          if (r >= 0 && r < 20 && c >= 0 && c < 20 && !tileData[adjacentKey]) {
+            // Create the chaos portal here
+            tileData[adjacentKey] = {
+              level: 101,
+              title: "🌀 Chaos Realm Portal",
+              description: "Enter the Chaos Realm - Reality itself bends here.",
+              cleared: false,
+              status: true, // Unlocked immediately
+              isPortal: true,
+              portalMode: 'chaos',
+              portalName: 'Chaos Realm',
+              portalIcon: '🌀',
+              enemyOne: null,
+              enemyTwo: null,
+              enemyThree: null
+            };
+            portalPlaced = true;
+            console.log('Chaos portal created at level 101, position:', adjacentKey);
+            break;
+          }
+        }
+        
+        // If no adjacent cells available, try to find any empty cell
+        if (!portalPlaced) {
+          for (let r = 0; r < 20; r++) {
+            for (let c = 0; c < 20; c++) {
+              const key = `${r},${c}`;
+              if (!tileData[key]) {
+                tileData[key] = {
+                  level: 101,
+                  title: "🌀 Chaos Realm Portal",
+                  description: "Enter the Chaos Realm - Reality itself bends here.",
+                  cleared: false,
+                  status: true,
+                  isPortal: true,
+                  portalMode: 'chaos',
+                  portalName: 'Chaos Realm',
+                  portalIcon: '🌀',
+                  enemyOne: null,
+                  enemyTwo: null,
+                  enemyThree: null
+                };
+                portalPlaced = true;
+                console.log('Chaos portal created at level 101, position:', key);
+                break;
+              }
+            }
+            if (portalPlaced) break;
+          }
+        }
+      }
+    }
+  }
+  
   console.log('Updated progression:', progression);
   saveDungeonProgression(progression);
   
@@ -239,7 +332,8 @@ function generateAndSaveDungeon() {
   const maxAttempts = 50;
   
   // Reset dungeon progression: only level 1 is playable initially
-  localStorage.removeItem('dungeonProgressionData');
+  const mode = currentGameMode || 'main';
+  localStorage.removeItem(`dungeonProgressionData_${mode}`);
   
   // A helper function to find unvisited neighbors
   function getUnvisitedNeighbors(row, col) {
@@ -286,7 +380,7 @@ function generateAndSaveDungeon() {
   while (!success && attempts < maxAttempts) {
     dungeonPath = [];
     visited = new Set();
-    // Ensure level 1 starts within the initial visible 10x10 area
+    // Ensure level 1 starts within the initial visible area
     const startRow = Math.floor(Math.random() * Math.min(10, rows));
     const startCol = Math.floor(Math.random() * Math.min(10, cols));
     success = findPath(startRow, startCol);
@@ -310,9 +404,9 @@ function generateAndSaveDungeon() {
       const e = ENEMY_BASE_STATS[key];
       if (!e || !e.image) continue;
       
-      // Handle both numeric tiers and string tiers (like 'unknown')
-      const tierMatch = (typeof tier === 'string' && tier === 'unknown') 
-        ? e.tier === 'unknown'
+      // Handle both numeric tiers and string tiers (like 'Chaos')
+      const tierMatch = (typeof tier === 'string' && tier === 'Chaos') 
+        ? e.tier === 'Chaos'
         : Number(e.tier) === Number(tier);
       
       if (tierMatch) {
@@ -322,286 +416,248 @@ function generateAndSaveDungeon() {
     return list;
   }
 
+  // Helper: collect enemies by type
+  function getEnemiesByType(type){
+    const list = [];
+    for (const key in ENEMY_BASE_STATS) {
+      const e = ENEMY_BASE_STATS[key];
+      if (!e || !e.image || !e.type) continue;
+      if (e.type === type) {
+        list.push(e.image);
+      }
+    }
+    return list;
+  }
+
+  // Helper: get tier based on level
   function levelToTier(level){
     const lvl = Number(level)||1;
-    // Boss levels: 10, 20, 30, 40, 50 for normal mode
-    if (lvl === 50) return 6; // Final boss of normal mode (tier 6)
-    if (lvl === 40 || lvl === 30 || lvl === 20 || lvl === 10) return 5; // Mini-boss tier 5
-    // Regular tiers based on level ranges
     if (lvl <= 10) return 1;
-    if (lvl <= 20) return 2;
-    if (lvl <= 30) return 3;
-    if (lvl <= 40) return 4;
-    return 4; // 41-49 stay at tier 4
+    if (lvl <= 25) return 2;
+    if (lvl <= 50) return 3;
+    if (lvl <= 75) return 4;
+    return 5;
+  }
+
+  // Helper: get mini-boss for a specific type
+  function getBossForType(type){
+    // Map types to their tier 5 boss enemies
+    const typeBosses = {
+      'Undead': ['Enemies/mutant.png', 'Enemies/ancientLich.png'],
+      'Nature': ['Enemies/worldroot.png'],
+      'Humanoid': ['Enemies/king.png'],
+      'Elemental': ['Enemies/stormElemental.png'],
+      'Beast': ['Enemies/dragon.png', 'Enemies/frostWyrm.png'],
+      'Aquatic': ['Enemies/voidKraken.png'],
+      'Construct': ['Enemies/crystalBehemoth.png'],
+      'Aberration': ['Enemies/Shadow.png', 'Enemies/timeLord.png']
+    };
+    const bossList = typeBosses[type] || [];
+    return bossList.length ? bossList[Math.floor(Math.random() * bossList.length)] : null;
   }
 
   // Populate tileData from the generated path
   dungeonPath.forEach((coords, index) => {
     const key = `${coords.row},${coords.col}`;
+    let level = index + 1;
     
-    // Calculate actual level based on game mode
-    const tileIndex = index + 1;
-    let level;
-    if (currentGameMode === 'hard') {
-      level = 50 + tileIndex;
-    } else if (currentGameMode === 'hell') {
-      level = 100 + tileIndex;
-    } else {
-      level = tileIndex;
+    // Adjust level based on game mode
+    if (currentGameMode === 'chaos') {
+      level = 100 + level; // Chaos realm is levels 101-150
+    } else if (currentGameMode === 'undead') {
+      level = 9 + level; // Levels 10-20
+    } else if (currentGameMode === 'nature') {
+      level = 24 + level; // Levels 25-35
+    } else if (currentGameMode === 'elemental') {
+      level = 39 + level; // Levels 40-50
+    } else if (currentGameMode === 'beast') {
+      level = 54 + level; // Levels 55-65
+    } else if (currentGameMode === 'aquatic') {
+      level = 69 + level; // Levels 70-80
+    } else if (currentGameMode === 'construct') {
+      level = 84 + level; // Levels 85-95
+    } else if (currentGameMode === 'aberration') {
+      level = 89 + level; // Levels 90-100
     }
     
     const tile = { level };
 
-    // Hard Mode specific logic
-    if (currentGameMode === 'hard') {
-      if (tileIndex === 1) {
-        // First tile of hard mode (level 51)
-        tile.title = "Hard Mode - Start";
-        tile.description = "The true challenge begins here.";
-        tile.cleared = false;
-        tile.status = true; // accessible
-        const pool = getEnemiesByTier(4);
-        tile.enemyOne = pool.length ? pool[Math.floor(Math.random()*pool.length)] : null;
-        tile.enemyTwo = pool.length ? pool[Math.floor(Math.random()*pool.length)] : null;
-        tile.enemyThree = pool.length ? pool[Math.floor(Math.random()*pool.length)] : null;
-        tile.enemyFour = null;
-        tile.enemyFive = null;
-      } else if (level === 100) {
-        // Final boss of hard mode: Lightning Shark
-        tile.title = "Hard Mode Final Boss";
-        tile.description = "The Lightning Shark awaits your challenge.";
-        tile.cleared = false;
-        tile.status = false;
-        tile.isBossTile = true;
-        tile.enemyOne = "Enemies/lightningShark.png";
-        tile.enemyTwo = null;
-        tile.enemyThree = null;
-        tile.enemyFour = null;
-        tile.enemyFive = null;
-      } else if ((level - 50) % 5 === 0) {
-        // Boss stages every 5 levels (105, 110, 115, etc.)
-        tile.title = "Hard Mode Boss";
-        tile.description = "Double boss encounter with enhanced stats.";
-        tile.cleared = false;
-        tile.status = false;
-        tile.isBossTile = true;
-        const pool = getEnemiesByTier(5);
-        tile.enemyOne = pool.length ? pool[Math.floor(Math.random()*pool.length)] : null;
-        tile.enemyTwo = pool.length ? pool[Math.floor(Math.random()*pool.length)] : null;
-        tile.enemyThree = null;
-        tile.enemyFour = null;
-        tile.enemyFive = null;
-      } else {
-        // Regular hard mode tiles: up to 5 enemies
-        tile.title = "Hard Mode";
-        tile.description = "Face enhanced enemies in this brutal challenge.";
-        tile.cleared = false;
-        tile.status = false;
-        
-        // Mix of tier 4-5 enemies
-        let pool = getEnemiesByTier(4).concat(getEnemiesByTier(5));
-        const count = 3 + Math.floor(Math.random() * 3); // 3-5 enemies
-        const picks = [];
-        for (let i = 0; i < count; i++) {
-          if (!pool.length) break;
-          const img = pool[Math.floor(Math.random() * pool.length)];
-          picks.push(img);
-        }
-        tile.enemyOne = picks[0] || null;
-        tile.enemyTwo = picks[1] || null;
-        tile.enemyThree = picks[2] || null;
-        tile.enemyFour = picks[3] || null;
-        tile.enemyFive = picks[4] || null;
-      }
-    }
-    // Hell Mode specific logic
-    else if (currentGameMode === 'hell') {
-      const hellLevel = level;
-      const tileIndex = index + 1;
-      const actualLevel = 100 + tileIndex; // Hell mode is levels 101-150
-      
-      tile.level = actualLevel; // Override level for hell mode
-      
-      if (tileIndex === 1) {
-        // First tile of hell mode (level 151)
-        tile.title = "Hell Mode - Start";
-        tile.description = "Unknown entities await...";
-        tile.cleared = false;
-        tile.status = true; // accessible
-        const unknownPool = getEnemiesByTier('unknown');
-        const count = 2;
-        const picks = [];
-        for (let i = 0; i < count; i++) {
-          if (!unknownPool.length) break;
-          const img = unknownPool[Math.floor(Math.random() * unknownPool.length)];
-          picks.push(img);
-        }
-        tile.enemyOne = picks[0] || null;
-        tile.enemyTwo = picks[1] || null;
-        tile.enemyThree = null;
-        tile.enemyFour = null;
-        tile.enemyFive = null;
-      } else if (actualLevel === 150) {
-        // Final boss: The Overseer (tier 7)
-        tile.title = "The Overseer";
-        tile.description = "The Ancient One awaits at the pinnacle of hell.";
-        tile.cleared = false;
-        tile.status = false;
-        tile.isBossTile = true;
-        tile.enemyOne = "Enemies/overseer.png";
-        tile.enemyTwo = null;
-        tile.enemyThree = null;
-        tile.enemyFour = null;
-        tile.enemyFive = null;
-      } else if (actualLevel === 125) {
-        // Mid-boss: Monstrous Fish with minions
-        tile.title = "Abyssal Terror";
-        tile.description = "The Monstrous Fish rules this domain.";
-        tile.cleared = false;
-        tile.status = false;
-        tile.isBossTile = true;
-        tile.enemyOne = "Enemies/monstruousFish.png";
-        // Add some minions (uncommon/rare enemies for tier 6 boss fight)
-        const minionPool = getEnemiesByTier(2).concat(getEnemiesByTier(3));
-        tile.enemyTwo = minionPool.length ? minionPool[Math.floor(Math.random() * minionPool.length)] : null;
-        tile.enemyThree = minionPool.length ? minionPool[Math.floor(Math.random() * minionPool.length)] : null;
-        tile.enemyFour = null;
-        tile.enemyFive = null;
-      } else {
-        // Regular hell mode tiles: mix of unknown enemies and buffed lower-tier enemies
-        tile.title = "Hell Mode";
-        tile.description = "Reality distorts around mysterious foes.";
-        tile.cleared = false;
-        tile.status = false;
-        
-        // Build pool: unknown enemies + all tiers 2-5
-        let unknownPool = getEnemiesByTier('unknown');
-        
-        // Exclude monstrous fish until after mid-boss encounter
-        if (actualLevel < 125) {
-          unknownPool = unknownPool.filter(img => img !== "Enemies/monstruousFish.png");
-        }
-        
-        const tier2Pool = getEnemiesByTier(2);
-        const tier3Pool = getEnemiesByTier(3);
-        const tier4Pool = getEnemiesByTier(4);
-        const tier5Pool = getEnemiesByTier(5);
-        
-        // Weighted pool - favor unknown enemies (5x weight)
-        let pool = [];
-        for (let i = 0; i < 5; i++) pool = pool.concat(unknownPool); // 5x weight for unknown
-        pool = pool.concat(tier2Pool, tier3Pool, tier4Pool, tier5Pool);
-        
-        // Enemy count: Fixed ranges to ensure variety
-        // Fewer enemies = higher individual power (handled by battle stat multipliers)
-        // More enemies = lower individual power but more total threat
-        let minEnemies, maxEnemies;
-        if (actualLevel <= 160) {
-          minEnemies = 2;
-          maxEnemies = 4; // 2-4 enemies
-        } else if (actualLevel <= 170) {
-          minEnemies = 3;
-          maxEnemies = 5; // 3-5 enemies
-        } else if (actualLevel <= 180) {
-          minEnemies = 3;
-          maxEnemies = 6; // 3-6 enemies
-        } else if (actualLevel <= 190) {
-          minEnemies = 4;
-          maxEnemies = 7; // 4-7 enemies
-        } else {
-          minEnemies = 5;
-          maxEnemies = 7; // 5-7 enemies
-        }
-        
-        const count = minEnemies + Math.floor(Math.random() * (maxEnemies - minEnemies + 1));
-        
-        const picks = [];
-        for (let i = 0; i < count; i++) {
-          if (!pool.length) break;
-          const img = pool[Math.floor(Math.random() * pool.length)];
-          picks.push(img);
-        }
-        
-        tile.enemyOne = picks[0] || null;
-        tile.enemyTwo = picks[1] || null;
-        tile.enemyThree = picks[2] || null;
-        tile.enemyFour = picks[3] || null;
-        tile.enemyFive = picks[4] || null;
-        tile.enemySix = picks[5] || null;
-        tile.enemySeven = picks[6] || null;
-      }
-    }
-    // Normal Mode logic
-    else {
+    // Mode-based tile generation
+    if (currentGameMode === 'main') {
+      // MAIN PATH (Levels 1-100)
       if (level === 1) {
-        tile.title = "Start Tile";
-        tile.description = "This is the beginning of the map.";
+        tile.title = "Journey Begins";
+        tile.description = "The first step of your adventure.";
         tile.cleared = false;
         tile.status = true;
         const pool = getEnemiesByTier(1);
         tile.enemyOne = pool.length ? pool[Math.floor(Math.random()*pool.length)] : null;
         tile.enemyTwo = null;
         tile.enemyThree = null;
-      } else if (level === 50) {
-        // Final boss: Divine King (tier 6)
-        tile.title = "Divine King";
-        tile.description = "The ultimate challenge awaits.";
+      } else if (level === 10 || level === 25 || level === 40 || level === 55 || level === 70 || level === 85 || level === 90) {
+        // Portal tiles - separate from regular levels, transition to dimension
+        const portalMap = {
+          10: { mode: 'undead', name: 'Graveyard Dimension', icon: '💀' },
+          25: { mode: 'nature', name: 'Verdant Dimension', icon: '🌿' },
+          40: { mode: 'elemental', name: 'Elemental Plane', icon: '🔥' },
+          55: { mode: 'beast', name: 'Primal Wilds', icon: '🦁' },
+          70: { mode: 'aquatic', name: 'Abyssal Depths', icon: '🌊' },
+          85: { mode: 'construct', name: 'Forge of Titans', icon: '🗿' },
+          90: { mode: 'aberration', name: 'Void Realm', icon: '👁️' }
+        };
+        const portal = portalMap[level];
+        tile.title = `🌀 ${portal.name}`;
+        tile.description = `Enter the ${portal.name}`;
+        tile.cleared = false;
+        tile.status = false;
+        tile.isPortal = true;
+        tile.portalMode = portal.mode;
+        tile.portalName = portal.name;
+        tile.portalIcon = portal.icon;
+        // No enemies on portal tile itself
+        tile.enemyOne = null;
+        tile.enemyTwo = null;
+        tile.enemyThree = null;
+      } else if (level === 15 || level === 30 || level === 45 || level === 60 || level === 75) {
+        // Humanoid bosses every 15 levels
+        tile.title = "⚔️ Humanoid Champion";
+        tile.description = "A powerful humanoid blocks your path.";
+        tile.cleared = false;
+        tile.status = false;
+        tile.isBossTile = true;
+        const pool = getEnemiesByTier(5);
+        const humanoidBosses = pool.filter(img => {
+          for (const key in ENEMY_BASE_STATS) {
+            if (ENEMY_BASE_STATS[key].image === img && ENEMY_BASE_STATS[key].type === 'Humanoid') {
+              return true;
+            }
+          }
+          return false;
+        });
+        tile.enemyOne = humanoidBosses.length ? humanoidBosses[Math.floor(Math.random() * humanoidBosses.length)] : pool[0];
+        tile.enemyTwo = null;
+        tile.enemyThree = null;
+      } else if (level === 100) {
+        // Divine King - Final boss of main path
+        tile.title = "⚔️ Divine King";
+        tile.description = "Defeat the Divine King to unlock the Chaos Realm.";
         tile.cleared = false;
         tile.status = false;
         tile.isBossTile = true;
         tile.enemyOne = "Enemies/divineKing.png";
         tile.enemyTwo = null;
         tile.enemyThree = null;
-      } else if (level === 40 || level === 30 || level === 20 || level === 10) {
-        // Boss levels: tier 5
-        tile.title = "Boss";
-        tile.description = "A powerful boss blocks your path.";
+      } else {
+        // Regular humanoid levels - tier-based spawning
+        tile.title = "Humanoid Territory";
+        tile.description = "Humanoid warriors defend their realm.";
+        tile.cleared = false;
+        tile.status = false;
+        
+        const tier = levelToTier(level);
+        const pool = getEnemiesByTier(tier).concat(tier > 1 ? getEnemiesByTier(tier - 1) : []);
+        const humanoidPool = pool.filter(img => {
+          for (const key in ENEMY_BASE_STATS) {
+            if (ENEMY_BASE_STATS[key].image === img && ENEMY_BASE_STATS[key].type === 'Humanoid') {
+              return true;
+            }
+          }
+          return false;
+        });
+        
+        const count = level <= 10 ? 1 + Math.floor(Math.random() * 2) : 2 + Math.floor(Math.random() * 2);
+        const picks = [];
+        for (let i = 0; i < count; i++) {
+          if (!humanoidPool.length) break;
+          picks.push(humanoidPool[Math.floor(Math.random() * humanoidPool.length)]);
+        }
+        tile.enemyOne = picks[0] || null;
+        tile.enemyTwo = picks[1] || null;
+        tile.enemyThree = picks[2] || null;
+      }
+    } else if (currentGameMode === 'chaos') {
+      // CHAOS REALM (Levels 101-150)
+      if (level === 150) {
+        // The Overseer - Final Boss
+        tile.title = "👁️‍🗨️ The Overseer";
+        tile.description = "The Ancient One awaits.";
         tile.cleared = false;
         tile.status = false;
         tile.isBossTile = true;
-        const pool = getEnemiesByTier(5);
-        tile.enemyOne = pool.length ? pool[Math.floor(Math.random()*pool.length)] : null;
+        tile.enemyOne = "Enemies/overseer.png";
         tile.enemyTwo = null;
         tile.enemyThree = null;
       } else {
-        // Regular tiles: choose tier by level bands
-        tile.title = "Basic";
-        tile.description = `A path leads you deeper into the dungeon.`;
+        // Regular chaos levels
+        tile.title = `🌀 Chaos Realm`;
+        tile.description = "Reality bends around chaotic entities.";
+        tile.cleared = false;
+        tile.status = (level === 101); // Only first level accessible initially
+        
+        const chaosPool = getEnemiesByTier('Chaos');
+        const count = 2 + Math.floor(Math.random() * 3);
+        const picks = [];
+        for (let i = 0; i < count; i++) {
+          if (!chaosPool.length) break;
+          picks.push(chaosPool[Math.floor(Math.random() * chaosPool.length)]);
+        }
+        tile.enemyOne = picks[0] || null;
+        tile.enemyTwo = picks[1] || null;
+        tile.enemyThree = picks[2] || null;
+        tile.enemyFour = picks[3] || null;
+      }
+    } else {
+      // DIMENSIONAL PORTALS (10 levels each)
+      const dimensionTypes = {
+        'undead': { type: 'Undead', name: 'Graveyard', icon: '💀' },
+        'nature': { type: 'Nature', name: 'Verdant', icon: '🌿' },
+        'elemental': { type: 'Elemental', name: 'Elemental', icon: '🔥' },
+        'beast': { type: 'Beast', name: 'Primal', icon: '🦁' },
+        'aquatic': { type: 'Aquatic', name: 'Abyssal', icon: '🌊' },
+        'construct': { type: 'Construct', name: 'Forge', icon: '🗿' },
+        'aberration': { type: 'Aberration', name: 'Void', icon: '👁️' }
+      };
+      
+      const dimInfo = dimensionTypes[currentGameMode];
+      
+      // Determine if this is the boss level (last level of dimension)
+      const dimensionStartLevels = {
+        'undead': 10,
+        'nature': 25,
+        'elemental': 40,
+        'beast': 55,
+        'aquatic': 70,
+        'construct': 85,
+        'aberration': 90
+      };
+      const startLevel = dimensionStartLevels[currentGameMode] || 1;
+      const isBossLevel = (level === startLevel + 10); // Boss at +10 from start
+      
+      if (isBossLevel) {
+        // Dimensional boss
+        tile.title = `${dimInfo.icon} ${dimInfo.type} Overlord`;
+        tile.description = `The ruler of this dimension awaits.`;
         tile.cleared = false;
         tile.status = false;
+        tile.isBossTile = true;
+        tile.isDimensionalBoss = true;
+        const bossImage = getBossForType(dimInfo.type);
+        tile.enemyOne = bossImage || null;
+        tile.enemyTwo = null;
+        tile.enemyThree = null;
+      } else {
+        // Regular dimension level
+        tile.title = `${dimInfo.icon} ${dimInfo.name} Dimension`;
+        tile.description = `Face ${dimInfo.type} enemies.`;
+        tile.cleared = false;
+        tile.status = (level === startLevel); // Only first level accessible initially
         
-        // After level 10, mix enemies from different tiers
-        let pool = [];
-        if (level <= 10) {
-          const tier = levelToTier(level);
-          pool = getEnemiesByTier(tier);
-        } else {
-          const baseTier = levelToTier(level);
-          const tierRange = [];
-          if (baseTier > 1) tierRange.push(baseTier - 1);
-          tierRange.push(baseTier);
-          if (baseTier < 5) tierRange.push(baseTier + 1);
-          
-          tierRange.forEach(t => {
-            pool = pool.concat(getEnemiesByTier(t));
-          });
-        }
-        
-        const count = (function enemiesCountForLevel(level){
-          const lvl = Number(level)||1;
-          if (lvl === 1) return 1;
-          if (lvl <= 10) return 1 + Math.floor(Math.random()*2);
-          if (lvl <= 25) return 2;
-          if (lvl <= 50) return 2 + Math.floor(Math.random()*2);
-          if (lvl <= 75) return 3;
-          if (lvl < 100) return 3 + Math.floor(Math.random()*2);
-          return 1;
-        })(level);
+        const typePool = getEnemiesByType(dimInfo.type);
+        const count = 2 + Math.floor(Math.random() * 2);
         const picks = [];
-        for (let i=0; i<count; i++) {
-          if (!pool.length) break;
-          const img = pool[Math.floor(Math.random()*pool.length)];
-          picks.push(img);
+        for (let i = 0; i < count; i++) {
+          if (!typePool.length) break;
+          picks.push(typePool[Math.floor(Math.random() * typePool.length)]);
         }
         tile.enemyOne = picks[0] || null;
         tile.enemyTwo = picks[1] || null;
@@ -612,8 +668,7 @@ function generateAndSaveDungeon() {
     tileData[key] = tile;
   });
 
-  const mode = currentGameMode || 'normal';
-  localStorage.setItem(`dungeonTileData_${mode}`, JSON.stringify(tileData));
+  localStorage.setItem(`dungeonTileData_${currentGameMode}`, JSON.stringify(tileData));
 }
 
 // Function to render the grid based on tileData
@@ -634,26 +689,53 @@ function renderGrid() {
         cell.style.visibility = "visible";
         cell.style.opacity = data.status ? 1 : 0.5;
         cell.style.borderColor = data.cleared ? "green" : "black";
-        cell.textContent = `Lvl ${data.level}`;
         
-        // Define specific mini-boss levels (excluding Hell Mode)
-        const miniBossLevels = [10, 20, 30, 40, 55, 60, 65, 70, 75, 80, 85, 90, 95];
-        const isFinalBoss = data.level === 50 || data.level === 100 || data.level === 150;
-        const isMidBoss = data.level === 125; // Monstrous Fish
-        const isMiniBoss = miniBossLevels.includes(data.level);
+        // Get current unlocked level for highlighting
+        const progression = loadDungeonProgression();
+        const currentUnlockedLevel = progression.unlockedUpToLevel;
+        
+        // Highlight the current unlocked level with green glow
+        if (data.level === currentUnlockedLevel && !data.cleared) {
+          cell.classList.add('current-level');
+          cell.style.boxShadow = '0 0 20px #00ff00, 0 0 30px #00ff00, 0 0 40px #00ff00';
+          cell.style.borderColor = '#00ff00';
+          cell.style.animation = 'pulse-glow 2s ease-in-out infinite';
+          // Store reference for scrolling
+          cell.dataset.currentLevel = 'true';
+        } else {
+          cell.classList.remove('current-level');
+          cell.style.animation = '';
+          delete cell.dataset.currentLevel;
+        }
+        
+        // Display level number or special icon
+        if (data.isPortal) {
+          cell.textContent = `🌀 ${data.level}`;
+        } else if (data.isDimensionalBoss) {
+          cell.textContent = `${data.dimensionType === 'Undead' ? '💀' : data.dimensionType === 'Nature' ? '🌿' : data.dimensionType === 'Elemental' ? '🔥' : data.dimensionType === 'Beast' ? '🦁' : data.dimensionType === 'Aquatic' ? '🌊' : data.dimensionType === 'Construct' ? '🗿' : '👁️'} ${data.level}`;
+        } else {
+          cell.textContent = `Lvl ${data.level}`;
+        }
+        
+        // Define boss levels in new system
+        const dimensionalBossLevels = [20, 35, 50, 65, 80, 95, 100]; // 10 levels after each portal opens
+        const isFinalBoss = data.level === 100 || data.level === 150;
+        const isHumanoidBoss = data.level === 25 || data.level === 50;
+        const isDimensionalBoss = data.isDimensionalBoss || false;
+        const isPortal = data.isPortal || false;
         
         // Apply appropriate class
         if (isFinalBoss) {
           cell.classList.add('final-boss-cell');
-          cell.classList.remove('mini-boss-cell', 'mid-boss-cell');
-        } else if (isMidBoss) {
-          cell.classList.add('mid-boss-cell');
-          cell.classList.remove('final-boss-cell', 'mini-boss-cell');
-        } else if (isMiniBoss) {
+          cell.classList.remove('mini-boss-cell', 'mid-boss-cell', 'portal-cell');
+        } else if (isPortal) {
+          cell.classList.add('portal-cell');
+          cell.classList.remove('final-boss-cell', 'mini-boss-cell', 'mid-boss-cell');
+        } else if (isDimensionalBoss || isHumanoidBoss) {
           cell.classList.add('mini-boss-cell');
-          cell.classList.remove('final-boss-cell', 'mid-boss-cell');
+          cell.classList.remove('final-boss-cell', 'mid-boss-cell', 'portal-cell');
         } else {
-          cell.classList.remove('mini-boss-cell', 'final-boss-cell', 'mid-boss-cell');
+          cell.classList.remove('mini-boss-cell', 'final-boss-cell', 'mid-boss-cell', 'portal-cell');
         }
       } else {
         cell.style.visibility = "hidden";
@@ -698,6 +780,31 @@ map.addEventListener("click", (e) => {
     const data = tileData[key];
 
     if (data) {
+      // Determine if this level is accessible (cleared or one above highest cleared)
+      const highestCleared = getHighestClearedLevel();
+      const isAccessible = data.cleared || data.level === highestCleared + 1;
+      
+      // Handle portal tiles differently
+      if (data.isPortal) {
+        let portalButtonHTML = '';
+        if (isAccessible) {
+          portalButtonHTML = `<button onclick="enterPortal('${data.portalMode}')" class="battle-btn">Enter Portal</button>`;
+        }
+        
+        const html = `
+          <h3>${data.title}</h3>
+          <p>${data.description}</p>
+          <p>Level: ${data.level}</p>
+          <p style="font-size: 3em; margin: 10px 0;">${data.portalIcon}</p>
+          <div style="margin-top: 1rem;">
+            ${portalButtonHTML}
+            <button onclick="closePopup()" class="close-btn">Close</button>
+          </div>
+        `;
+        openPopup(html, cell);
+        return;
+      }
+
       const enemies = [
         data.enemyOne,
         data.enemyTwo,
@@ -708,19 +815,15 @@ map.addEventListener("click", (e) => {
         data.enemySeven
       ].filter(enemy => enemy);
 
-      const enemiesHTML = enemies.map(enemy =>
+      const enemiesHTML = enemies.length > 0 ? enemies.map(enemy =>
         `<img src="${enemy}" alt="${data.title}" style="width:${100 / enemies.length}%"/>`
-      ).join('');
-
-      // Determine if this level is accessible (cleared or one above highest cleared)
-      const highestCleared = getHighestClearedLevel();
-      const isAccessible = data.cleared || data.level === highestCleared + 1;
+      ).join('') : '';
       
       // Determine if this is a boss tile
-      const isBossTile = data.level === 10 || data.level === 20 || data.level === 30 || data.level === 40 || data.level === 50;
+      const isBossTile = data.isBossTile || data.isDimensionalBoss || false;
       
       let battleButtonHTML = '';
-      if (isAccessible) {
+      if (isAccessible && enemies.length > 0) {
         battleButtonHTML = `<button onclick="startBattle('${data.title}', ${data.level}, '${enemies.join(',')}', ${isBossTile})" class="battle-btn">Battle</button>`;
       }
 
@@ -738,6 +841,31 @@ map.addEventListener("click", (e) => {
     }
   }
 });
+
+// Function to enter a dimensional portal
+function enterPortal(portalMode) {
+  closePopup();
+  
+  // Initialize progression for the dimension if it doesn't exist
+  // Each dimension is independent and starts with its first level unlocked
+  const savedMode = currentGameMode;
+  currentGameMode = portalMode; // Temporarily set to portal mode
+  
+  const progression = loadDungeonProgression();
+  if (progression.unlockedUpToLevel < 1) {
+    // First time entering this dimension - unlock the first level
+    progression.unlockedUpToLevel = 1;
+    saveDungeonProgression(progression);
+  }
+  
+  currentGameMode = savedMode; // Restore current mode
+  
+  // Reload map with the portal's mode
+  window.location.href = `map.html?mode=${portalMode}`;
+}
+
+// Make it globally accessible
+window.enterPortal = enterPortal;
 
 // Function to get the highest cleared level
 function getHighestClearedLevel() {
@@ -838,35 +966,67 @@ document.body.addEventListener("click", (e) => {
     }
 });
 
+// Function to return to main path
+function returnToMainPath() {
+  window.location.href = 'map.html?mode=main';
+}
+
+// Make it globally accessible
+window.returnToMainPath = returnToMainPath;
+
 // Initial setup on page load
 function initialize() {
   // Initialize game mode first
   initializeGameMode();
   
-  const mode = currentGameMode || 'normal';
-  const savedData = localStorage.getItem(`dungeonTileData_${mode}`);
+  // Show/hide return button based on mode
+  const returnBtn = document.getElementById('returnToMain');
+  if (returnBtn) {
+    if (currentGameMode !== 'main') {
+      returnBtn.style.display = 'inline-block';
+    } else {
+      returnBtn.style.display = 'none';
+    }
+  }
+  
+  const savedData = localStorage.getItem(`dungeonTileData_${currentGameMode}`);
   if (savedData) {
     tileData = JSON.parse(savedData);
     // Apply saved progression to tile status
-    const progression = loadDungeonProgression();
-    console.log('Loading progression for mode', mode, ':', progression);
+    let progression = loadDungeonProgression();
+    console.log('Loading progression for mode', currentGameMode, ':', progression);
+    
+    // Ensure first level is always unlocked for dimensions
+    if (progression.unlockedUpToLevel < 1) {
+      progression.unlockedUpToLevel = 1;
+      saveDungeonProgression(progression);
+    }
+    
     for (const key in tileData) {
       const level = tileData[key].level;
       // Mark cleared levels
       if (progression.clearedLevels.includes(level)) {
         tileData[key].cleared = true;
       }
-      // Enable levels up to highest unlocked (but keep 1 and 2 always accessible)
+      // Enable levels up to highest unlocked
       if (level <= progression.unlockedUpToLevel) {
         tileData[key].status = true;
       }
     }
     // Save the updated tileData back to localStorage
-    localStorage.setItem(`dungeonTileData_${mode}`, JSON.stringify(tileData));
+    localStorage.setItem(`dungeonTileData_${currentGameMode}`, JSON.stringify(tileData));
   } else {
     generateAndSaveDungeon();
   }
   renderGrid();
+  
+  // Scroll to current unlocked level after a short delay to ensure rendering is complete
+  setTimeout(() => {
+    const currentLevelCell = document.querySelector('[data-current-level="true"]');
+    if (currentLevelCell) {
+      currentLevelCell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+    }
+  }, 100);
 }
 
 // The button click function to regenerate the dungeon
@@ -3217,7 +3377,6 @@ function resetInventory() {
 
 
 const ENEMY_BASE_STATS = {
-  //Unknown Type Enemy Stats
   'skull': {
     health: 15,
     strength:2,
@@ -3228,6 +3387,7 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/skull.png",
     tier:1,
+    type: "Undead",
     role: "Early threat - Low health but decent speed, teaches players basic combat mechanics and attack timing.",
     attacks: ['Bone Toss', 'Rattling Strike', 'Death Rattle']
   },
@@ -3241,6 +3401,7 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/slime.png",
     tier:2,
+    type: "Aberration",
     role: "Tanky starter - Higher HP and defense than skulls, introduces the need for sustained damage.",
     attacks: ['Acid Splash', 'Engulf', 'Split Attack']
   },
@@ -3254,6 +3415,7 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/alien.png",
     tier:3,
+    type: "Aberration",
     specialEffect: "Alien Fire: Applies burn status on attack",
     attacks: ['Laser Beam', 'Alien Fire', 'Plasma Overload', 'Energy Shield']
   },
@@ -3267,6 +3429,7 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/cursedKnight.png",
     tier:4,
+    type: "Undead",
     specialEffect: "Cursed Blade: Applies grim status on attack (2% max HP damage per turn)",
     attacks: ['Dark Slash', 'Cursed Blade', 'Shadow Strike']
   },
@@ -3280,10 +3443,10 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/shadow.png",
     tier:5,
+    type: "Aberration",
     role: "Speed demon - Extremely fast enemy that attacks frequently, tests player defense and speed builds.",
     attacks: ['Shadow Strike Boss', 'Void Step', 'Dark Pulse', 'Shadow Clone', 'Umbral Assault']
   },
-  //Creature Type Enemy Stats
   'dragon': {
     health: 45,
     strength:3.9,
@@ -3294,11 +3457,11 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/dragon.png",
     tier:5,
+    type: "Beast",
     specialEffect: "BOSS: Dragon's Inferno - All attacks apply burn status (3% max HP damage per turn)",
     attackStatus: "burn",
     attacks: ['Claw Swipe', 'Dragon\'s Inferno', 'Flame Breath', 'Draconic Fury', 'Scales of Fire', 'Inferno Nova']
   },
-  //Zombie Type Enemy Stats
   'corspe': {
     health: 17,
     strength:2.3,
@@ -3309,6 +3472,7 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/corspe.png",
     tier:1,
+    type: "Undead",
     specialEffect: "Undead: Slow shambling corpse",
     attacks: ['Shambling Swipe', 'Infected Bite']
   },
@@ -3322,6 +3486,7 @@ const ENEMY_BASE_STATS = {
     hBars:2,
     image:"Enemies/crawler.png",
     tier:2,
+    type: "Undead",
     specialEffect: "Venomous Bite: Applies bleed status on attack + Two Lives (slow/tanky then fast/fragile)",
     secondForm: {
       health: 8,
@@ -3342,6 +3507,7 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/frozenCorspe.png",
     tier:3,
+    type: "Undead",
     specialEffect: "Frozen Touch: Applies chill status on attack",
     attackStatus: "chill",
     attacks: ['Frozen Touch', 'Ice Spike', 'Frostbite', 'Permafrost']
@@ -3356,6 +3522,7 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/necromancer.png",
     tier:4,
+    type: "Humanoid",
     specialEffect: "Resurrection: While alive, dead allies resurrect as zombies",
     attacks: ['Death Bolt', 'Resurrection', 'Life Drain', 'Curse of Undeath', 'Bone Shield']
   },
@@ -3369,10 +3536,10 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/mutant.png",
     tier:5,
+    type: "Undead",
     specialEffect: "BOSS: Mutated Strength - Fast and powerful zombie with high strength and speed",
     attacks: ['Mutated Strike', 'Toxic Bite', 'Regenerative Flesh', 'Berserk Mode', 'Plague Slam', 'Adaptive Evolution']
   },
-  //Forest Type Enemy Stats
   'Sapling': {
     health: 19,
     strength:0,
@@ -3383,6 +3550,7 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/sapling.png",
     tier:1,
+    type: "Nature",
     role: "Magic seedling - Low HP forest caster, introduces nature-themed enemies.",
     attacks: ['Thorn Shot', 'Photosynthesis', 'Root Whip']
   },
@@ -3396,6 +3564,7 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/vineLasher.png",
     tier:2,
+    type: "Nature",
     specialEffect: "Draining Vines: Applies leech status on attack (drains HP over time)",
     attacks: ['Vine Whip', 'Draining Thorns', 'Entangle']
   },
@@ -3409,6 +3578,7 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/treant.png",
     tier:3,
+    type: "Nature",
     specialEffect: "Rooted Defender: High defense, slow but steady",
     attacks: ['Root Smash', 'Bark Armor', 'Nature\'s Wrath', 'Regeneration']
   },
@@ -3422,6 +3592,7 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/elderEnt.png",
     tier:4,
+    type: "Nature",
     specialEffect: "Ancient Growth: Gains 10% bonus magic each turn (compounds) + high defense",
     attacks: ['Ancient Roots', 'Ancient Growth', 'Overgrowth', 'Forest\'s Blessing', 'Petrify']
   },
@@ -3435,10 +3606,10 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/worldroot.png",
     tier:5,
+    type: "Nature",
     specialEffect: "BOSS: Nature's Call - Summons Vine Lasher (15 lvls lower) every attack",
     attacks: ['Root Strike Boss', 'Nature\'s Call', 'Photosynthesis Boss', 'Worldroot Crush', 'Verdant Shield', 'Gaia\'s Wrath']
   },
-  //Army Enemy Stats
   'Knight': {
     health: 20,
     strength:2.6,
@@ -3449,6 +3620,7 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/knight.png",
     tier:1,
+    type: "Humanoid",
     attacks: ['Sword Slash', 'Shield Fortify', 'Overhead Chop']
   },
   'Archer': {
@@ -3461,6 +3633,7 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/archer.png",
     tier:2,
+    type: "Humanoid",
     attacks: ['Piercing Shot', 'Rapid Fire', 'Quick Bite']
   },
   'Mage': {
@@ -3473,6 +3646,7 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/mage.png",
     tier:3,
+    type: "Humanoid",
     specialEffect: "Arcane Curse: Applies random status effect (burn/bleed/chill) on attack",
     attacks: ['Magic Missile', 'Arcane Curse', 'Mana Shield', 'Spell Burst']
   },
@@ -3486,6 +3660,7 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/kingsGuard.png",
     tier:4,
+    type: "Humanoid",
     specialEffect: "Royal Protector: Balanced high-tier warrior",
     attacks: ['Royal Strike', 'Defensive Stance', 'Punish', 'Honor Bound']
   },
@@ -3499,10 +3674,292 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/king.png",
     tier:5,
+    type: "Humanoid",
     specialEffect: "BOSS: Royal Command - Summons King's Guard (15 lvls lower) + gains 10% stats per guard alive",
-    attacks: ['Royal Strike', 'Defensive Stance', 'Punish', 'Honor Bound']
+    attacks: ['Royal Decree', 'Royal Command', 'Sovereign\'s Might', 'Execute', 'King\'s Blessing', 'Throne Shaker']
   },
-  //Ocean Type Enemy Stats
+  'wisp': {
+    health: 14,
+    strength:0,
+    magic:2.6,
+    speed:5,
+    defense: 0.7,
+    mana:150,
+    hBars:1,
+    image:"Enemies/wisp.png",
+    tier:1,
+    type: "Elemental",
+    role: "Fast mage - Fragile magical spirit, high speed and magic damage.",
+    attacks: ['Spirit Bolt', 'Flicker', 'Ethereal Dodge']
+  },
+  'ooze': {
+    health: 26,
+    strength:2.6,
+    magic:1.3,
+    speed:1.5,
+    defense: 2.3,
+    mana:140,
+    hBars:1,
+    image:"Enemies/ooze.png",
+    tier:2,
+    type: "Aberration",
+    specialEffect: "Corrosive Body: Attacks reduce enemy defense temporarily",
+    attacks: ['Acidic Strike', 'Dissolve', 'Split Form', 'Toxic Absorption']
+  },
+  'livingArmor': {
+    health: 25,
+    strength:3.6,
+    magic:0,
+    speed:2,
+    defense: 3.9,
+    mana:110,
+    hBars:1,
+    image:"Enemies/livingArmor.png",
+    tier:2,
+    type: "Construct",
+    specialEffect: "Hollow Shell: Counter-attacks when blocking",
+    attacks: ['Shield Slam', 'Counter Strike', 'Armored Defense', 'Reversal']
+  },
+  'swampBeast': {
+    health: 23,
+    strength:3.3,
+    magic:1.6,
+    speed:2.5,
+    defense: 2,
+    mana:150,
+    hBars:1,
+    image:"Enemies/swampBeast.png",
+    tier:2,
+    type: "Beast",
+    role: "Marsh lurker - Poison-based attacks and regeneration.",
+    attacks: ['Bog Bite', 'Swamp Gas', 'Murky Regeneration', 'Marsh Grasp']
+  },
+  'runeSentinel': {
+    health: 28,
+    strength:2.6,
+    magic:4.2,
+    speed:3,
+    defense: 3.6,
+    mana:220,
+    hBars:1,
+    image:"Enemies/runeSentinel.png",
+    tier:3,
+    type: "Construct",
+    specialEffect: "Runic Power: Magic attacks empower next physical strike",
+    attacks: ['Rune Strike', 'Ancient Script', 'Magic Amplify', 'Glyph Burst', 'Power Rune']
+  },
+  'spectralKnight': {
+    health: 24,
+    strength:3.6,
+    magic:2.6,
+    speed:4.5,
+    defense: 2.3,
+    mana:180,
+    hBars:1,
+    image:"Enemies/spectralKnight.png",
+    tier:3,
+    type: "Undead",
+    specialEffect: "Phantom Form: Has chance to phase through attacks",
+    attacks: ['Ghost Blade', 'Spectral Charge', 'Phase Shift', 'Haunting Strike', 'Spirit Guard']
+  },
+  'magmaBeast': {
+    health: 30,
+    strength:4.2,
+    magic:2,
+    speed:2.5,
+    defense: 3.9,
+    mana:160,
+    hBars:1,
+    image:"Enemies/magmaBeast.png",
+    tier:3,
+    type: "Elemental",
+    specialEffect: "Molten Core: All attacks inflict burn, reflects damage when hit",
+    attackStatus: "burn",
+    attacks: ['Lava Claw', 'Eruption', 'Magma Shield', 'Volcanic Rage', 'Molten Skin']
+  },
+  'shadowReaper': {
+    health: 29,
+    strength:4.6,
+    magic:3.3,
+    speed:5,
+    defense: 2.9,
+    mana:200,
+    hBars:1,
+    image:"Enemies/shadowReaper.png",
+    tier:4,
+    type: "Undead",
+    specialEffect: "Soul Harvest: Grows stronger with each enemy defeated in battle",
+    attacks: ['Reaper Scythe', 'Dark Harvest', 'Soul Steal', 'Death\'s Door', 'Shadow Veil', 'Grim Presence']
+  },
+  'crystalBehemoth': {
+    health: 36,
+    strength:5.2,
+    magic:2.6,
+    speed:2,
+    defense: 6.5,
+    mana:170,
+    hBars:1,
+    image:"Enemies/crystalBehemoth.png",
+    tier:4,
+    type: "Construct",
+    specialEffect: "Crystal Armor: Extremely high defense, magic attacks shatter and deal AoE damage",
+    attacks: ['Crystal Slam', 'Gem Barrage', 'Diamond Skin', 'Prism Shatter', 'Refract', 'Hardened Core']
+  },
+  'timeLord': {
+    health: 44,
+    strength:4.6,
+    magic:6.5,
+    speed:7,
+    defense: 5.2,
+    mana:340,
+    hBars:1,
+    image:"Enemies/timeLord.png",
+    tier:6,
+    type: "Aberration",
+    specialEffect: "BOSS: Time Manipulation - Can rewind time to undo damage, manipulates turn order",
+    attacks: ['Temporal Strike', 'Rewind', 'Time Stop', 'Chronos Blast', 'Future Sight', 'Paradox', 'Infinity Loop']
+  },
+  'gargoyle': {
+    health: 18,
+    strength:2.9,
+    magic:0,
+    speed:2.5,
+    defense: 2,
+    mana:100,
+    hBars:1,
+    image:"Enemies/gargoyle.png",
+    tier:1,
+    type: "Construct",
+    role: "Stone guardian - High defense for tier 1, teaches defense breaking.",
+    attacks: ['Stone Claw', 'Harden', 'Dive Bomb']
+  },
+  'mimic': {
+    health: 21,
+    strength:3,
+    magic:0,
+    speed:3,
+    defense: 1.6,
+    mana:100,
+    hBars:1,
+    image:"Enemies/mimic.png",
+    tier:2,
+    type: "Aberration",
+    specialEffect: "Treasure Curse: Counter-attacks when hit, mimics player's last attack type",
+    attacks: ['Snap Bite', 'Coin Toss', 'False Treasure', 'Mimic']
+  },
+  'banshee': {
+    health: 20,
+    strength:0,
+    magic:4.2,
+    speed:5.5,
+    defense: 1.6,
+    mana:200,
+    hBars:1,
+    image:"Enemies/banshee.png",
+    tier:2,
+    type: "Undead",
+    specialEffect: "Wailing Curse: Magic attacks reduce enemy magic temporarily",
+    attacks: ['Wail', 'Soul Scream', 'Death Mark', 'Haunting Cry']
+  },
+  'voidTouched': {
+    health: 25,
+    strength:3.6,
+    magic:2.3,
+    speed:4,
+    defense: 2.6,
+    mana:170,
+    hBars:1,
+    image:"Enemies/voidTouched.png",
+    tier:2,
+    type: "Aberration",
+    role: "Corrupted warrior - Void-infused soldier with chaotic abilities.",
+    attacks: ['Void Slash', 'Corruption', 'Dark Pulse', 'Unstable Form']
+  },
+  'stormElemental': {
+    health: 26,
+    strength:0,
+    magic:4.6,
+    speed:5,
+    defense: 2.3,
+    mana:230,
+    hBars:1,
+    image:"Enemies/stormElemental.png",
+    tier:3,
+    type: "Elemental",
+    specialEffect: "Lightning Charged: Attacks have chance to stun, increases speed each turn",
+    attacks: ['Lightning Bolt', 'Thunder Clap', 'Chain Lightning', 'Storm Surge', 'Static Shield']
+  },
+  'bloodGolem': {
+    health: 32,
+    strength:4.6,
+    magic:0,
+    speed:1.5,
+    defense: 4.2,
+    mana:120,
+    hBars:1,
+    image:"Enemies/bloodGolem.png",
+    tier:3,
+    type: "Construct",
+    specialEffect: "Blood Absorption: Heals when dealing damage, grows stronger from bleeding enemies",
+    attacks: ['Blood Strike', 'Crimson Drain', 'Coagulate', 'Hemorrhage', 'Blood Armor']
+  },
+  'frostWyrm': {
+    health: 28,
+    strength:4.2,
+    magic:3.9,
+    speed:4,
+    defense: 3.6,
+    mana:200,
+    hBars:1,
+    image:"Enemies/frostWyrm.png",
+    tier:3,
+    type: "Beast",
+    specialEffect: "Frost Aura: All attacks apply chill, reduces enemy speed",
+    attackStatus: "chill",
+    attacks: ['Frost Bite', 'Ice Breath', 'Glacial Armor', 'Blizzard', 'Frozen Domain']
+  },
+  'plagueBringer': {
+    health: 27,
+    strength:3.3,
+    magic:4.6,
+    speed:3,
+    defense: 3.3,
+    mana:220,
+    hBars:1,
+    image:"Enemies/plagueBringer.png",
+    tier:4,
+    type: "Undead",
+    specialEffect: "Pestilence: Applies multiple status effects, spreads debuffs to all enemies",
+    attacks: ['Plague Strike', 'Disease Cloud', 'Festering Wound', 'Epidemic', 'Rot', 'Contagion']
+  },
+  'voidKraken': {
+    health: 34,
+    strength:5.2,
+    magic:3.9,
+    speed:3.5,
+    defense: 4.6,
+    mana:210,
+    hBars:1,
+    image:"Enemies/voidKraken.png",
+    tier:4,
+    type: "Aquatic",
+    specialEffect: "Tentacle Fury: Attacks twice per turn, can grab and restrict player actions",
+    attacks: ['Tentacle Slam', 'Ink Cloud', 'Crushing Grip', 'Void Pull', 'Deep Terror', 'Maelstrom']
+  },
+  'ancientLich': {
+    health: 40,
+    strength:2,
+    magic:6.5,
+    speed:4,
+    defense: 4.6,
+    mana:300,
+    hBars:1,
+    image:"Enemies/ancientLich.png",
+    tier:5,
+    type: "Undead",
+    specialEffect: "BOSS: Phylactery - Resurrects once per battle, summons skeleton minions",
+    attacks: ['Death Coil', 'Necromantic Power', 'Soul Shackle', 'Lich Form', 'Army of the Dead', 'Eternal Curse', 'Phylactery Shield']
+  },
   'piranha': {
     health: 19,
     strength:3.9,
@@ -3513,6 +3970,7 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/piranha.png",
     tier:2,
+    type: "Aquatic",
     specialEffect: "Death Bite: Fast first strike, performs one final attack when defeated",
     attacks: ['Quick Bite', 'Feeding Frenzy', 'Death Bite']
   },
@@ -3526,6 +3984,7 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/coralMonster.png",
     tier:3,
+    type: "Aquatic",
     specialEffect: "Coral Armor: Big tanky enemy with high defense and coral-enhanced durability",
     attacks: ['Coral Punch', 'Calcified Shell', 'Reef Slam', 'Coral Growth']
   },
@@ -3539,10 +3998,10 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/shark.png",
     tier:4,
+    type: "Aquatic",
     specialEffect: "Blood Frenzy: Gains 15% strength for each bleeding enemy + all attacks apply bleed",
     attacks: ['Bite', 'Blood Frenzy', 'Savage Maul', 'Feeding Time', 'Bloodthirst']
   },
-  //Final Boss Enemy Stats
   'divineKing': {
     health: 287,
     strength:11.7,
@@ -3553,6 +4012,7 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/divineKing.png",
     tier:6,
+    type: "Humanoid",
     specialEffect: "FINAL BOSS Phase 1: Divine power incarnate",
     attacks: ['Divine Smite', 'Holy Judgment', 'Divine Protection', 'Celestial Storm', 'Righteous Fury', 'Resurrection Divine', 'Heaven\'s Light', 'God\'s Wrath']
   },
@@ -3566,6 +4026,7 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/demonKing.png",
     tier:6,
+    type: "Humanoid",
     specialEffect: "FINAL BOSS Phase 2: Demonic transformation - ultimate power",
     attacks: ['Demon Claw', 'Hellfire', 'Demonic Rage', 'Apocalypse Boss', 'Soul Rend', 'Infernal Shield', 'Damnation']
   },
@@ -3579,10 +4040,10 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/lightningShark.png",
     tier:6,
+    type: "Aquatic",
     specialEffect: "LEGENDARY BOSS: Lightning Shock - Gives player lightning status (ignores next attack, 2 turn cooldown)",
     attacks: ['Electric Bite', 'Lightning Shock', 'Thunder Storm', 'Blood Hunt', 'Voltaic Shield', 'Feeding Frenzy Boss', 'Lightning Speed', 'Megavolt']
   },
-  // Hell Mode - Unknown Enemies
   'dino': {
     health: 74,
     strength:7.8,
@@ -3592,8 +4053,9 @@ const ENEMY_BASE_STATS = {
     mana:180,
     hBars:1,
     image:"Enemies/dino.png",
-    tier:'unknown',
-    specialEffect: "UNKNOWN: Prehistoric Rampage - High defense and strength, charges with devastating force",
+    tier:'Chaos',
+    type: "Beast",
+    specialEffect: "CHAOS: Prehistoric Rampage - High defense and strength, charges with devastating force",
     attacks: ['Savage Maul', 'Bite', 'Blood Frenzy']
   },
   'flamelingSmall': {
@@ -3605,8 +4067,9 @@ const ENEMY_BASE_STATS = {
     mana:250,
     hBars:1,
     image:"Enemies/flamelingSmall.png",
-    tier:'unknown',
-    specialEffect: "UNKNOWN: Ember Spark - Fast and agile, applies burn on every attack",
+    tier:'Chaos',
+    type: "Elemental",
+    specialEffect: "CHAOS: Ember Spark - Fast and agile, applies burn on every attack",
     attacks: ['Thorn Shot', 'Photosynthesis']
   },
   'flamelingMedium': {
@@ -3618,8 +4081,9 @@ const ENEMY_BASE_STATS = {
     mana:280,
     hBars:1,
     image:"Enemies/flamelingMedium.png",
-    tier:'unknown',
-    specialEffect: "UNKNOWN: Flame Burst - Balanced fire elemental, burn damage scales with magic",
+    tier:'Chaos',
+    type: "Elemental",
+    specialEffect: "CHAOS: Flame Burst - Balanced fire elemental, burn damage scales with magic",
     attacks: ['Alien Fire', 'Laser Beam', 'Energy Shield']
   },
   'flamelingBig': {
@@ -3631,8 +4095,9 @@ const ENEMY_BASE_STATS = {
     mana:320,
     hBars:2,
     image:"Enemies/flamelingBig.png",
-    tier:'unknown',
-    specialEffect: "UNKNOWN: Inferno Titan - Massive flameling with two health bars, devastating fire magic",
+    tier:'Chaos',
+    type: "Elemental",
+    specialEffect: "CHAOS: Inferno Titan - Massive flameling with two health bars, devastating fire magic",
     attacks: ['Alien Fire', 'Plasma Overload', 'Inferno Nova']
   },
   'sotrak': {
@@ -3644,8 +4109,9 @@ const ENEMY_BASE_STATS = {
     mana:240,
     hBars:1,
     image:"Enemies/sotrak.png",
-    tier:'unknown',
-    specialEffect: "UNKNOWN: Void Walker - Teleports and strikes with void energy, applies random status effects",
+    tier:'Chaos',
+    type: "Aberration",
+    specialEffect: "CHAOS: Void Walker - Teleports and strikes with void energy, applies random status effects",
     attacks: ['Reality Warp', 'Void Step', 'Dark Pulse']
   },
   'monstruousFish': {
@@ -3657,8 +4123,9 @@ const ENEMY_BASE_STATS = {
     mana:280,
     hBars:2,
     image:"Enemies/monstruousFish.png",
-    tier:'unknown',
-    specialEffect: "UNKNOWN: Abyssal Terror - Deadly ocean predator, gains power from bleeding enemies",
+    tier:'Chaos',
+    type: "Aquatic",
+    specialEffect: "CHAOS: Abyssal Terror - Deadly ocean predator, gains power from bleeding enemies",
     attacks: ['Electric Bite', 'Savage Maul', 'Feeding Frenzy Boss', 'Megavolt']
   },
   'overseer': {
@@ -3671,6 +4138,7 @@ const ENEMY_BASE_STATS = {
     hBars:3,
     image:"Enemies/overseer.png",
     tier:7,
+    type: "Demi-God",
     specialEffect: "ANCIENT BOSS: Omniscient Watcher - 3 phases with different attacks",
     attacks: ['Reality Warp', 'Omniscient Strike', 'Existence Erasure']
   }
@@ -3937,6 +4405,144 @@ const ATTACK_STATS = {
   "Reality Warp":           { strMultiplier: 0,    magicMultiplier: 4.0,  status: "random", manaCost: 40, cooldown: 0, group: "magic", randomStatusCount: 3, emoji: "🌀" },
   "Omniscient Strike":      { strMultiplier: 3.5,  magicMultiplier: 3.5,  status: "none", manaCost: 35, cooldown: 0, group: "hybrid", alwaysCrits: true, emoji: "👁️" },
   "Existence Erasure":      { strMultiplier: 5.0,  magicMultiplier: 5.0,  status: "none", manaCost: 50, cooldown: 0, group: "hybrid", ignoresDefense: true, emoji: "☠️" },
+  
+  // NEW ENEMY ATTACKS
+  // Tier 1 - Wisp
+  "Spirit Bolt":            { strMultiplier: 0,    magicMultiplier: 1.1,  status: "none", manaCost: 11, cooldown: 0, group: "magic", emoji: "✨" },
+  "Flicker":                { strMultiplier: 0,    magicMultiplier: 0.8,  status: "none", manaCost: 8, cooldown: 0, group: "magic", dodgeBonus: 0.15, emoji: "💫" },
+  "Ethereal Dodge":         { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", dodgeChance: 0.20, isPassive: true, emoji: "👻", description: "Passive: 20% chance to dodge incoming attacks" },
+  
+  // Tier 2 - Ooze
+  "Acidic Strike":          { strMultiplier: 1.0,  magicMultiplier: 0.6,  status: "vulnerable", manaCost: 6, cooldown: 0, group: "hybrid", emoji: "🧪" },
+  "Dissolve":               { strMultiplier: 0,    magicMultiplier: 1.4,  status: "corruption", manaCost: 14, cooldown: 1, group: "magic", reduceDefense: 0.2, emoji: "🫠" },
+  "Split Form":             { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 3, group: "utility", summonCopy: true, emoji: "〰️" },
+  "Toxic Absorption":       { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", healOnStatus: 0.1, isPassive: true, emoji: "☣️", description: "Passive: Heals when applying status effects" },
+  
+  // Tier 2 - Living Armor
+  "Shield Slam":            { strMultiplier: 1.4,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 1, group: "strength", fortifySelf: 0.3, emoji: "🛡️" },
+  "Counter Strike":         { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", counterDamage: 0.5, isPassive: true, emoji: "⚔️", description: "Passive: Counters for 50% damage when blocking" },
+  "Armored Defense":        { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "utility", fortifySelf: 60, barrierSelf: true, emoji: "🛡️" },
+  "Reversal":               { strMultiplier: 1.8,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "strength", counterBonus: 1.0, emoji: "🔄" },
+  
+  // Tier 2 - Swamp Beast
+  "Bog Bite":               { strMultiplier: 1.2,  magicMultiplier: 0,    status: "corruption", manaCost: 0, cooldown: 0, group: "strength", emoji: "🦷" },
+  "Swamp Gas":              { strMultiplier: 0,    magicMultiplier: 1.3,  status: "corruption", manaCost: 13, cooldown: 1, group: "magic", applyVulnerable: true, emoji: "💨" },
+  "Murky Regeneration":     { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", healPercent: 0.04, isPassive: true, emoji: "🌿", description: "Passive: Heals 4% of max HP at the start of each turn" },
+  "Marsh Grasp":            { strMultiplier: 1.6,  magicMultiplier: 0,    status: "leech", manaCost: 0, cooldown: 2, group: "strength", heals: 0.3, emoji: "🫲" },
+  
+  // Tier 3 - Rune Sentinel
+  "Rune Strike":            { strMultiplier: 1.3,  magicMultiplier: 0.8,  status: "none", manaCost: 8, cooldown: 0, group: "hybrid", emoji: "⚡" },
+  "Ancient Script":         { strMultiplier: 0,    magicMultiplier: 1.6,  status: "vulnerable", manaCost: 16, cooldown: 0, group: "magic", emoji: "📜" },
+  "Magic Amplify":          { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", magicEmpowerNext: 0.3, isPassive: true, emoji: "🔮", description: "Passive: Magic attacks empower next physical strike by 30%" },
+  "Glyph Burst":            { strMultiplier: 0,    magicMultiplier: 2.1,  status: "burn", manaCost: 21, cooldown: 1, group: "magic", emoji: "💥" },
+  "Power Rune":             { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "utility", magicGrowth: 0.08, emoji: "🗿" },
+  
+  // Tier 3 - Spectral Knight
+  "Ghost Blade":            { strMultiplier: 1.4,  magicMultiplier: 0.8,  status: "none", manaCost: 8, cooldown: 0, group: "hybrid", emoji: "👻" },
+  "Spectral Charge":        { strMultiplier: 2.0,  magicMultiplier: 0,    status: "vulnerable", manaCost: 0, cooldown: 2, group: "strength", emoji: "⚔️" },
+  "Phase Shift":            { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", dodgeChance: 0.18, isPassive: true, emoji: "🌫️", description: "Passive: 18% chance to phase through attacks" },
+  "Haunting Strike":        { strMultiplier: 1.6,  magicMultiplier: 1.0,  status: "grim", manaCost: 10, cooldown: 1, group: "hybrid", emoji: "💀" },
+  "Spirit Guard":           { strMultiplier: 0,    magicMultiplier: 0.5,  status: "none", manaCost: 5, cooldown: 0, group: "magic", fortifySelf: 0.4, emoji: "🛡️" },
+  
+  // Tier 3 - Magma Beast
+  "Lava Claw":              { strMultiplier: 1.5,  magicMultiplier: 0,    status: "burn", manaCost: 0, cooldown: 0, group: "strength", emoji: "🔥" },
+  "Eruption":               { strMultiplier: 0,    magicMultiplier: 1.9,  status: "burn", manaCost: 19, cooldown: 1, group: "magic", emoji: "🌋" },
+  "Magma Shield":           { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", damageReduction: 0.2, burnReflect: true, isPassive: true, emoji: "🔥", description: "Passive: Reduces damage by 20% and reflects Burn to attackers" },
+  "Volcanic Rage":          { strMultiplier: 2.2,  magicMultiplier: 0.8,  status: "burn", manaCost: 8, cooldown: 2, group: "hybrid", emoji: "😡" },
+  "Molten Skin":            { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "utility", fortifySelf: 45, emoji: "🛡️" },
+  
+  // Tier 4 - Shadow Reaper
+  "Reaper Scythe":          { strMultiplier: 1.8,  magicMultiplier: 0,    status: "grim", manaCost: 0, cooldown: 1, group: "strength", emoji: "🪦" },
+  "Dark Harvest":           { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", killStrBonus: 0.1, isPassive: true, emoji: "💀", description: "Passive: Gains +10% strength per enemy defeated this battle" },
+  "Soul Steal":             { strMultiplier: 0,    magicMultiplier: 2.0,  status: "leech", manaCost: 20, cooldown: 0, group: "magic", heals: 0.8, emoji: "👻" },
+  "Death's Door":           { strMultiplier: 2.4,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "strength", lowHpTargetBonus: 0.8, emoji: "🚪" },
+  "Shadow Veil":            { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 3, group: "utility", dodgeBonus: 0.4, emoji: "🌑" },
+  "Grim Presence":          { strMultiplier: 0,    magicMultiplier: 1.2,  status: "grim", manaCost: 12, cooldown: 0, group: "magic", applyCorruption: true, emoji: "💀" },
+  
+  // Tier 4 - Crystal Behemoth
+  "Crystal Slam":           { strMultiplier: 2.0,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 1, group: "strength", emoji: "💎" },
+  "Gem Barrage":            { strMultiplier: 0,    magicMultiplier: 1.8,  status: "bleed", manaCost: 18, cooldown: 1, group: "magic", hits: 3, emoji: "💠" },
+  "Diamond Skin":           { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", fortifySelf: 90, isPassive: true, emoji: "💎", description: "Passive: Gains 90 Fortify at the start of each turn" },
+  "Prism Shatter":          { strMultiplier: 2.5,  magicMultiplier: 1.2,  status: "vulnerable", manaCost: 12, cooldown: 2, group: "hybrid", isAOE: true, emoji: "💥" },
+  "Refract":                { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", reflectMagic: 0.3, isPassive: true, emoji: "🔮", description: "Passive: Reflects 30% of magic damage back to attacker" },
+  "Hardened Core":          { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 4, group: "utility", fortifySelf: 120, barrierSelf: 2, emoji: "🛡️" },
+  
+  // Tier 1 - Gargoyle
+  "Stone Claw":             { strMultiplier: 1.4,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 1, group: "strength", emoji: "🪨" },
+  "Harden":                 { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "utility", fortifySelf: 30, emoji: "🛡️" },
+  "Dive Bomb":              { strMultiplier: 1.8,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "strength", emoji: "💨" },
+
+  // Tier 2 - Mimic
+  "Snap Bite":              { strMultiplier: 1.6,  magicMultiplier: 0,    status: "bleed", manaCost: 0, cooldown: 1, group: "strength", emoji: "🦷" },
+  "Coin Toss":              { strMultiplier: 1.2,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "strength", emoji: "🪙" },
+  "False Treasure":         { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 3, group: "utility", barrierSelf: 3, fortifySelf: 20, emoji: "💰" },
+  "Mimic":                  { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", copyLastAttack: true, isPassive: true, emoji: "🎭", description: "Passive: Copies the damage type of the last attack received" },
+
+  // Tier 2 - Banshee
+  "Wail":                   { strMultiplier: 0,    magicMultiplier: 1.6,  status: "none", manaCost: 16, cooldown: 0, group: "magic", reduceMagic: 0.15, emoji: "😱" },
+  "Soul Scream":            { strMultiplier: 0,    magicMultiplier: 2.2,  status: "vulnerable", manaCost: 22, cooldown: 1, group: "magic", emoji: "👻" },
+  "Death Mark":             { strMultiplier: 0,    magicMultiplier: 1.4,  status: "grim", manaCost: 14, cooldown: 2, group: "magic", emoji: "💀" },
+  "Haunting Cry":           { strMultiplier: 0,    magicMultiplier: 1.8,  status: "chill", manaCost: 18, cooldown: 1, group: "magic", emoji: "🌫️" },
+
+  // Tier 2 - Void Touched
+  "Void Slash":             { strMultiplier: 1.8,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 1, group: "strength", emoji: "⚔️" },
+  "Corruption":             { strMultiplier: 0,    magicMultiplier: 1.6,  status: "leech", manaCost: 16, cooldown: 1, group: "magic", emoji: "🌀" },
+  "Unstable Form":          { strMultiplier: 1.4,  magicMultiplier: 1.4,  status: "random", manaCost: 14, cooldown: 2, group: "hybrid", emoji: "💫" },
+
+  // Tier 3 - Storm Elemental
+  "Lightning Bolt":         { strMultiplier: 0,    magicMultiplier: 2.0,  status: "none", manaCost: 20, cooldown: 0, group: "magic", emoji: "⚡" },
+  "Thunder Clap":           { strMultiplier: 0,    magicMultiplier: 1.6,  status: "none", manaCost: 16, cooldown: 1, group: "magic", stunChance: 0.3, emoji: "💥" },
+  "Chain Lightning":        { strMultiplier: 0,    magicMultiplier: 2.4,  status: "none", manaCost: 24, cooldown: 2, group: "magic", hits: 3, emoji: "⚡" },
+  "Storm Surge":            { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", speedBoost: 0.1, isPassive: true, emoji: "🌪️", description: "Passive: Gains 10% speed each turn" },
+  "Static Shield":          { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 3, group: "utility", barrierSelf: 4, reflectDamage: 0.25, emoji: "🛡️" },
+
+  // Tier 3 - Blood Golem
+  "Blood Strike":           { strMultiplier: 1.8,  magicMultiplier: 0,    status: "bleed", manaCost: 0, cooldown: 1, group: "strength", emoji: "🩸" },
+  "Crimson Drain":          { strMultiplier: 1.4,  magicMultiplier: 0,    status: "leech", manaCost: 0, cooldown: 1, group: "strength", healPercent: 0.15, emoji: "💉" },
+  "Coagulate":              { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "utility", healPercent: 0.12, emoji: "🩹" },
+  "Hemorrhage":             { strMultiplier: 2.2,  magicMultiplier: 0,    status: "bleed", manaCost: 0, cooldown: 2, group: "strength", bleedStacks: 3, emoji: "🔴" },
+  "Blood Armor":            { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", bleedEmpowerment: true, isPassive: true, emoji: "🛡️", description: "Passive: Gains 5% strength for each bleeding enemy" },
+
+  // Tier 3 - Frost Wyrm
+  "Frost Bite":             { strMultiplier: 1.6,  magicMultiplier: 1.0,  status: "chill", manaCost: 10, cooldown: 0, group: "hybrid", emoji: "❄️" },
+  "Ice Breath":             { strMultiplier: 0,    magicMultiplier: 2.4,  status: "chill", manaCost: 24, cooldown: 1, group: "magic", isAOE: true, emoji: "🌨️" },
+  "Glacial Armor":          { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "utility", fortifySelf: 40, emoji: "🧊" },
+  "Blizzard":               { strMultiplier: 0,    magicMultiplier: 2.0,  status: "chill", manaCost: 20, cooldown: 2, group: "magic", hits: 4, emoji: "🌬️" },
+  "Frozen Domain":          { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", slowEnemies: 0.08, isPassive: true, emoji: "❄️", description: "Passive: Reduces all enemy speed by 8%" },
+
+  // Tier 4 - Plague Bringer
+  "Plague Strike":          { strMultiplier: 1.6,  magicMultiplier: 0,    status: "bleed", manaCost: 0, cooldown: 0, group: "strength", emoji: "🦠" },
+  "Disease Cloud":          { strMultiplier: 0,    magicMultiplier: 2.0,  status: "random", manaCost: 20, cooldown: 1, group: "magic", randomStatusCount: 2, isAOE: true, emoji: "☁️" },
+  "Festering Wound":        { strMultiplier: 1.4,  magicMultiplier: 1.0,  status: "leech", manaCost: 10, cooldown: 1, group: "hybrid", emoji: "🩸" },
+  "Epidemic":               { strMultiplier: 0,    magicMultiplier: 2.6,  status: "grim", manaCost: 26, cooldown: 2, group: "magic", spreadDebuffs: true, emoji: "☣️" },
+  "Rot":                    { strMultiplier: 0,    magicMultiplier: 1.8,  status: "vulnerable", manaCost: 18, cooldown: 1, group: "magic", reduceHealing: 0.5, emoji: "💀" },
+  "Contagion":              { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", spreadStatus: true, isPassive: true, emoji: "🦠", description: "Passive: Status effects spread to adjacent enemies" },
+
+  // Tier 4 - Void Kraken
+  "Tentacle Slam":          { strMultiplier: 2.2,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 1, group: "strength", emoji: "🦑" },
+  "Ink Cloud":              { strMultiplier: 0,    magicMultiplier: 1.6,  status: "none", manaCost: 16, cooldown: 2, group: "magic", reduceAccuracy: 0.3, emoji: "💨" },
+  "Crushing Grip":          { strMultiplier: 1.8,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 1, group: "strength", restrictAction: true, emoji: "✊" },
+  "Void Pull":              { strMultiplier: 0,    magicMultiplier: 2.0,  status: "vulnerable", manaCost: 20, cooldown: 2, group: "magic", emoji: "🌀" },
+  "Deep Terror":            { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", doubleAttack: true, isPassive: true, emoji: "🦑", description: "Passive: Attacks twice per turn" },
+  "Maelstrom":              { strMultiplier: 2.8,  magicMultiplier: 1.6,  status: "none", manaCost: 16, cooldown: 3, group: "hybrid", isAOE: true, emoji: "🌊" },
+
+  // Tier 5 - Ancient Lich
+  "Death Coil":             { strMultiplier: 0,    magicMultiplier: 2.4,  status: "leech", manaCost: 24, cooldown: 0, group: "magic", healPercent: 0.2, emoji: "💀" },
+  "Necromantic Power":      { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "utility", empowerMagic: 0.25, emoji: "🔮" },
+  "Soul Shackle":           { strMultiplier: 0,    magicMultiplier: 2.8,  status: "grim", manaCost: 28, cooldown: 1, group: "magic", stunTarget: true, emoji: "⛓️" },
+  "Lich Form":              { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 4, group: "utility", barrierSelf: 5, fortifySelf: 80, emoji: "👤" },
+  "Army of the Dead":       { strMultiplier: 0,    magicMultiplier: 3.2,  status: "none", manaCost: 32, cooldown: 2, group: "magic", summonMinions: true, emoji: "🧟" },
+  "Eternal Curse":          { strMultiplier: 0,    magicMultiplier: 3.6,  status: "grim", manaCost: 36, cooldown: 3, group: "magic", permanentDebuff: true, emoji: "💀" },
+  "Phylactery Shield":      { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", resurrectOnce: true, isPassive: true, emoji: "📿", description: "Passive: Resurrects once per battle at 50% HP" },
+
+  // Tier 6 - Time Lord (SECRET BOSS)
+  "Temporal Strike":        { strMultiplier: 1.6,  magicMultiplier: 1.6,  status: "chill", manaCost: 16, cooldown: 0, group: "hybrid", emoji: "⏰" },
+  "Rewind":                 { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 4, group: "utility", healPercent: 0.25, undoDamage: true, emoji: "⏪" },
+  "Time Stop":              { strMultiplier: 0,    magicMultiplier: 2.2,  status: "none", manaCost: 22, cooldown: 2, group: "magic", stunTarget: true, extraTurn: true, emoji: "⏸️" },
+  "Chronos Blast":          { strMultiplier: 0,    magicMultiplier: 2.8,  status: "vulnerable", manaCost: 28, cooldown: 1, group: "magic", applyGrim: true, emoji: "💥" },
+  "Future Sight":           { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", dodgeChance: 0.22, isPassive: true, emoji: "🔮", description: "Passive: 22% chance to foresee and dodge attacks" },
+  "Paradox":                { strMultiplier: 2.4,  magicMultiplier: 2.4,  status: "random", manaCost: 24, cooldown: 2, group: "hybrid", randomStatusCount: 2, emoji: "🌀" },
+  "Infinity Loop":          { strMultiplier: 0,    magicMultiplier: 3.5,  status: "none", manaCost: 35, cooldown: 3, group: "magic", isAOE: true, repeatNextTurn: true, emoji: "♾️" },
 };
 
 
@@ -4303,6 +4909,8 @@ function generateRandomItem(level, forceRarity = null, luckBonus = 0) {
   }
   item.level = lvl;
 
+  // Assign first available slot index
+  assignItemSlot(item);
   INVENTORY.push(item);
   
   // Register item in collection index
@@ -4312,6 +4920,32 @@ function generateRandomItem(level, forceRarity = null, luckBonus = 0) {
   
   return item;
 }
+
+/**
+ * Assigns a slot index to an item (first available slot)
+ */
+function assignItemSlot(item) {
+  const totalSlots = 125; // 5 pages * 25 slots per page
+  const occupiedSlots = new Set();
+  
+  INVENTORY.forEach(i => {
+    if (i && i.slotIndex !== undefined) {
+      occupiedSlots.add(i.slotIndex);
+    }
+  });
+  
+  // Find first open slot
+  for (let i = 0; i < totalSlots; i++) {
+    if (!occupiedSlots.has(i)) {
+      item.slotIndex = i;
+      return;
+    }
+  }
+  
+  // If all slots full, assign to next index (overflow)
+  item.slotIndex = totalSlots;
+}
+window.assignItemSlot = assignItemSlot;
 
 
 // Example usage: generateRandomItem(5);

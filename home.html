@@ -170,6 +170,13 @@
                 </div>
             </div>
             
+            <div class="settings-option" onclick="giveWorldEnder()">
+                <div class="option-title">⚔️ Give Level 5000 World Ender (Test)</div>
+                <div class="option-description">
+                    Adds a level 5000 World Ender weapon to your inventory for testing purposes.
+                </div>
+            </div>
+            
             <div class="settings-option" onclick="toggleMusic()">
                 <div class="option-title">🎵 Toggle Music</div>
                 <div class="option-description" id="music-status">
@@ -376,6 +383,58 @@
             } catch (e) {
                 console.error('Error filling indexes:', e);
                 alert('An error occurred while filling indexes. Please check the console.');
+            }
+        }
+
+        function giveWorldEnder() {
+            try {
+                const worldEnderTemplate = ITEM_TABLE['World Ender'];
+                
+                if (worldEnderTemplate) {
+                    const testLevel = 5000;
+                    const levelScale = Math.pow(testLevel, 0.8);
+
+                    const worldEnder = {
+                        id: attackCounter++,
+                        _uid: Date.now() + Math.floor(Math.random()*10000),
+                        name: 'World Ender',
+                        slot: worldEnderTemplate.slot,
+                        rarity: worldEnderTemplate.rarity,
+                        strength: Math.round((worldEnderTemplate.strength || 0) * levelScale),
+                        speed: Math.round((worldEnderTemplate.speed || 0) * levelScale),
+                        magic: Math.round((worldEnderTemplate.magic || 0) * levelScale),
+                        defense: Math.round((worldEnderTemplate.defense || 0) * levelScale),
+                        health: Math.round((worldEnderTemplate.health || 0) * levelScale),
+                        mana: worldEnderTemplate.mana || 0,
+                        image: worldEnderTemplate.image,
+                        level: testLevel,
+                        attack: worldEnderTemplate.attack,
+                        ability: worldEnderTemplate.ability,
+                        equipped: false
+                    };
+                    
+                    if (typeof INVENTORY !== 'undefined' && Array.isArray(INVENTORY)) {
+                        INVENTORY.push(worldEnder);
+                        
+                        if (typeof saveGameData === 'function') {
+                            saveGameData();
+                        }
+                        
+                        if (typeof registerItemCollected === 'function') {
+                            registerItemCollected('World Ender');
+                        }
+                        
+                        alert('✅ Level 5000 World Ender added to your inventory!\n\nCheck your inventory to equip it.');
+                        closeSettings();
+                    } else {
+                        alert('❌ Error: INVENTORY not found.');
+                    }
+                } else {
+                    alert('❌ Error: World Ender template not found in ITEM_TABLE.');
+                }
+            } catch (e) {
+                console.error('Error giving World Ender:', e);
+                alert('❌ An error occurred. Check console for details.');
             }
         }
 

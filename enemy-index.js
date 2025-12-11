@@ -56,7 +56,7 @@ function isEnemyEncountered(enemyName) {
 }
 
 // Tier order for display
-const TIER_ORDER = [1, 2, 3, 4, 5, 6, 'unknown', 7];
+const TIER_ORDER = [1, 2, 3, 4, 5, 6, 'Chaos', 7];
 
 // Get tier color
 function getTierColor(tier) {
@@ -67,7 +67,7 @@ function getTierColor(tier) {
         4: '#a335ee',
         5: '#ff8000',
         6: '#e91e63',
-        'unknown': '#00ffff',
+        'Chaos': '#00ffff',
         7: '#ff0000'
     };
     return colors[tier] || '#ffffff';
@@ -82,10 +82,26 @@ function getTierName(tier) {
         4: 'Tier 4 - Elite',
         5: 'Tier 5 - Mini-Boss',
         6: 'Tier 6 - Legendary',
-        'unknown': 'Unknown - Mysterious Entities',
+        'Chaos': 'Chaos - Reality Distortion',
         7: 'Tier 7 - Ancient'
     };
     return names[tier] || `Tier ${tier}`;
+}
+
+// Get type info (color and icon)
+function getTypeInfo(type) {
+    const typeData = {
+        'Undead': { color: '#8b4789', icon: '💀' },
+        'Aberration': { color: '#9b59b6', icon: '👁️' },
+        'Beast': { color: '#8b4513', icon: '🦁' },
+        'Elemental': { color: '#e67e22', icon: '🔥' },
+        'Nature': { color: '#2ecc71', icon: '🌿' },
+        'Humanoid': { color: '#3498db', icon: '⚔️' },
+        'Aquatic': { color: '#1abc9c', icon: '🌊' },
+        'Construct': { color: '#7f8c8d', icon: '🗿' },
+        'Demi-God': { color: '#f1c40f', icon: '👁️‍🗨️' }
+    };
+    return typeData[type] || { color: '#ffffff', icon: '❓' };
 }
 
 // Calculate enemy stats at a specific level
@@ -147,12 +163,14 @@ function renderEnemiesIndex() {
             const color = getTierColor(tier);
             const cardClass = enemy.encountered ? 'obtained' : 'locked';
             const imgSrc = enemy.data.image || 'Enemies/unknown.png';
+            const enemyType = enemy.data.type || 'Unknown';
             
             html += `
                 <div class="enemy-card ${cardClass}" 
                      style="border-color: ${color}; color: ${color}"
                      data-enemy-name="${enemy.name}"
-                     data-encountered="${enemy.encountered}">
+                     data-encountered="${enemy.encountered}"
+                     data-type="${enemyType}">
                     <img src="${imgSrc}" alt="${enemy.encountered ? enemy.name : '???'}">
                 </div>
             `;
@@ -199,10 +217,12 @@ function showEnemyTooltip(event, enemyName, encountered) {
         if (!enemy) return;
         
         const color = getTierColor(enemy.tier);
+        const typeInfo = getTypeInfo(enemy.type);
         tooltip.style.borderColor = color;
         tooltip.innerHTML = `
             <strong style="color: ${color};">${enemyName.replace(/_/g, ' ')}</strong><br>
-            <span style="color: #aaa;">Tier ${enemy.tier}</span>
+            <span style="color: #aaa;">Tier ${enemy.tier}</span><br>
+            <span style="color: ${typeInfo.color};">${typeInfo.icon} ${enemy.type || 'Unknown'}</span>
         `;
     }
 

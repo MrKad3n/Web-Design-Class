@@ -16,6 +16,12 @@ KNIGHT:
 CORSPE:
 64x64 pixel art of a shambling zombie corpse enemy. Rotting flesh in grey-green tones with exposed bone. Tattered cloth remnants hanging from body. One arm outstretched in grasping pose. Slouched posture conveying slow movement. Decayed features, sunken eyes. Grimy texture details, dramatic shadows, horror aesthetic, no background.
 
+WISP:
+64x64 pixel art of a magical wisp spirit enemy. Small glowing orb of ethereal energy in pale blue-white light. Wispy trails of magic emanating from core. Faint ghostly face visible within glow. Floating above ground with gentle bobbing motion. Translucent aura with sparkle particles. Mystical glow effect, soft light rays, enchanted atmosphere, no background.
+
+GARGOYLE:
+64x64 pixel art of a stone gargoyle enemy. Crouching stone creature with bat-like wings folded. Grey stone texture with moss patches. Demonic face with horned head. Sharp talons on hands and feet. Hunched predatory stance. Weathered stone surface, gothic architecture detail, menacing pose, no background.
+
 
 TIER 2 - UNCOMMON ENEMIES
 --------------------------
@@ -34,6 +40,24 @@ CRAWLER:
 
 PIRANHA:
 64x64 pixel art of a vicious piranha fish enemy. Streamlined silver body with red-tinted fins. Razor-sharp triangular teeth visible in open mouth. Large aggressive eyes. Scales gleaming with water droplets. Dynamic swimming lunge pose. Metallic scales, sharp tooth definition, predatory energy, no background.
+
+OOZE:
+64x64 pixel art of a toxic ooze blob enemy. Sickly green-brown gelatinous mass with bubbling surface. Semi-transparent sludge with darker nucleus. Acidic drips falling from body. Corrosive vapor rising. Puddle spreading at base. Viscous texture, toxic glow, hazardous slime, no background.
+
+LIVING ARMOR:
+64x64 pixel art of an animated living armor enemy. Empty suit of armor moving on its own. Dark iron plates with rust spots. Glowing magical energy visible through gaps between armor pieces. Large shield and sword floating in position. Hollow helmet with ethereal light inside. Haunted metal texture, magical animation energy, possessed equipment, no background.
+
+SWAMP BEAST:
+64x64 pixel art of a swamp creature enemy. Amphibious monster covered in moss and algae. Mottled green-brown skin with warts. Hunched posture with powerful limbs. Dripping with swamp muck. Sharp claws and teeth. Bulbous eyes. Webbed fingers. Murky water effects, organic decay, primordial swamp dweller, no background.
+
+MIMIC:
+64x64 pixel art of a treasure chest mimic enemy. Wooden treasure chest with metal bindings. Sharp rows of teeth visible in open lid acting as mouth. Long pinkish tongue lolling out. Beady eyes on chest front. Clawed legs underneath. Aggressive snapping pose. Wood grain detail, metallic rivets, monster-chest hybrid, no background.
+
+BANSHEE:
+64x64 pixel art of a ghostly banshee enemy. Translucent female spirit in tattered flowing robes. Long flowing white hair whipping in ethereal wind. Mouth open in silent scream. Pale spectral form with wispy trailing edges. Floating above ground. Sorrowful yet terrifying expression. Glowing white-blue aura. Ghostly transparency, haunting beauty, spectral energy, no background.
+
+VOID TOUCHED:
+64x64 pixel art of a void-corrupted warrior enemy. Humanoid figure partially consumed by dark void energy. Black and purple corruption spreading across armor. Glowing purple eyes and cracks in skin. Shadowy tendrils emanating from body. Tattered cloak with void particles. One hand crackling with dark energy. Corrupted metal texture, void distortion effects, dark fantasy aesthetic, no background.
 
 
 TIER 3 - RARE ENEMIES
@@ -54,6 +78,24 @@ MAGE:
 CORAL MONSTER:
 64x64 pixel art of a coral reef creature enemy. Body formed from living coral in vibrant colors. Calcified shell armor with pink and orange hues. Tentacle-like polyps extending outward. Barnacle and shell growths. Aquatic predator stance. Textured coral surface, underwater bioluminescence, oceanic creature detail, no background.
 
+RUNE SENTINEL:
+64x64 pixel art of a magical rune guardian enemy. Humanoid construct made of stone blocks. Ancient runes glowing bright blue across entire body. Geometric angular design. Levitating slightly off ground. Rune circles rotating around torso. Crystal core visible in chest. Magical energy crackling between runes. Stone texture, arcane glow, ancient magical construct, no background.
+
+SPECTRAL KNIGHT:
+64x64 pixel art of a ghostly knight enemy. Translucent phantom warrior in ethereal armor. Semi-transparent blue-white spectral form. Glowing eyes beneath ghostly helmet. Ancient armor design fading in and out. Spectral sword with wispy blade. Chains and mist trailing from body. Phantom texture, haunting glow, undead warrior, no background.
+
+MAGMA BEAST:
+64x64 pixel art of a molten lava creature enemy. Large beast made of living magma and volcanic rock. Burning orange-red lava flowing through cracked obsidian hide. Magma dripping from body. Glowing eyes of pure fire. Rocky protrusions forming armor. Ground melting beneath it. Molten texture, intense heat glow, volcanic monster, no background.
+
+STORM ELEMENTAL:
+64x64 pixel art of a lightning storm elemental enemy. Humanoid figure made of swirling storm clouds and electricity. Crackling lightning bolts coursing through cloudy body. Bright electric blue and white energy. Wispy cloud form constantly shifting. Thunder aura surrounding it. Eyes of pure lightning. Floating effortlessly. Electrical effects, storm cloud texture, tempest energy, no background.
+
+BLOOD GOLEM:
+64x64 pixel art of a crimson blood golem enemy. Large hulking figure formed from solidified blood and flesh. Dark red muscles and sinew visible. Dripping blood constantly from body. Massive fists. Eyeless face with gaping maw. Hunched powerful stance. Visceral texture, gore effects, horrific presence, no background.
+
+FROST WYRM:
+64x64 pixel art of an ice dragon wyrm enemy. Serpentine ice dragon with crystalline scales. Frozen blue-white coloration with icicle spines. Sharp ice fangs in open maw. Frost breath visible. Wings of frozen membrane. Coiled threatening pose. Ice crystal texture, cold vapor trails, majestic frozen beast, no background.
+
 
 TIER 4 - ELITE ENEMIES
 -----------------------
@@ -73,6 +115,18 @@ KING'S GUARD:
 SHARK:
 64x64 pixel art of a great shark predator enemy. Massive shark with scarred grey skin. Rows of razor teeth in wide-open jaws. Battle scars across body. Blood-red eyes showing predatory focus. Powerful muscular build. Aggressive hunting lunge pose. Rough skin texture, tooth detail, apex predator energy, no background.
 
+SHADOW REAPER:
+64x64 pixel art of a death reaper elite enemy. Hooded skeletal figure wrapped in tattered black robes. Large ornate scythe with curved blade. Skull face with burning purple eye sockets. Dark aura swirling around body. Floating above ground. Bony hands gripping scythe. Souls orbiting the reaper. Bone texture, death energy, harbinger of doom, no background.
+
+CRYSTAL BEHEMOTH:
+64x64 pixel art of a massive crystal golem enemy. Enormous hulking figure made entirely of jagged crystals. Multiple colored gemstones embedded throughout body. Rainbow refraction effects. Massive crystalline fists. Angular geometric form. Light refracting through transparent sections. Towering powerful stance. Gem texture, prismatic effects, elemental colossus, no background.
+
+PLAGUE BRINGER:
+64x64 pixel art of a plague-infected undead enemy, full body sprite. Complete figure from head to feet visible. Rotting corpse covered in pustules and diseased growths. Green-brown skin with oozing sores. Tattered plague doctor robes with long coat. Skeletal hands holding vial of toxin. Hunched shambling pose. Both legs visible. Miasma of disease clouds surrounding body. Sickly green aura. Full character proportions, entire body in frame, horrific plague effects, pestilence vapor, grotesque detail, no background.
+
+VOID KRAKEN:
+64x64 pixel art of a void-corrupted kraken enemy. Massive tentacled sea creature infused with void energy. Purple-black tentacles with glowing void runes. Multiple eyes glowing with eldritch light. Void particles dripping from tentacles. Cosmic horror aesthetic. Writhing mass of tentacles. Eldritch texture, void corruption, oceanic nightmare, no background.
+
 
 TIER 5 - MINI-BOSS ENEMIES
 ---------------------------
@@ -91,6 +145,12 @@ WORLDROOT:
 
 KING:
 64x64 pixel art of a royal king boss enemy. Regal monarch in ornate golden crown with jewels. Luxurious royal robes in purple and gold with ermine trim. Scepter of command in one hand. Distinguished bearded face showing authority. Jeweled royal sword at hip. Commanding presence on throne or standing. Full body visible from head to feet. Detailed royal regalia, majestic bearing, sovereign power, crisp pixel detail, no background.
+
+ANCIENT LICH:
+64x64 pixel art of an ancient lich boss enemy. Skeletal undead sorcerer in flowing tattered black and purple robes. Ornate bone crown on skull. Staff with glowing phylactery crystal. Green necrotic flames in eye sockets. Floating above ground in levitation pose. Ancient magical runes orbiting body. Bones yellowed with age. Spectral energy emanating from hands. Detailed bone texture, death magic aura, immortal evil presence, no background.
+
+TIME LORD:
+64x64 pixel art of a time manipulation boss enemy. Mysterious robed figure with cosmic clock motifs. Ancient timekeeper robes in deep purple and gold with clockwork patterns. Elaborate clock face mask or helm showing multiple time zones. Glowing hourglasses and pocket watches orbiting body. Staff topped with spinning temporal gears. Time distortion effects around figure. Roman numerals glowing on robes. Swirling clock hands and time fragments. Timeworn texture, chrono energy, master of time itself, no background.
 
 
 TIER 6 - LEGENDARY BOSS ENEMIES

@@ -1,65 +1,3 @@
-// ...existing code...
-
-function renderInventoryGrid() {
-  const inventory = document.getElementById("inventory");
-  if (!inventory) {
-    console.error("Inventory element not found!");
-    return;
-  }
-  inventory.innerHTML = "";
-  // ...existing code...
-  // Move page navigation to the right of the Inventory section title
-  setTimeout(() => {
-    let navDiv = document.getElementById('inventory-page-nav');
-    const sectionTitle = document.querySelector('.section-title');
-    if (!navDiv) {
-      navDiv = document.createElement('div');
-      navDiv.id = 'inventory-page-nav';
-      navDiv.style.display = 'inline-flex';
-      navDiv.style.justifyContent = 'flex-end';
-      navDiv.style.alignItems = 'center';
-      navDiv.style.gap = '14px';
-      navDiv.style.marginLeft = '18px';
-      navDiv.style.fontSize = '1.1em';
-      if (sectionTitle && sectionTitle.parentNode) {
-        sectionTitle.style.display = 'inline-block';
-        sectionTitle.parentNode.insertBefore(navDiv, sectionTitle.nextSibling);
-      }
-    }
-    navDiv.innerHTML = '';
-    // Page label
-    const pageLabel = document.createElement('span');
-    pageLabel.textContent = `Page ${inventoryPage} / ${maxPages}`;
-    pageLabel.style.fontWeight = 'bold';
-    pageLabel.style.color = '#e94560';
-    navDiv.appendChild(pageLabel);
-    // Prev button
-    const prevBtn = document.createElement('button');
-    prevBtn.textContent = '←';
-    prevBtn.className = 'nav-btn';
-    prevBtn.disabled = inventoryPage === 1;
-    prevBtn.onclick = () => {
-      if (inventoryPage > 1) {
-        inventoryPage--;
-        renderInventory();
-      }
-    };
-    navDiv.appendChild(prevBtn);
-    // Next button
-    const unequippedItems = INVENTORY.filter(i => i && !i.equipped);
-    const nextBtn = document.createElement('button');
-    nextBtn.textContent = '→';
-    nextBtn.className = 'nav-btn';
-    nextBtn.disabled = inventoryPage === maxPages || unequippedItems.length <= inventoryPage * slotsPerPage;
-    nextBtn.onclick = () => {
-      if (inventoryPage < maxPages && unequippedItems.length > inventoryPage * slotsPerPage) {
-        inventoryPage++;
-        renderInventory();
-      }
-    };
-    navDiv.appendChild(nextBtn);
-  }, 0);
-}
 // Helper to get the selected member (from script.js)
 function getSelectedMember() {
   return typeof SELECTED_MEMBER !== 'undefined' ? SELECTED_MEMBER : 'ONE';
@@ -81,6 +19,16 @@ const invCols = 5;
 let inventoryPage = 1; // 1-based page index
 const maxPages = 5;
 const slotsPerPage = invRows * invCols;
+const totalSlots = maxPages * slotsPerPage; // 125 total slots
+
+// Ensure each item has a stable slot index
+function ensureItemSlots() {
+  INVENTORY.forEach((item, idx) => {
+    if (item && item.slotIndex === undefined) {
+      item.slotIndex = idx;
+    }
+  });
+}
 
 function renderInventoryGrid() {
   const inventory = document.getElementById("inventory");
@@ -90,22 +38,30 @@ function renderInventoryGrid() {
   }
   inventory.innerHTML = "";
   
-  // Filter to only unequipped items and pack them
-  const unequippedItems = INVENTORY.filter(i => i && !i.equipped);
-  // Calculate start/end index for current page
-  const startIdx = (inventoryPage - 1) * slotsPerPage;
-  const endIdx = startIdx + slotsPerPage;
-  const pageItems = unequippedItems.slice(startIdx, endIdx);
-  let itemIdx = 0;
+  ensureItemSlots();
+  
+  // Calculate start/end slot index for current page
+  const startSlot = (inventoryPage - 1) * slotsPerPage;
+  const endSlot = startSlot + slotsPerPage;
+  
+  // Create a map of slot positions to items (only unequipped items)
+  const slotMap = {};
+  INVENTORY.forEach(item => {
+    if (item && !item.equipped && item.slotIndex !== undefined) {
+      slotMap[item.slotIndex] = item;
+    }
+  });
 
   for (let row = 0; row < invRows; row++) {
     for (let col = 0; col < invCols; col++) {
+      const slotIndex = startSlot + (row * invCols) + col;
       const slot = document.createElement("div");
       slot.className = "inv-slot";
       slot.dataset.row = row;
       slot.dataset.col = col;
+      slot.dataset.slotIndex = slotIndex;
 
-      const data = pageItems[itemIdx];
+      const data = slotMap[slotIndex];
       const img = document.createElement("img");
       img.className = "inv-img";
 
@@ -119,7 +75,6 @@ function renderInventoryGrid() {
           slot.style.boxShadow = `0 0 8px ${rarityColor}`;
         }
         slot.addEventListener('click', (e) => displayItemInfo(data, e));
-        itemIdx++;
       } else {
         img.src = "Assests/empty-slot.png";
         img.alt = "Empty Slot";
@@ -128,6 +83,53 @@ function renderInventoryGrid() {
       slot.appendChild(img);
       inventory.appendChild(slot);
     }
+  }
+  
+  // Update pagination controls
+  updatePaginationControls();
+}
+
+function updatePaginationControls() {
+  let navDiv = document.getElementById('inventory-page-nav');
+  const inventorySection = document.querySelector('.section-title');
+  
+  if (!navDiv && inventorySection) {
+    navDiv = document.createElement('div');
+    navDiv.id = 'inventory-page-nav';
+    navDiv.style.cssText = 'display: inline-flex; gap: 10px; margin-left: 20px; align-items: center;';
+    inventorySection.style.display = 'inline-block';
+    inventorySection.parentNode.insertBefore(navDiv, inventorySection.nextSibling);
+  }
+  
+  if (navDiv) {
+    const unequippedCount = INVENTORY.filter(i => i && !i.equipped).length;
+    const actualMaxPages = Math.max(1, Math.ceil(unequippedCount / slotsPerPage));
+    
+    navDiv.innerHTML = `
+      <button id="prev-page-btn" class="nav-btn" style="padding: 6px 12px; font-size: 0.9em;">←</button>
+      <span style="color: #e94560; font-weight: bold;">Page ${inventoryPage} / ${actualMaxPages}</span>
+      <button id="next-page-btn" class="nav-btn" style="padding: 6px 12px; font-size: 0.9em;">→</button>
+    `;
+    
+    const prevBtn = document.getElementById('prev-page-btn');
+    const nextBtn = document.getElementById('next-page-btn');
+    
+    prevBtn.disabled = inventoryPage <= 1;
+    nextBtn.disabled = inventoryPage >= actualMaxPages;
+    
+    prevBtn.onclick = () => {
+      if (inventoryPage > 1) {
+        inventoryPage--;
+        renderInventory();
+      }
+    };
+    
+    nextBtn.onclick = () => {
+      if (inventoryPage < actualMaxPages) {
+        inventoryPage++;
+        renderInventory();
+      }
+    };
   }
 }
 
@@ -512,6 +514,9 @@ function displayItemInfo(item) {
   deleteBtn.style.color = 'white';
   deleteBtn.style.marginLeft = '8px';
   deleteBtn.onclick = () => {
+    // Store the slot index before removing
+    const deletedSlotIndex = item.slotIndex;
+    
     // Remove from INVENTORY array
     const idx = INVENTORY.indexOf(item);
     if (idx > -1) {
@@ -538,10 +543,15 @@ function displayItemInfo(item) {
         }
       }
     }
+    
+    // Close the popup
+    const popup = document.getElementById('item-popup');
+    if (popup) popup.remove();
+    
     updateStats();
     renderInventory();
     if (typeof saveGameData === 'function') saveGameData();
-    infoItem.innerHTML = '<p>Item deleted.</p>';
+    
     // Play delete sound
     playSoundEffect('delete');
   };
@@ -640,8 +650,7 @@ function unequipItemFromMember(item, memberKey = getSelectedMember()) {
   
   // Check if inventory has space (count unequipped items)
   const unequippedCount = INVENTORY.filter(i => i && !i.equipped).length;
-  const maxSlots = invRows * invCols;
-  if (unequippedCount >= maxSlots) {
+  if (unequippedCount >= totalSlots) {
     alert('Inventory is full! Cannot unequip item.');
     return;
   }
@@ -660,17 +669,33 @@ function unequipItemFromMember(item, memberKey = getSelectedMember()) {
       INVENTORY.push(invItem);
     }
     invItem.equipped = false;
+    
+    // Find first available slot and assign it
+    const occupiedSlots = new Set();
+    INVENTORY.forEach(i => {
+      if (i && !i.equipped && i.slotIndex !== undefined) {
+        occupiedSlots.add(i.slotIndex);
+      }
+    });
+    
+    // Find first open slot
+    for (let i = 0; i < totalSlots; i++) {
+      if (!occupiedSlots.has(i)) {
+        invItem.slotIndex = i;
+        break;
+      }
+    }
 
     // Remove any attacks that originated from this item
-  if (invItem._uid) removeAttackBySourceUid(invItem._uid, memberKey);
+    if (invItem._uid) removeAttackBySourceUid(invItem._uid, memberKey);
 
     // Recalculate and re-render everything
-  updateStats();
-  renderInventory();
-      if (typeof saveGameData === 'function') saveGameData();
+    updateStats();
+    renderInventory();
+    if (typeof saveGameData === 'function') saveGameData();
   
-  // Play unequip sound
-  playSoundEffect('confirmbeep');
+    // Play unequip sound
+    playSoundEffect('confirmbeep');
   } else if (member[slotKey] === item.name && !item.equipped) {
     // Item with same name is equipped, but the one clicked is unequipped (duplicate case)
     // Just mark this unequipped copy as not equipped (it should already be false)

@@ -50,9 +50,7 @@
             }
 
             .mode-card.normal:hover { border-color: #1eff00; box-shadow: 0 10px 30px rgba(30, 255, 0, 0.4); }
-            .mode-card.hard:hover { border-color: #ff8000; box-shadow: 0 10px 30px rgba(255, 128, 0, 0.4); }
             .mode-card.challenge:hover { border-color: #a335ee; box-shadow: 0 10px 30px rgba(163, 53, 238, 0.4); }
-            .mode-card.hell:hover { border-color: #ff0000; box-shadow: 0 10px 30px rgba(255, 0, 0, 0.4); }
 
             .mode-icon {
                 font-size: 5em;
@@ -67,9 +65,7 @@
             }
 
             .mode-card.normal .mode-name { color: #1eff00; }
-            .mode-card.hard .mode-name { color: #ff8000; }
             .mode-card.challenge .mode-name { color: #a335ee; }
-            .mode-card.hell .mode-name { color: #ff0000; }
 
             .mode-description {
                 color: #aaa;
@@ -121,39 +117,20 @@
 
         <div class="mode-grid">
             <!-- Normal Mode -->
-            <div class="mode-card normal" onclick="selectMode('normal')">
-                <div class="mode-icon">⚔️</div>
-                <div class="mode-name">Normal Mode</div>
+            <div class="mode-card normal" onclick="selectMode('main')">
+                <div class="mode-icon">📜</div>
+                <div class="mode-name">Story Mode</div>
                 <div class="mode-description">
-                    Classic dungeon crawling experience
+                    Embark on an epic journey through the realm
                 </div>
                 <div class="mode-features">
                     <ul>
-                        <li>Levels 1-50</li>
-                        <li>Up to 3 enemies per stage</li>
-                        <li>Mini boss stages at 25, 50, 75</li>
-                        <li>Final boss at level 100</li>
-                        <li>Standard difficulty scaling</li>
-                        <li>Unlock new levels progressively</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- Hard Mode -->
-            <div class="mode-card hard" onclick="selectMode('hard')">
-                <div class="mode-icon">🔥</div>
-                <div class="mode-name">Hard Mode</div>
-                <div class="mode-description">
-                    Extreme challenge for experienced players
-                </div>
-                <div class="mode-features">
-                    <ul>
-                        <li>Levels 50-100</li>
-                        <li>Up to 5 enemies per stage</li>
-                        <li>Mini boss stages every 5 levels</li>
-                        <li>Enemies have 1.1x stats (except speed)</li>
-                        <li>Mini bosses have 1.5x stats</li>
-                        <li>Final boss: Lightning Shark (Lv 100)</li>
+                        <li>100 levels of progressive difficulty</li>
+                        <li>Face 1-4 enemies per battle</li>
+                        <li>Boss battles every 15 levels</li>
+                        <li>Dimensional portals at levels 10, 25, 40, 55, 70, 85, 90</li>
+                        <li>Final boss: Divine King at level 100</li>
+                        <li>Unlock Chaos Realm after defeating Divine King</li>
                     </ul>
                 </div>
             </div>
@@ -173,25 +150,6 @@
                         <li>No enemy count limits</li>
                         <li>Rewards: Enchantments</li>
                         <li>Each stage grants specific enchant</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- Hell Mode -->
-            <div class="mode-card hell" onclick="selectMode('hell')">
-                <div class="mode-icon">💀</div>
-                <div class="mode-name">Hell Mode</div>
-                <div class="mode-description">
-                    Face mysterious unknown enemies
-                </div>
-                <div class="mode-features">
-                    <ul>
-                        <li>Levels 100-150</li>
-                        <li>2-7 enemies per stage</li>
-                        <li>Unknown tier enemies with unique powers</li>
-                        <li>Lower tier enemies buffed (2.4x-1.2x)</li>
-                        <li>Mid-boss: Monstrous Fish (Lv 125)</li>
-                        <li>Final boss: The Overseer (Lv 150)</li>
                     </ul>
                 </div>
             </div>
@@ -255,14 +213,10 @@
             // Save selected mode to localStorage
             localStorage.setItem('selectedGameMode', mode);
             
-            if (mode === 'normal') {
-                window.location.href = 'map.html?mode=normal';
-            } else if (mode === 'hard') {
-                window.location.href = 'map.html?mode=hard';
+            if (mode === 'main') {
+                window.location.href = 'map.html?mode=main';
             } else if (mode === 'challenge') {
                 window.location.href = 'challenge.html';
-            } else if (mode === 'hell') {
-                window.location.href = 'map.html?mode=hell';
             }
         }
     </script>
