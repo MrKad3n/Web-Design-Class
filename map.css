@@ -128,6 +128,24 @@ body {
       box-shadow: 0 0 25px rgba(0,255,255,1), inset 0 0 12px rgba(0,255,255,0.5);
     }
   }
+
+  /* Elite cell visual marker (pre-portal elite levels before level 25) */
+  .elite-cell {
+    border-color: #9370DB !important;
+    box-shadow: 0 0 10px rgba(147,112,219,0.5), inset 0 0 6px rgba(147,112,219,0.25);
+    position: relative;
+    background-image: linear-gradient(135deg, rgba(147,112,219,0.1), rgba(147,112,219,0));
+  }
+  .elite-cell::after {
+    content: "ELITE";
+    position: absolute;
+    top: 4px;
+    right: 6px;
+    font-size: 9px;
+    color: #9370DB;
+    text-shadow: 0 0 6px rgba(0,0,0,0.8);
+    font-weight: 700;
+  }
   
   #popup {
     position: absolute;

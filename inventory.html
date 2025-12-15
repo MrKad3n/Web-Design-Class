@@ -262,7 +262,15 @@
         // Load game data from localStorage before rendering
         if (typeof loadGameData === 'function') {
             loadGameData();
+            console.log('[INVENTORY PAGE] Game data loaded. INVENTORY has', INVENTORY.length, 'items');
         }
+        
+        // Render inventory after data is loaded
+        if (typeof renderInventory === 'function') {
+            renderInventory();
+            console.log('[INVENTORY PAGE] Inventory rendered');
+        }
+        
         // Music system for inventory page
         let inventoryMusic = null;
         function playInventoryMusic() {

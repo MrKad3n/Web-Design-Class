@@ -153,6 +153,25 @@
                     </ul>
                 </div>
             </div>
+
+            <!-- Horde Mode -->
+            <div class="mode-card" style="border-color: #ff4444" onclick="selectMode('horde')">
+                <div class="mode-icon">🔥</div>
+                <div class="mode-name" style="color: #ff4444">Horde Mode</div>
+                <div class="mode-description">
+                    Survive endless waves for legendary rewards
+                </div>
+                <div class="mode-features">
+                    <ul>
+                        <li>Face increasing waves of enemies</li>
+                        <li>Each wave harder than the last</li>
+                        <li>Earn gems, horde tokens, and rare items</li>
+                        <li>Unlock powerful Relics (special equipment)</li>
+                        <li>Risk/Reward: Claim rewards or keep going</li>
+                        <li>Lose a wave = lose all unclaimed rewards</li>
+                    </ul>
+                </div>
+            </div>
         </div>
 
         <a href="home.html" class="back-button">← Back to Home</a>
@@ -217,6 +236,8 @@
                 window.location.href = 'map.html?mode=main';
             } else if (mode === 'challenge') {
                 window.location.href = 'challenge.html';
+            } else if (mode === 'horde') {
+                window.location.href = 'horde.html';
             }
         }
     </script>

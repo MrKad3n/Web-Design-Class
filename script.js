@@ -175,6 +175,9 @@ function initializeGameMode() {
 window.initializeGameMode = initializeGameMode;
 window.getCurrentGameMode = function() { return currentGameMode; };
 
+// Initialize game mode immediately when script loads (for all pages)
+initializeGameMode();
+
 // --- Dungeon Progression Functions (global - accessible on all pages) ---
 function loadDungeonProgression() {
   try {
@@ -331,9 +334,13 @@ function generateAndSaveDungeon() {
   let attempts = 0;
   const maxAttempts = 50;
   
-  // Reset dungeon progression: only level 1 is playable initially
+  // Initialize dungeon progression if it doesn't exist, otherwise keep existing
   const mode = currentGameMode || 'main';
-  localStorage.removeItem(`dungeonProgressionData_${mode}`);
+  let progression = loadDungeonProgression();
+  if (!progression || !progression.hasOwnProperty('unlockedUpToLevel')) {
+    progression = { clearedLevels: [], unlockedUpToLevel: 1 };
+    saveDungeonProgression(progression);
+  }
   
   // A helper function to find unvisited neighbors
   function getUnvisitedNeighbors(row, col) {
@@ -445,12 +452,19 @@ function generateAndSaveDungeon() {
     const typeBosses = {
       'Undead': ['Enemies/mutant.png', 'Enemies/ancientLich.png'],
       'Nature': ['Enemies/worldroot.png'],
-      'Humanoid': ['Enemies/king.png'],
+      'Army': ['Enemies/king.png'],
+      'Rogue': ['Enemies/king.png'],
+      'Mage Guild': ['Enemies/king.png'],
+      'Mercenary': ['Enemies/king.png'],
+      'Cultist': ['Enemies/king.png'],
+      'Paladin': ['Enemies/king.png'],
+      'Assassin': ['Enemies/king.png'],
+      'Royal Guard': ['Enemies/king.png'],
       'Elemental': ['Enemies/stormElemental.png'],
       'Beast': ['Enemies/dragon.png', 'Enemies/frostWyrm.png'],
-      'Aquatic': ['Enemies/voidKraken.png'],
+      'Aquatic': ['Enemies/lightningShark.png'],
       'Construct': ['Enemies/crystalBehemoth.png'],
-      'Aberration': ['Enemies/Shadow.png', 'Enemies/timeLord.png']
+      'Aberration': ['Enemies/Shadow.png']
     };
     const bossList = typeBosses[type] || [];
     return bossList.length ? bossList[Math.floor(Math.random() * bossList.length)] : null;
@@ -472,11 +486,11 @@ function generateAndSaveDungeon() {
       level = 39 + level; // Levels 40-50
     } else if (currentGameMode === 'beast') {
       level = 54 + level; // Levels 55-65
-    } else if (currentGameMode === 'aquatic') {
+    } else if (currentGameMode === 'aberration') {
       level = 69 + level; // Levels 70-80
     } else if (currentGameMode === 'construct') {
       level = 84 + level; // Levels 85-95
-    } else if (currentGameMode === 'aberration') {
+    } else if (currentGameMode === 'aquatic') {
       level = 89 + level; // Levels 90-100
     }
     
@@ -501,9 +515,9 @@ function generateAndSaveDungeon() {
           25: { mode: 'nature', name: 'Verdant Dimension', icon: '🌿' },
           40: { mode: 'elemental', name: 'Elemental Plane', icon: '🔥' },
           55: { mode: 'beast', name: 'Primal Wilds', icon: '🦁' },
-          70: { mode: 'aquatic', name: 'Abyssal Depths', icon: '🌊' },
+          70: { mode: 'aberration', name: 'Void Realm', icon: '👁️' },
           85: { mode: 'construct', name: 'Forge of Titans', icon: '🗿' },
-          90: { mode: 'aberration', name: 'Void Realm', icon: '👁️' }
+          90: { mode: 'aquatic', name: 'Abyssal Depths', icon: '🌊' }
         };
         const portal = portalMap[level];
         tile.title = `🌀 ${portal.name}`;
@@ -518,23 +532,52 @@ function generateAndSaveDungeon() {
         tile.enemyOne = null;
         tile.enemyTwo = null;
         tile.enemyThree = null;
-      } else if (level === 15 || level === 30 || level === 45 || level === 60 || level === 75) {
-        // Humanoid bosses every 15 levels
-        tile.title = "⚔️ Humanoid Champion";
-        tile.description = "A powerful humanoid blocks your path.";
+      } else if (level === 9 || level === 24 || level === 39 || level === 54 || level === 69 || level === 84 || level === 89) {
+        // Mini-boss tiles right before portals - Use tier 4 for early, tier 5 for later
+        let humanoidType = 'Army';
+        let branchName = 'Army';
+        let specificEnemy = null;
+        
+        if (level === 9) {
+          humanoidType = 'Army';
+          branchName = 'Army';
+          specificEnemy = 'Enemies/royalKnight.png'; // Tier 4
+        } else if (level === 24) {
+          humanoidType = 'Rogue';
+          branchName = 'Rogue';
+          specificEnemy = 'Enemies/masterThief.png'; // Tier 4
+        } else if (level === 39) {
+          humanoidType = 'Mage Guild';
+          branchName = 'Mage Guild';
+          specificEnemy = 'Enemies/archMage.png'; // Tier 5
+        } else if (level === 54) {
+          humanoidType = 'Mercenary';
+          branchName = 'Mercenary';
+          specificEnemy = 'Enemies/warlord.png'; // Tier 5
+        } else if (level === 69) {
+          humanoidType = 'Cultist';
+          branchName = 'Cultist';
+          specificEnemy = 'Enemies/voidCaller.png'; // Tier 5
+        } else if (level === 84) {
+          humanoidType = 'Paladin';
+          branchName = 'Paladin';
+          specificEnemy = 'Enemies/grandTemplar.png'; // Tier 5
+        } else if (level === 89) {
+          humanoidType = 'Assassin';
+          branchName = 'Assassin';
+          specificEnemy = 'Enemies/shadowMaster.png'; // Tier 5
+        }
+        
+        tile.title = `⚔️ ${branchName} Elite`;
+        tile.description = `A powerful ${branchName.toLowerCase()} elite blocks your path. Beyond lies a portal.`;
         tile.cleared = false;
         tile.status = false;
         tile.isBossTile = true;
-        const pool = getEnemiesByTier(5);
-        const humanoidBosses = pool.filter(img => {
-          for (const key in ENEMY_BASE_STATS) {
-            if (ENEMY_BASE_STATS[key].image === img && ENEMY_BASE_STATS[key].type === 'Humanoid') {
-              return true;
-            }
-          }
-          return false;
-        });
-        tile.enemyOne = humanoidBosses.length ? humanoidBosses[Math.floor(Math.random() * humanoidBosses.length)] : pool[0];
+        // Only levels 9 and 24 are elite tiles; 39,54,69,84,89 are mini-boss tiles only
+        tile.isEliteTile = (level === 9 || level === 24);
+        
+        // Use specific tier 4 or tier 5 enemy for each branch
+        tile.enemyOne = specificEnemy;
         tile.enemyTwo = null;
         tile.enemyThree = null;
       } else if (level === 100) {
@@ -548,32 +591,146 @@ function generateAndSaveDungeon() {
         tile.enemyTwo = null;
         tile.enemyThree = null;
       } else {
-        // Regular humanoid levels - tier-based spawning
-        tile.title = "Humanoid Territory";
-        tile.description = "Humanoid warriors defend their realm.";
-        tile.cleared = false;
-        tile.status = false;
+        // Regular humanoid levels - tier-based spawning with branch types by level range
+        // Determine humanoid branch type based on level
+        let humanoidType = 'Army';
+        let branchName = 'Army';
+        let allowedTypes = []; // Types that can spawn on this level
         
-        const tier = levelToTier(level);
-        const pool = getEnemiesByTier(tier).concat(tier > 1 ? getEnemiesByTier(tier - 1) : []);
-        const humanoidPool = pool.filter(img => {
-          for (const key in ENEMY_BASE_STATS) {
-            if (ENEMY_BASE_STATS[key].image === img && ENEMY_BASE_STATS[key].type === 'Humanoid') {
-              return true;
-            }
-          }
-          return false;
-        });
-        
-        const count = level <= 10 ? 1 + Math.floor(Math.random() * 2) : 2 + Math.floor(Math.random() * 2);
-        const picks = [];
-        for (let i = 0; i < count; i++) {
-          if (!humanoidPool.length) break;
-          picks.push(humanoidPool[Math.floor(Math.random() * humanoidPool.length)]);
+        if (level >= 1 && level <= 9) {
+          humanoidType = 'Army';
+          branchName = 'Army';
+          allowedTypes = ['Army'];
+        } else if (level >= 11 && level <= 24) {
+          humanoidType = 'Rogue';
+          branchName = 'Rogue';
+          allowedTypes = ['Rogue'];
+        } else if (level >= 26 && level <= 39) {
+          humanoidType = 'Mage Guild';
+          branchName = 'Mage Guild';
+          allowedTypes = ['Mage Guild'];
+        } else if (level >= 41 && level <= 54) {
+          humanoidType = 'Mercenary';
+          branchName = 'Mercenary';
+          allowedTypes = ['Mercenary'];
+        } else if (level >= 56 && level <= 69) {
+          humanoidType = 'Cultist';
+          branchName = 'Cultist';
+          // Mage Guild can spawn on Cultist levels (lower tier on higher)
+          allowedTypes = ['Cultist', 'Mage Guild'];
+        } else if (level >= 71 && level <= 84) {
+          humanoidType = 'Paladin';
+          branchName = 'Paladin';
+          // Army can spawn on Paladin levels (lower tier on higher)
+          allowedTypes = ['Paladin', 'Army'];
+        } else if (level >= 86 && level <= 100) {
+          humanoidType = 'Assassin';
+          branchName = 'Assassin';
+          // Rogue can spawn on Assassin levels (lower tier on higher)
+          allowedTypes = ['Assassin', 'Rogue'];
         }
-        tile.enemyOne = picks[0] || null;
-        tile.enemyTwo = picks[1] || null;
-        tile.enemyThree = picks[2] || null;
+        
+        // Special handling for final gauntlet (levels 95-99): mixed types, 3 tier 4 + 1 tier 5 boss
+        if (level >= 95 && level <= 99) {
+          tile.title = `⚔️ Final Gauntlet`;
+          tile.description = `Elite warriors from all factions converge. Victory is near.`;
+          tile.cleared = false;
+          tile.status = false;
+          tile.isEliteTile = true;
+          
+          // All humanoid types can spawn here
+          allowedTypes = ['Army', 'Rogue', 'Mage Guild', 'Mercenary', 'Cultist', 'Paladin', 'Assassin'];
+          
+          // Get tier 4 enemies
+          const tier4Pool = getEnemiesByTier(4).filter(img => {
+            for (const key in ENEMY_BASE_STATS) {
+              if (ENEMY_BASE_STATS[key].image === img) {
+                const enemyType = ENEMY_BASE_STATS[key].type;
+                return allowedTypes.includes(enemyType);
+              }
+            }
+            return false;
+          });
+          
+          // Get tier 5 enemies (bosses)
+          const tier5Pool = getEnemiesByTier(5).filter(img => {
+            for (const key in ENEMY_BASE_STATS) {
+              if (ENEMY_BASE_STATS[key].image === img) {
+                const enemyType = ENEMY_BASE_STATS[key].type;
+                return allowedTypes.includes(enemyType);
+              }
+            }
+            return false;
+          });
+          
+          // Pick 3 tier 4 enemies
+          const picks = [];
+          for (let i = 0; i < 3; i++) {
+            if (!tier4Pool.length) break;
+            picks.push(tier4Pool[Math.floor(Math.random() * tier4Pool.length)]);
+          }
+          
+          // Add 1 tier 5 boss
+          if (tier5Pool.length) {
+            picks.push(tier5Pool[Math.floor(Math.random() * tier5Pool.length)]);
+          }
+          
+          tile.enemyOne = picks[0] || null;
+          tile.enemyTwo = picks[1] || null;
+          tile.enemyThree = picks[2] || null;
+          tile.enemyFour = picks[3] || null;
+        } else {
+          tile.title = `${branchName} Territory`;
+          tile.description = `${branchName} warriors defend their realm.`;
+          tile.cleared = false;
+          tile.status = false;
+          // Regular territory tiles don't have elite markers
+          
+          const tier = levelToTier(level);
+          // Expand tier variety: include current tier, tier-1, and tier+1 (when available)
+          let tierPool = getEnemiesByTier(tier);
+          if (tier > 1) {
+            tierPool = tierPool.concat(getEnemiesByTier(tier - 1));
+          }
+          // Add higher tier for variety (including tier 5 when appropriate)
+          if (tier < 5) {
+            tierPool = tierPool.concat(getEnemiesByTier(tier + 1));
+          }
+          // For level 91-99, cap at tier 4
+          if (level >= 91 && level <= 99) {
+            tierPool = tierPool.filter(img => {
+              for (const key in ENEMY_BASE_STATS) {
+                if (ENEMY_BASE_STATS[key].image === img) {
+                  return ENEMY_BASE_STATS[key].tier <= 4;
+                }
+              }
+              return false;
+            });
+          }
+          
+          // Build humanoid pool from all allowed types
+          const humanoidPool = tierPool.filter(img => {
+            for (const key in ENEMY_BASE_STATS) {
+              if (ENEMY_BASE_STATS[key].image === img) {
+                // Check if this enemy's type is in the allowed types for this level
+                const enemyType = ENEMY_BASE_STATS[key].type;
+                return allowedTypes.includes(enemyType);
+              }
+            }
+            return false;
+          });
+          
+          // Determine enemy count: early game 1-2, later 2-3
+          const count = level <= 10 ? 1 + Math.floor(Math.random() * 2) : 2 + Math.floor(Math.random() * 2);
+          const picks = [];
+          for (let i = 0; i < count; i++) {
+            if (!humanoidPool.length) break;
+            picks.push(humanoidPool[Math.floor(Math.random() * humanoidPool.length)]);
+          }
+          tile.enemyOne = picks[0] || null;
+          tile.enemyTwo = picks[1] || null;
+          tile.enemyThree = picks[2] || null;
+        }
       }
     } else if (currentGameMode === 'chaos') {
       // CHAOS REALM (Levels 101-150)
@@ -626,9 +783,9 @@ function generateAndSaveDungeon() {
         'nature': 25,
         'elemental': 40,
         'beast': 55,
-        'aquatic': 70,
+        'aberration': 70,
         'construct': 85,
-        'aberration': 90
+        'aquatic': 90
       };
       const startLevel = dimensionStartLevels[currentGameMode] || 1;
       const isBossLevel = (level === startLevel + 10); // Boss at +10 from start
@@ -650,9 +807,20 @@ function generateAndSaveDungeon() {
         tile.title = `${dimInfo.icon} ${dimInfo.name} Dimension`;
         tile.description = `Face ${dimInfo.type} enemies.`;
         tile.cleared = false;
-        tile.status = (level === startLevel); // Only first level accessible initially
+        tile.status = false; // Status will be updated based on saved progression
         
-        const typePool = getEnemiesByType(dimInfo.type);
+        // Get enemies of this type, but exclude tier 5, 6, and chaos enemies
+        const typePool = getEnemiesByType(dimInfo.type).filter(img => {
+          for (const key in ENEMY_BASE_STATS) {
+            if (ENEMY_BASE_STATS[key].image === img) {
+              const tier = ENEMY_BASE_STATS[key].tier;
+              // Only include tiers 1-4
+              return tier >= 1 && tier <= 4;
+            }
+          }
+          return false;
+        });
+        
         const count = 2 + Math.floor(Math.random() * 2);
         const picks = [];
         for (let i = 0; i < count; i++) {
@@ -690,6 +858,10 @@ function renderGrid() {
         cell.style.opacity = data.status ? 1 : 0.5;
         cell.style.borderColor = data.cleared ? "green" : "black";
         
+        if (data.level === 10) {
+          console.log(`[RENDER] Level 10 tile - status: ${data.status}, opacity: ${data.status ? 1 : 0.5}, cleared: ${data.cleared}`);
+        }
+        
         // Get current unlocked level for highlighting
         const progression = loadDungeonProgression();
         const currentUnlockedLevel = progression.unlockedUpToLevel;
@@ -717,25 +889,29 @@ function renderGrid() {
           cell.textContent = `Lvl ${data.level}`;
         }
         
-        // Define boss levels in new system
+        // Define boss and elite levels in new system
         const dimensionalBossLevels = [20, 35, 50, 65, 80, 95, 100]; // 10 levels after each portal opens
         const isFinalBoss = data.level === 100 || data.level === 150;
-        const isHumanoidBoss = data.level === 25 || data.level === 50;
+        const isHumanoidBoss = data.isBossTile || false; // Use isBossTile property for mini-boss tiles
         const isDimensionalBoss = data.isDimensionalBoss || false;
         const isPortal = data.isPortal || false;
+        const isElite = data.isEliteTile || false;
         
         // Apply appropriate class
         if (isFinalBoss) {
           cell.classList.add('final-boss-cell');
-          cell.classList.remove('mini-boss-cell', 'mid-boss-cell', 'portal-cell');
+          cell.classList.remove('mini-boss-cell', 'mid-boss-cell', 'portal-cell', 'elite-cell');
         } else if (isPortal) {
           cell.classList.add('portal-cell');
-          cell.classList.remove('final-boss-cell', 'mini-boss-cell', 'mid-boss-cell');
+          cell.classList.remove('final-boss-cell', 'mini-boss-cell', 'mid-boss-cell', 'elite-cell');
         } else if (isDimensionalBoss || isHumanoidBoss) {
           cell.classList.add('mini-boss-cell');
-          cell.classList.remove('final-boss-cell', 'mid-boss-cell', 'portal-cell');
-        } else {
+          cell.classList.remove('final-boss-cell', 'mid-boss-cell', 'portal-cell', 'elite-cell');
+        } else if (isElite) {
+          cell.classList.add('elite-cell');
           cell.classList.remove('mini-boss-cell', 'final-boss-cell', 'mid-boss-cell', 'portal-cell');
+        } else {
+          cell.classList.remove('mini-boss-cell', 'final-boss-cell', 'mid-boss-cell', 'portal-cell', 'elite-cell');
         }
       } else {
         cell.style.visibility = "hidden";
@@ -780,9 +956,8 @@ map.addEventListener("click", (e) => {
     const data = tileData[key];
 
     if (data) {
-      // Determine if this level is accessible (cleared or one above highest cleared)
-      const highestCleared = getHighestClearedLevel();
-      const isAccessible = data.cleared || data.level === highestCleared + 1;
+      // Determine if this level is accessible based on status
+      const isAccessible = data.status;
       
       // Handle portal tiles differently
       if (data.isPortal) {
@@ -846,19 +1021,44 @@ map.addEventListener("click", (e) => {
 function enterPortal(portalMode) {
   closePopup();
   
-  // Initialize progression for the dimension if it doesn't exist
-  // Each dimension is independent and starts with its first level unlocked
-  const savedMode = currentGameMode;
-  currentGameMode = portalMode; // Temporarily set to portal mode
+  // Get the starting level for this dimension (the portal level itself)
+  const dimensionStartLevels = {
+    'undead': 10,
+    'nature': 25,
+    'elemental': 40,
+    'beast': 55,
+    'aberration': 70,
+    'construct': 85,
+    'aquatic': 90
+  };
   
-  const progression = loadDungeonProgression();
-  if (progression.unlockedUpToLevel < 1) {
-    // First time entering this dimension - unlock the first level
-    progression.unlockedUpToLevel = 1;
-    saveDungeonProgression(progression);
+  const firstLevel = dimensionStartLevels[portalMode] || 1;
+  
+  // Directly save progression for the portal mode
+  try {
+    const saved = localStorage.getItem(`dungeonProgressionData_${portalMode}`);
+    const progression = saved ? JSON.parse(saved) : { clearedLevels: [], unlockedUpToLevel: 1 };
+    progression.unlockedUpToLevel = firstLevel;
+    progression.clearedLevels = progression.clearedLevels || [];
+    localStorage.setItem(`dungeonProgressionData_${portalMode}`, JSON.stringify(progression));
+    console.log(`Entering ${portalMode} portal, unlocking level ${firstLevel}`, progression);
+  } catch (e) {
+    console.error('Failed to save portal progression', e);
   }
   
-  currentGameMode = savedMode; // Restore current mode
+  // Also unlock the next level on the main path (level after the portal)
+  try {
+    const mainSaved = localStorage.getItem(`dungeonProgressionData_main`);
+    const mainProgression = mainSaved ? JSON.parse(mainSaved) : { clearedLevels: [], unlockedUpToLevel: 1 };
+    const levelAfterPortal = firstLevel + 1;
+    if (mainProgression.unlockedUpToLevel <= firstLevel) {
+      mainProgression.unlockedUpToLevel = levelAfterPortal;
+      localStorage.setItem(`dungeonProgressionData_main`, JSON.stringify(mainProgression));
+      console.log(`Unlocked level ${levelAfterPortal} on main path after entering portal`);
+    }
+  } catch (e) {
+    console.error('Failed to update main path progression', e);
+  }
   
   // Reload map with the portal's mode
   window.location.href = `map.html?mode=${portalMode}`;
@@ -990,34 +1190,54 @@ function initialize() {
   }
   
   const savedData = localStorage.getItem(`dungeonTileData_${currentGameMode}`);
+  console.log('[MAP INIT] Current game mode:', currentGameMode);
+  console.log('[MAP INIT] Saved dungeon data exists:', !!savedData);
+  
   if (savedData) {
     tileData = JSON.parse(savedData);
-    // Apply saved progression to tile status
-    let progression = loadDungeonProgression();
-    console.log('Loading progression for mode', currentGameMode, ':', progression);
-    
-    // Ensure first level is always unlocked for dimensions
-    if (progression.unlockedUpToLevel < 1) {
-      progression.unlockedUpToLevel = 1;
-      saveDungeonProgression(progression);
-    }
-    
-    for (const key in tileData) {
-      const level = tileData[key].level;
-      // Mark cleared levels
-      if (progression.clearedLevels.includes(level)) {
-        tileData[key].cleared = true;
-      }
-      // Enable levels up to highest unlocked
-      if (level <= progression.unlockedUpToLevel) {
-        tileData[key].status = true;
-      }
-    }
-    // Save the updated tileData back to localStorage
-    localStorage.setItem(`dungeonTileData_${currentGameMode}`, JSON.stringify(tileData));
+    console.log('[MAP INIT] Loaded tileData from storage, tile count:', Object.keys(tileData).length);
   } else {
+    console.log('[MAP INIT] No saved data, generating new dungeon');
     generateAndSaveDungeon();
+    console.log('[MAP INIT] Generated tileData, tile count:', Object.keys(tileData).length);
   }
+  
+  // Apply saved progression to tile status (whether loaded or newly generated)
+  let progression = loadDungeonProgression();
+  console.log('[MAP INIT] Loading progression for mode', currentGameMode, ':', progression);
+  
+  // Ensure first level is always unlocked for dimensions
+  if (progression.unlockedUpToLevel < 1) {
+    console.log('[MAP INIT] Progression unlocked level < 1, setting to 1');
+    progression.unlockedUpToLevel = 1;
+    saveDungeonProgression(progression);
+  }
+  
+  console.log('[MAP INIT] Updating tile status based on progression...');
+  let unlockedCount = 0;
+  const tileLevels = [];
+  for (const key in tileData) {
+    const level = tileData[key].level;
+    tileLevels.push(level);
+    const wasUnlocked = tileData[key].status;
+    
+    // Mark cleared levels
+    if (progression.clearedLevels.includes(level)) {
+      tileData[key].cleared = true;
+    }
+    // Enable levels up to highest unlocked
+    if (level <= progression.unlockedUpToLevel) {
+      tileData[key].status = true;
+      if (!wasUnlocked) unlockedCount++;
+      console.log(`[MAP INIT] Unlocking level ${level} (tile at ${key})`);
+    }
+  }
+  console.log('[MAP INIT] Tile levels in dungeon:', tileLevels.sort((a,b) => a-b));
+  console.log('[MAP INIT] Unlocked', unlockedCount, 'tiles based on progression.unlockedUpToLevel =', progression.unlockedUpToLevel);
+  
+  // Save the updated tileData back to localStorage
+  localStorage.setItem(`dungeonTileData_${currentGameMode}`, JSON.stringify(tileData));
+  console.log('[MAP INIT] Saved updated tileData to storage');
   renderGrid();
   
   // Scroll to current unlocked level after a short delay to ensure rendering is complete
@@ -1041,22 +1261,23 @@ window.onload = initialize;
 }
 
 // --- Dungeon Progression Functions (global - accessible on all pages) ---
+// NOTE: These are DUPLICATE functions - the real ones are at lines ~179-196
+// Keeping these for backward compatibility but they now redirect to mode-specific versions
 function loadDungeonProgression() {
   try {
-    const saved = localStorage.getItem('dungeonProgression');
-    if (saved) {
-      return JSON.parse(saved);
-    }
+    const mode = currentGameMode || 'main';
+    const saved = localStorage.getItem(`dungeonProgressionData_${mode}`);
+    return saved ? JSON.parse(saved) : { clearedLevels: [], unlockedUpToLevel: 1 };
   } catch (e) {
     console.error('Failed to load dungeon progression', e);
+    return { clearedLevels: [], unlockedUpToLevel: 1 };
   }
-  // Default: only level 1 unlocked
-  return { clearedLevels: [], unlockedUpToLevel: 1 };
 }
 
 function saveDungeonProgression(progression) {
   try {
-    localStorage.setItem('dungeonProgression', JSON.stringify(progression));
+    const mode = currentGameMode || 'main';
+    localStorage.setItem(`dungeonProgressionData_${mode}`, JSON.stringify(progression));
   } catch (e) {
     console.error('Failed to save dungeon progression', e);
   }
@@ -1075,7 +1296,17 @@ function clearLevelAndUnlock(level) {
   
   // Unlock the next level if this is a new highest cleared
   if (level >= progression.unlockedUpToLevel) {
-    progression.unlockedUpToLevel = level + 1;
+    let nextLevel = level + 1;
+    
+    // Portal levels on main path - skip over them and unlock the level after
+    const portalLevels = [10, 25, 40, 55, 70, 85, 90];
+    
+    // If the next level is a portal, skip it and unlock the level after the portal
+    if (currentGameMode === 'main' && portalLevels.includes(nextLevel)) {
+      progression.unlockedUpToLevel = nextLevel + 1;
+    } else {
+      progression.unlockedUpToLevel = nextLevel;
+    }
   }
   
   // Give iron armor set on first level completion
@@ -1098,8 +1329,9 @@ function clearLevelAndUnlock(level) {
         tileData[key].status = true;
       }
     }
-    localStorage.setItem('dungeonTileData', JSON.stringify(tileData));
-    console.log('Updated tileData in localStorage');
+    const mode = currentGameMode || 'main';
+    localStorage.setItem(`dungeonTileData_${mode}`, JSON.stringify(tileData));
+    console.log('Updated tileData in localStorage for mode:', mode);
   } else {
     console.log('tileData not available, progression saved for map reload');
   }
@@ -3079,6 +3311,85 @@ const ITEM_TABLE = {
     image: "Items/arcanePistol.png",
     role: "Spellslinger - Converts mana into skill damage, hybrid magic-ranged offensive tool.",
   },
+  
+  // ========================================
+  // RELICS - Special equipment from Horde Mode
+  // ========================================
+  "Heart of the Phoenix": {
+    slot: "Relic",
+    rarity: "Legendary",
+    strength: 0,
+    speed: 0,
+    magic: 0,
+    defense: 0,
+    health: 15,
+    mana: 0,
+    attack: "none",
+    ability: 104,
+    image: "Items/phoenixHeart.png",
+    role: "RELIC: Once per battle, automatically revive at 50% HP when defeated. Grants +15 max HP.",
+    relicEffect: "reviveOnDeath",
+  },
+  "Bloodthirsty Fang": {
+    slot: "Relic",
+    rarity: "Epic",
+    strength: 8,
+    speed: 0,
+    magic: 0,
+    defense: 0,
+    health: 0,
+    mana: 0,
+    attack: "none",
+    ability: 105,
+    image: "Items/bloodFang.png",
+    role: "RELIC: Heal for 15% of damage dealt. Grants +8 Strength for aggressive sustain.",
+    relicEffect: "lifesteal15",
+  },
+  "Amulet of Haste": {
+    slot: "Relic",
+    rarity: "Epic",
+    strength: 0,
+    speed: 12,
+    magic: 0,
+    defense: 0,
+    health: 0,
+    mana: 0,
+    attack: "none",
+    ability: 106,
+    image: "Items/hasteAmulet.png",
+    role: "RELIC: 20% chance to take an extra turn immediately. Grants +12 Speed for turn manipulation.",
+    relicEffect: "extraTurnChance20",
+  },
+  "Mana Crystal": {
+    slot: "Relic",
+    rarity: "Rare",
+    strength: 0,
+    speed: 0,
+    magic: 6,
+    defense: 0,
+    health: 0,
+    mana: 50,
+    attack: "none",
+    ability: 107,
+    image: "Items/manaCrystal.png",
+    role: "RELIC: Regenerate 10 mana at the start of each turn. Grants +6 Magic and +50 max mana.",
+    relicEffect: "manaRegen10",
+  },
+  "Titan's Bulwark": {
+    slot: "Relic",
+    rarity: "Legendary",
+    strength: 0,
+    speed: 0,
+    magic: 0,
+    defense: 15,
+    health: 10,
+    mana: 0,
+    attack: "none",
+    ability: 108,
+    image: "Items/titanBulwark.png",
+    role: "RELIC: Reduce all incoming damage by 20%. Grants +15 Defense and +10 HP for ultimate tankiness.",
+    relicEffect: "damageReduction20",
+  },
 };
 
 //------------------------------------------------------------------------------------------------------------------------------------------------
@@ -3105,8 +3416,9 @@ function saveGameData() {
       enchantmentInventory: typeof ENCHANTMENT_INVENTORY !== 'undefined' ? ENCHANTMENT_INVENTORY : {},
       gems: typeof GEMS !== 'undefined' ? GEMS : 0,
     };
+    console.log('[SAVE] Saving game data. INVENTORY items:', payload.inventory.length);
     localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
-    //console.log('Saved game data');
+    console.log('[SAVE] Game data saved successfully');
   } catch (e) {
     console.error('Failed to save game data', e);
   }
@@ -3483,7 +3795,7 @@ const ENEMY_BASE_STATS = {
     speed:1.5,
     defense: 2.6,
     mana:110,
-    hBars:2,
+    hBars:1,
     image:"Enemies/crawler.png",
     tier:2,
     type: "Undead",
@@ -3522,7 +3834,7 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/necromancer.png",
     tier:4,
-    type: "Humanoid",
+    type: "Mage Guild",
     specialEffect: "Resurrection: While alive, dead allies resurrect as zombies",
     attacks: ['Death Bolt', 'Resurrection', 'Life Drain', 'Curse of Undeath', 'Bone Shield']
   },
@@ -3620,7 +3932,7 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/knight.png",
     tier:1,
-    type: "Humanoid",
+    type: "Army",
     attacks: ['Sword Slash', 'Shield Fortify', 'Overhead Chop']
   },
   'Archer': {
@@ -3633,7 +3945,7 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/archer.png",
     tier:2,
-    type: "Humanoid",
+    type: "Rogue",
     attacks: ['Piercing Shot', 'Rapid Fire', 'Quick Bite']
   },
   'Mage': {
@@ -3646,7 +3958,7 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/mage.png",
     tier:3,
-    type: "Humanoid",
+    type: "Mage Guild",
     specialEffect: "Arcane Curse: Applies random status effect (burn/bleed/chill) on attack",
     attacks: ['Magic Missile', 'Arcane Curse', 'Mana Shield', 'Spell Burst']
   },
@@ -3660,7 +3972,7 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/kingsGuard.png",
     tier:4,
-    type: "Humanoid",
+    type: "Royal Guard",
     specialEffect: "Royal Protector: Balanced high-tier warrior",
     attacks: ['Royal Strike', 'Defensive Stance', 'Punish', 'Honor Bound']
   },
@@ -3674,9 +3986,325 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/king.png",
     tier:5,
-    type: "Humanoid",
+    type: "Royal Guard",
     specialEffect: "BOSS: Royal Command - Summons King's Guard (15 lvls lower) + gains 10% stats per guard alive",
     attacks: ['Royal Decree', 'Royal Command', 'Sovereign\'s Might', 'Execute', 'King\'s Blessing', 'Throne Shaker']
+  },
+  // ===== ARMY BRANCH ENEMIES =====
+  'footman': {
+    health: 18,
+    strength:2.3,
+    magic:0,
+    speed:2,
+    defense: 1.9,
+    mana:100,
+    hBars:1,
+    image:"Enemies/footman.png",
+    tier:1,
+    type: "Army",
+    role: "Basic infantry - Slightly tougher than knights, forms the backbone of the army.",
+    attacks: ['Spear Thrust', 'Shield Wall', 'Formation Strike']
+  },
+  'swordsman': {
+    health: 21,
+    strength:3,
+    magic:0,
+    speed:2.5,
+    defense: 1.6,
+    mana:100,
+    hBars:1,
+    image:"Enemies/swordsman.png",
+    tier:2,
+    type: "Army",
+    specialEffect: "Dual Wield: Attacks twice but with reduced damage on second hit",
+    attacks: ['Double Slash', 'Whirlwind Strike', 'Blade Dance', 'Parry']
+  },
+  'captain': {
+    health: 26,
+    strength:3.9,
+    magic:0,
+    speed:3,
+    defense: 2.9,
+    mana:120,
+    hBars:1,
+    image:"Enemies/captain.png",
+    tier:3,
+    type: "Army",
+    specialEffect: "Rally: Increases all ally attack damage by 10% while alive",
+    attacks: ['Commanding Strike', 'Rally', 'Tactical Assault', 'Inspiring Presence', 'Battle Cry']
+  },
+  'royalKnight': {
+    health: 29,
+    strength:4.2,
+    magic:0,
+    speed:3,
+    defense: 3.9,
+    mana:130,
+    hBars:1,
+    image:"Enemies/royalKnight.png",
+    tier:4,
+    type: "Army",
+    specialEffect: "Heavy Armor: Takes 20% reduced damage from physical attacks",
+    attacks: ['Charging Strike', 'Shield Bash', 'Heavy Slam', 'Fortified Defense', 'Lance Rush', 'Noble Guard']
+  },
+  // ===== ROGUE BRANCH ENEMIES =====
+  'bandit': {
+    health: 16,
+    strength:2.9,
+    magic:0,
+    speed:4,
+    defense: 1.3,
+    mana:100,
+    hBars:1,
+    image:"Enemies/bandit.png",
+    tier:2,
+    type: "Rogue",
+    specialEffect: "First Strike: Guaranteed critical on first attack if faster than target",
+    attacks: ['Quick Stab', 'Steal', 'Dirty Trick', 'Ambush']
+  },
+  'shadowBlade': {
+    health: 22,
+    strength:3.6,
+    magic:1.6,
+    speed:5,
+    defense: 1.9,
+    mana:150,
+    hBars:1,
+    image:"Enemies/shadowBlade.png",
+    tier:3,
+    type: "Rogue",
+    specialEffect: "Shadow Step: 25% chance to dodge attacks and counter",
+    attacks: ['Shadow Strike', 'Poison Blade', 'Vanish', 'Backstab', 'Smoke Bomb']
+  },
+  'masterThief': {
+    health: 27,
+    strength:4.2,
+    magic:0,
+    speed:6,
+    defense: 2.3,
+    mana:140,
+    hBars:1,
+    image:"Enemies/masterThief.png",
+    tier:4,
+    type: "Rogue",
+    specialEffect: "Evasion Master: 30% dodge chance, steals player mana on hit",
+    attacks: ['Precision Strike', 'Mana Siphon', 'Acrobatic Dodge', 'Vital Strike', 'Smoke Screen', 'Crippling Blow']
+  },
+  // ===== MAGE GUILD BRANCH ENEMIES =====
+  'apprentice': {
+    health: 17,
+    strength:0,
+    magic:3.6,
+    speed:3,
+    defense: 1.6,
+    mana:180,
+    hBars:1,
+    image:"Enemies/apprentice.png",
+    tier:3,
+    type: "Mage Guild",
+    specialEffect: "Mana Burn: Magic attacks cost enemy 5% less mana each turn",
+    attacks: ['Arcane Bolt', 'Mana Shield', 'Fireball', 'Ice Shard', 'Lightning Spark']
+  },
+  'warlock': {
+    health: 25,
+    strength:0,
+    magic:4.9,
+    speed:3.5,
+    defense: 2.6,
+    mana:250,
+    hBars:1,
+    image:"Enemies/warlock.png",
+    tier:4,
+    type: "Mage Guild",
+    specialEffect: "Dark Pact: Sacrifices 10% HP to deal 150% magic damage",
+    attacks: ['Shadow Bolt', 'Dark Pact', 'Corruption Wave', 'Soul Leech', 'Curse of Weakness', 'Demonic Shield']
+  },
+  'archMage': {
+    health: 33,
+    strength:0,
+    magic:6.5,
+    speed:4,
+    defense: 3.3,
+    mana:300,
+    hBars:1,
+    image:"Enemies/archMage.png",
+    tier:5,
+    type: "Mage Guild",
+    specialEffect: "BOSS: Spell Mastery - Can cast two spells per turn, immune to silence",
+    attacks: ['Meteor Storm', 'Arcane Explosion', 'Time Warp', 'Mana Nova', 'Spell Reflect', 'Elemental Chaos', 'Arcane Ascension']
+  },
+  // ===== MERCENARY BRANCH ENEMIES =====
+  'sellsword': {
+    health: 24,
+    strength:3.9,
+    magic:0,
+    speed:3.5,
+    defense: 2.3,
+    mana:110,
+    hBars:1,
+    image:"Enemies/sellsword.png",
+    tier:3,
+    type: "Mercenary",
+    specialEffect: "Battle Scarred: Gains 5% strength for each attack taken",
+    attacks: ['Mercenary Strike', 'Reckless Assault', 'Combat Experience', 'Veteran\'s Might', 'Paid in Blood']
+  },
+  'bountyHunter': {
+    health: 28,
+    strength:4.6,
+    magic:0,
+    speed:4.5,
+    defense: 2.9,
+    mana:130,
+    hBars:1,
+    image:"Enemies/bountyHunter.png",
+    tier:4,
+    type: "Mercenary",
+    specialEffect: "Mark for Death: Applies vulnerable status (increases damage taken by 25%)",
+    attacks: ['Crossbow Shot', 'Mark for Death', 'Chain Strike', 'Execution', 'Hunter\'s Mark', 'Trophy Claim']
+  },
+  'warlord': {
+    health: 40,
+    strength:5.9,
+    magic:0,
+    speed:3.5,
+    defense: 4.6,
+    mana:160,
+    hBars:1,
+    image:"Enemies/warlord.png",
+    tier:5,
+    type: "Mercenary",
+    specialEffect: "BOSS: Blood Money - Heals for 15% of damage dealt, summons Sellswords",
+    attacks: ['Warlord\'s Fury', 'Hired Blades', 'Devastating Blow', 'War Cry', 'Mercenary Command', 'Savage Cleave', 'Bloodlust']
+  },
+  // ===== CULTIST BRANCH ENEMIES =====
+  'cultist': {
+    health: 22,
+    strength:1.6,
+    magic:4.2,
+    speed:3,
+    defense: 2,
+    mana:200,
+    hBars:1,
+    image:"Enemies/cultist.png",
+    tier:3,
+    type: "Cultist",
+    specialEffect: "Dark Ritual: On death, heals all allies for 20% max HP",
+    attacks: ['Void Bolt', 'Dark Ritual', 'Sacrificial Blade', 'Curse', 'Unholy Chant']
+  },
+  'darkPriest': {
+    health: 26,
+    strength:0,
+    magic:5.2,
+    speed:3.5,
+    defense: 2.9,
+    mana:260,
+    hBars:1,
+    image:"Enemies/darkPriest.png",
+    tier:4,
+    type: "Cultist",
+    specialEffect: "Forbidden Knowledge: Applies random debuff each turn to player",
+    attacks: ['Shadow Plague', 'Forbidden Knowledge', 'Pain Amplifier', 'Void Heal', 'Dark Blessing', 'Insanity']
+  },
+  'voidCaller': {
+    health: 38,
+    strength:2.6,
+    magic:6.5,
+    speed:4,
+    defense: 3.9,
+    mana:320,
+    hBars:1,
+    image:"Enemies/voidCaller.png",
+    tier:5,
+    type: "Cultist",
+    specialEffect: "BOSS: Void Summon - Summons Void Touched minions, applies corruption",
+    attacks: ['Void Tear', 'Summon Void', 'Reality Break', 'Corruption Burst', 'Eldritch Blast', 'Madness Wave', 'Dark Apotheosis']
+  },
+  // ===== PALADIN BRANCH ENEMIES =====
+  'holyKnight': {
+    health: 27,
+    strength:4.2,
+    magic:1.9,
+    speed:2.5,
+    defense: 3.6,
+    mana:160,
+    hBars:1,
+    image:"Enemies/holyKnight.png",
+    tier:3,
+    type: "Paladin",
+    specialEffect: "Divine Shield: 20% chance to block attacks completely",
+    attacks: ['Holy Strike', 'Divine Shield', 'Smite', 'Righteous Fury', 'Blessing of Might']
+  },
+  'crusader': {
+    health: 31,
+    strength:4.9,
+    magic:2.6,
+    speed:3,
+    defense: 4.2,
+    mana:190,
+    hBars:1,
+    image:"Enemies/crusader.png",
+    tier:4,
+    type: "Paladin",
+    specialEffect: "Zealous: Deals 30% more damage when below 50% HP",
+    attacks: ['Crusader Strike', 'Holy Wrath', 'Divine Protection', 'Judgment', 'Consecration', 'Avenging Light']
+  },
+  'grandTemplar': {
+    health: 42,
+    strength:5.9,
+    magic:4.2,
+    speed:3.5,
+    defense: 5.9,
+    mana:240,
+    hBars:1,
+    image:"Enemies/grandTemplar.png",
+    tier:5,
+    type: "Paladin",
+    specialEffect: "BOSS: Divine Aegis - Immune to status effects, heals allies each turn",
+    attacks: ['Templar\'s Judgment', 'Divine Aegis', 'Holy Nova', 'Radiant Burst', 'Blessing of Light', 'Sanctified Ground', 'Divine Intervention']
+  },
+  // ===== ASSASSIN BRANCH ENEMIES =====
+  'nightblade': {
+    health: 23,
+    strength:4.2,
+    magic:1.3,
+    speed:6,
+    defense: 1.9,
+    mana:140,
+    hBars:1,
+    image:"Enemies/nightblade.png",
+    tier:3,
+    type: "Assassin",
+    specialEffect: "Bleed Master: All attacks apply bleed status (3% max HP per turn)",
+    attackStatus: "bleed",
+    attacks: ['Bleeding Edge', 'Shadow Meld', 'Arterial Strike', 'Silent Kill', 'Crimson Dance']
+  },
+  'deathMark': {
+    health: 28,
+    strength:5.2,
+    magic:0,
+    speed:7,
+    defense: 2.3,
+    mana:150,
+    hBars:1,
+    image:"Enemies/deathMark.png",
+    tier:4,
+    type: "Assassin",
+    specialEffect: "Lethal Strike: Critical hits deal 200% damage and reduce healing by 50%",
+    attacks: ['Death Mark', 'Assassinate', 'Throat Slit', 'Shadow Dance', 'Poison Vial', 'Garrote']
+  },
+  'shadowMaster': {
+    health: 36,
+    strength:6.5,
+    magic:2,
+    speed:8,
+    defense: 3.3,
+    mana:180,
+    hBars:1,
+    image:"Enemies/shadowMaster.png",
+    tier:5,
+    type: "Assassin",
+    specialEffect: "BOSS: Perfect Assassination - First attack always crits, creates shadow clones",
+    attacks: ['Fatal Strike', 'Shadow Clone', 'Dimensional Step', 'Execute Order', 'Phantom Blades', 'Death Sentence', 'Vanishing Act']
   },
   'wisp': {
     health: 14,
@@ -3815,7 +4443,7 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/timeLord.png",
     tier:6,
-    type: "Aberration",
+    type: "Demi-God",
     specialEffect: "BOSS: Time Manipulation - Can rewind time to undo damage, manipulates turn order",
     attacks: ['Temporal Strike', 'Rewind', 'Time Stop', 'Chronos Blast', 'Future Sight', 'Paradox', 'Infinity Loop']
   },
@@ -4012,7 +4640,7 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/divineKing.png",
     tier:6,
-    type: "Humanoid",
+    type: "Royal Guard",
     specialEffect: "FINAL BOSS Phase 1: Divine power incarnate",
     attacks: ['Divine Smite', 'Holy Judgment', 'Divine Protection', 'Celestial Storm', 'Righteous Fury', 'Resurrection Divine', 'Heaven\'s Light', 'God\'s Wrath']
   },
@@ -4026,7 +4654,7 @@ const ENEMY_BASE_STATS = {
     hBars:1,
     image:"Enemies/demonKing.png",
     tier:6,
-    type: "Humanoid",
+    type: "Royal Guard",
     specialEffect: "FINAL BOSS Phase 2: Demonic transformation - ultimate power",
     attacks: ['Demon Claw', 'Hellfire', 'Demonic Rage', 'Apocalypse Boss', 'Soul Rend', 'Infernal Shield', 'Damnation']
   },
@@ -4157,7 +4785,7 @@ const ATTACK_STATS = {
   "Charge":          { strMultiplier:  1.4,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 1, group: "strength" },
   "plunge":          { strMultiplier: 1.5,  magicMultiplier: 0,    status: "bleed", manaCost: 0, cooldown: 1, group: "strength" },
   "Combo":           { strMultiplier: 2.3,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "strength" },
-  "Grim slice":      { strMultiplier: 3,    magicMultiplier: 0,    status: "grim", manaCost: 0, cooldown: 3, group: "strength" },
+  "Grim slice":      { strMultiplier: 3,    magicMultiplier: 0,    status: "grim", manaCost: 0, cooldown: 3, group: "strength", guaranteedProc: true },
   "Quick Jab":       { strMultiplier: 1.2,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 1, group: "strength" },
   "Reckless Swing":  { strMultiplier: 2.0,  magicMultiplier: 0,    status: "bleed", manaCost: 0, cooldown: 2, group: "strength" },
   "Drain Strike":    { strMultiplier: 1.6,  magicMultiplier: 0,    status: "leech", manaCost: 0, cooldown: 1, group: "strength" },
@@ -4177,7 +4805,7 @@ const ATTACK_STATS = {
   "Retribution":     { strMultiplier: 2.0,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "strength" },
   "Earthshaker":     { strMultiplier: 4.0,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 4, group: "strength" },
   "Last Stand":      { strMultiplier: 2.8,  magicMultiplier: 0.5,  status: "none", manaCost: 5, cooldown: 3, group: "strength" },
-  "Divine Rend":     { strMultiplier: 3.2,  magicMultiplier: 0.5,  status: "bleed", manaCost: 5, cooldown: 3, group: "strength" },
+  "Divine Rend":     { strMultiplier: 3.2,  magicMultiplier: 0.5,  status: "bleed", manaCost: 5, cooldown: 3, group: "strength", guaranteedProc: true },
   
   // ==================== MAGIC ATTACKS ====================
   // Pure magic attacks cost mana based on multiplier (multiplier × 10)
@@ -4193,8 +4821,8 @@ const ATTACK_STATS = {
   "Arcane Bolt":     { strMultiplier: 0,    magicMultiplier: 1.5,  status: "none", manaCost: 15, cooldown: 0, group: "magic" },
   "Time Warp":       { strMultiplier: 0,    magicMultiplier: 1.8,  status: "chill", manaCost: 18, cooldown: 0, group: "magic" },
   "Psychic Blast":   { strMultiplier: 0,    magicMultiplier: 1.7,  status: "none", manaCost: 17, cooldown: 0, group: "magic" },
-  "Void Surge":      { strMultiplier: 0,    magicMultiplier: 2.5,  status: "grim", manaCost: 25, cooldown: 0, group: "magic" },
-  "Supernova":       { strMultiplier: 0.5,  magicMultiplier: 3.0,  status: "burn", manaCost: 30, cooldown: 1, group: "magic" },
+  "Void Surge":      { strMultiplier: 0,    magicMultiplier: 2.5,  status: "grim", manaCost: 25, cooldown: 0, group: "magic", guaranteedProc: true },
+  "Supernova":       { strMultiplier: 0.5,  magicMultiplier: 3.0,  status: "burn", manaCost: 30, cooldown: 1, group: "magic", guaranteedProc: true },
   "Wisdom Beam":     { strMultiplier: 0,    magicMultiplier: 1.6,  status: "none", manaCost: 16, cooldown: 0, group: "magic" },
   "Chain Lightning": { strMultiplier: 0,    magicMultiplier: 1.8,  status: "burn", manaCost: 18, cooldown: 0, group: "magic" },
   "Ice Shard":       { strMultiplier: 0,    magicMultiplier: 1.4,  status: "chill", manaCost: 14, cooldown: 0, group: "magic" },
@@ -4205,8 +4833,8 @@ const ATTACK_STATS = {
   "Power Surge":     { strMultiplier: 0,    magicMultiplier: 2.8,  status: "none", manaCost: 28, cooldown: 0, group: "magic" },
   "Conjure Ally":    { strMultiplier: 0.5,  magicMultiplier: 1.8,  status: "player buff", manaCost: 18, cooldown: 1, group: "magic" },
   "Arcane Ward":     { strMultiplier: 0,    magicMultiplier: 1.2,  status: "player buff", manaCost: 12, cooldown: 0, group: "magic" },
-  "Epidemic":        { strMultiplier: 0.6,  magicMultiplier: 2.3,  status: "poison", manaCost: 23, cooldown: 1, group: "magic" },
-  "Apocalypse":      { strMultiplier: 2.0,  magicMultiplier: 2.0,  status: "burn", manaCost: 60, cooldown: 2, aoe: true, group: "magic" }, // AOE: 3 enemies × 2.0 mag = 6.0 effective
+  "Epidemic":        { strMultiplier: 0.6,  magicMultiplier: 2.3,  status: "poison", manaCost: 23, cooldown: 1, group: "magic", guaranteedProc: true },
+  "Apocalypse":      { strMultiplier: 2.0,  magicMultiplier: 2.0,  status: "burn", manaCost: 60, cooldown: 2, aoe: true, group: "magic", guaranteedProc: true }, // AOE: 3 enemies × 2.0 mag = 6.0 effective
   
   // ==================== HYBRID ATTACKS (Strength + Magic) ====================
   // Attacks with both strength and magic have BOTH cooldown AND mana cost
@@ -4214,10 +4842,10 @@ const ATTACK_STATS = {
   "poke":            { strMultiplier: 0.5,  magicMultiplier: 0.5,  status: "none", manaCost: 5, cooldown: 0, group: "hybrid" },
   "slap":            { strMultiplier: 0.45, magicMultiplier: 0.45, status: "none", manaCost: 5, cooldown: 0, group: "hybrid" },
   "Tree People":     { strMultiplier: 0.3,  magicMultiplier: 0.5,  status: "leech", manaCost: 5, cooldown: 0, group: "hybrid" },
-  "Incenerate":      { strMultiplier: 1.4,  magicMultiplier: 1,    status: "burn", manaCost: 10, cooldown: 1, group: "hybrid" },
+  "Incenerate":      { strMultiplier: 1.4,  magicMultiplier: 1,    status: "burn", manaCost: 10, cooldown: 1, group: "hybrid", guaranteedProc: true },
   "skater slice":    { strMultiplier: 1.6,  magicMultiplier: 0.4,  status: "bleed", manaCost: 4, cooldown: 1, group: "hybrid" },
   "force strike":    { strMultiplier: 2.2,  magicMultiplier: 1.3,  status: "none", manaCost: 13, cooldown: 2, group: "hybrid" },
-  "Thunder":         { strMultiplier: 1.8,  magicMultiplier: 1.8,  status: "burn", manaCost: 18, cooldown: 2, group: "hybrid" },
+  "Thunder":         { strMultiplier: 1.8,  magicMultiplier: 1.8,  status: "burn", manaCost: 18, cooldown: 2, group: "hybrid", guaranteedProc: true },
   "spell infused":   { strMultiplier: 2,    magicMultiplier: 2.5,  status: "random", manaCost: 25, cooldown: 2, group: "hybrid" },
   "Shield Bash":     { strMultiplier: 1.3,  magicMultiplier: 0.5,  status: "none", manaCost: 5, cooldown: 1, group: "hybrid" },
   "Tidal Crash":     { strMultiplier: 1.2,  magicMultiplier: 1.8,  status: "chill", manaCost: 18, cooldown: 1, group: "hybrid" },
@@ -4375,6 +5003,128 @@ const ATTACK_STATS = {
   "Execute":                { strMultiplier: 3.0,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "strength", lowHpTargetBonus: 1.0, emoji: "☠️" },
   "King's Blessing":        { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 3, group: "utility", healPercent: 0.15, barrierAll: true, emoji: "✨" },
   "Throne Shaker":          { strMultiplier: 2.2,  magicMultiplier: 2.2,  status: "vulnerable", manaCost: 22, cooldown: 3, group: "hybrid", isAOE: true, applyGrim: true, emoji: "💥" },
+  
+  // NEW HUMANOID BRANCH ATTACKS
+  // Army Branch
+  "Spear Thrust":           { strMultiplier: 1.0,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "strength", emoji: "🔱" },
+  "Shield Wall":            { strMultiplier: 0.8,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 1, group: "strength", fortifySelf: 0.25, emoji: "🛡️" },
+  "Formation Strike":       { strMultiplier: 1.3,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 1, group: "strength", allyBonus: 0.2, emoji: "⚔️" },
+  "Double Slash":           { strMultiplier: 1.5,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 1, group: "strength", hits: 2, emoji: "⚔️" },
+  "Whirlwind Strike":       { strMultiplier: 1.8,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "strength", isAOE: true, emoji: "🌪️" },
+  "Blade Dance":            { strMultiplier: 1.2,  magicMultiplier: 0,    status: "bleed", manaCost: 0, cooldown: 1, group: "strength", emoji: "💃" },
+  "Parry":                  { strMultiplier: 0.6,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "strength", counterDamage: 0.4, emoji: "🛡️" },
+  "Commanding Strike":      { strMultiplier: 1.5,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 1, group: "strength", emoji: "👊" },
+  "Rally":                  { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", allyDamageBonus: 0.1, isPassive: true, emoji: "📢", description: "Passive: All allies deal +10% damage" },
+  "Tactical Assault":       { strMultiplier: 1.9,  magicMultiplier: 0,    status: "vulnerable", manaCost: 0, cooldown: 2, group: "strength", emoji: "🎯" },
+  "Inspiring Presence":     { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 3, group: "utility", healAlliesPercent: 0.08, emoji: "✨" },
+  "Battle Cry":             { strMultiplier: 1.3,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "strength", buffAllies: true, emoji: "📣" },
+  "Charging Strike":        { strMultiplier: 2.1,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "strength", emoji: "🏇" },
+  "Heavy Slam":             { strMultiplier: 2.4,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "strength", emoji: "💥" },
+  "Fortified Defense":      { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "utility", fortifySelf: 70, emoji: "🛡️" },
+  "Lance Rush":             { strMultiplier: 2.0,  magicMultiplier: 0,    status: "bleed", manaCost: 0, cooldown: 2, group: "strength", emoji: "🏹" },
+  "Noble Guard":            { strMultiplier: 1.0,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 1, group: "strength", fortifySelf: 0.3, emoji: "👑" },
+  
+  // Rogue Branch
+  "Quick Stab":             { strMultiplier: 1.1,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "strength", emoji: "🗡️" },
+  "Steal":                  { strMultiplier: 0.8,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "strength", stealMana: 15, emoji: "💰" },
+  "Dirty Trick":            { strMultiplier: 1.3,  magicMultiplier: 0,    status: "vulnerable", manaCost: 0, cooldown: 1, group: "strength", emoji: "😈" },
+  "Shadow Meld":            { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "utility", dodgeBonus: 0.5, emoji: "🌑" },
+  "Backstab":               { strMultiplier: 2.2,  magicMultiplier: 0,    status: "bleed", manaCost: 0, cooldown: 2, group: "strength", critBonus: 0.5, emoji: "🗡️" },
+  "Smoke Bomb":             { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 3, group: "utility", dodgeNext: true, emoji: "💨" },
+  "Precision Strike":       { strMultiplier: 1.9,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 1, group: "strength", alwaysCrits: true, emoji: "🎯" },
+  "Mana Siphon":            { strMultiplier: 1.2,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 1, group: "strength", stealMana: 25, emoji: "💙" },
+  "Acrobatic Dodge":        { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", dodgeChance: 0.3, isPassive: true, emoji: "🤸", description: "Passive: 30% chance to dodge attacks" },
+  "Vital Strike":           { strMultiplier: 2.5,  magicMultiplier: 0,    status: "grim", manaCost: 0, cooldown: 2, group: "strength", emoji: "💔" },
+  "Smoke Screen":           { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 3, group: "utility", blindEnemies: true, emoji: "🌫️" },
+  "Crippling Blow":         { strMultiplier: 1.8,  magicMultiplier: 0,    status: "vulnerable", manaCost: 0, cooldown: 2, group: "strength", reduceSpeed: 0.3, emoji: "🦵" },
+  
+  // Mage Guild Branch
+  "Arcane Bolt":            { strMultiplier: 0,    magicMultiplier: 1.5,  status: "none", manaCost: 15, cooldown: 0, group: "magic", emoji: "✨" },
+  "Fireball":               { strMultiplier: 0,    magicMultiplier: 1.7,  status: "burn", manaCost: 17, cooldown: 0, group: "magic", emoji: "🔥" },
+  "Lightning Spark":        { strMultiplier: 0,    magicMultiplier: 1.3,  status: "none", manaCost: 13, cooldown: 0, group: "magic", emoji: "⚡" },
+  "Shadow Bolt":            { strMultiplier: 0,    magicMultiplier: 1.8,  status: "none", manaCost: 18, cooldown: 0, group: "magic", emoji: "🌑" },
+  "Dark Pact":              { strMultiplier: 0,    magicMultiplier: 2.4,  status: "none", manaCost: 24, cooldown: 2, group: "magic", selfDamage: 0.1, damageBonus: 0.5, emoji: "🩸" },
+  "Corruption Wave":        { strMultiplier: 0,    magicMultiplier: 2.0,  status: "corruption", manaCost: 20, cooldown: 1, group: "magic", emoji: "🌀" },
+  "Soul Leech":             { strMultiplier: 0,    magicMultiplier: 1.6,  status: "leech", manaCost: 16, cooldown: 0, group: "magic", heals: 0.5, emoji: "👻" },
+  "Curse of Weakness":      { strMultiplier: 0,    magicMultiplier: 1.4,  status: "vulnerable", manaCost: 14, cooldown: 1, group: "magic", reduceStr: 0.2, emoji: "💀" },
+  "Demonic Shield":         { strMultiplier: 0,    magicMultiplier: 0.5,  status: "none", manaCost: 5, cooldown: 2, group: "magic", fortifySelf: 50, emoji: "🛡️" },
+  "Meteor Storm":           { strMultiplier: 0,    magicMultiplier: 3.2,  status: "burn", manaCost: 32, cooldown: 2, group: "magic", isAOE: true, emoji: "☄️" },
+  "Arcane Explosion":       { strMultiplier: 0,    magicMultiplier: 2.8,  status: "none", manaCost: 28, cooldown: 2, group: "magic", isAOE: true, emoji: "💥" },
+  "Mana Nova":              { strMultiplier: 0,    magicMultiplier: 2.4,  status: "none", manaCost: 24, cooldown: 1, group: "magic", drainMana: 20, emoji: "💙" },
+  "Spell Reflect":          { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 3, group: "utility", reflectSpells: true, emoji: "🔮" },
+  "Elemental Chaos":        { strMultiplier: 0,    magicMultiplier: 3.0,  status: "random", manaCost: 30, cooldown: 2, group: "magic", randomStatusCount: 3, emoji: "🌈" },
+  "Arcane Ascension":       { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", magicGrowth: 0.15, isPassive: true, emoji: "⬆️", description: "Passive: Gains +15% magic per turn" },
+  
+  // Mercenary Branch  
+  "Mercenary Strike":       { strMultiplier: 1.6,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 1, group: "strength", emoji: "⚔️" },
+  "Reckless Assault":       { strMultiplier: 2.0,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "strength", selfDamage: 0.05, emoji: "😤" },
+  "Combat Experience":      { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", damageGrowth: 0.05, isPassive: true, emoji: "💪", description: "Passive: Gains +5% strength per attack received" },
+  "Veteran's Might":        { strMultiplier: 2.2,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "strength", stackBonus: true, emoji: "💥" },
+  "Paid in Blood":          { strMultiplier: 1.8,  magicMultiplier: 0,    status: "bleed", manaCost: 0, cooldown: 1, group: "strength", heals: 0.2, emoji: "🩸" },
+  "Crossbow Shot":          { strMultiplier: 0,    magicMultiplier: 0,    skillMultiplier: 0.2, status: "none", manaCost: 0, cooldown: 0, group: "skill", requiresAmmo: true, emoji: "🏹" },
+  "Chain Strike":           { strMultiplier: 1.9,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "strength", hits: 3, emoji: "⛓️" },
+  "Execution":              { strMultiplier: 3.0,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 3, group: "strength", lowHpBonus: 1.5, emoji: "☠️" },
+  "Hunter's Mark":          { strMultiplier: 1.3,  magicMultiplier: 0,    status: "vulnerable", manaCost: 0, cooldown: 1, group: "strength", emoji: "🎯" },
+  "Trophy Claim":           { strMultiplier: 2.1,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "strength", killBonus: true, emoji: "🏆" },
+  "Warlord's Fury":         { strMultiplier: 2.8,  magicMultiplier: 0,    status: "bleed", manaCost: 0, cooldown: 2, group: "strength", emoji: "😡" },
+  "Hired Blades":           { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 4, group: "utility", summonAlly: "sellsword", emoji: "💰" },
+  "Devastating Blow":       { strMultiplier: 3.2,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 3, group: "strength", emoji: "💥" },
+  "War Cry":                { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 3, group: "utility", buffAllStr: 0.15, emoji: "📢" },
+  "Mercenary Command":      { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", allyDamageBonus: 0.12, isPassive: true, emoji: "👥", description: "Passive: All allies deal +12% damage" },
+  "Savage Cleave":          { strMultiplier: 2.6,  magicMultiplier: 0,    status: "bleed", manaCost: 0, cooldown: 2, group: "strength", isAOE: true, emoji: "🪓" },
+  "Bloodlust":              { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 0, group: "utility", lifesteal: 0.15, isPassive: true, emoji: "🩸", description: "Passive: Heals for 15% of damage dealt" },
+  
+  // Cultist Branch
+  "Void Bolt":              { strMultiplier: 0,    magicMultiplier: 1.8,  status: "none", manaCost: 18, cooldown: 0, group: "magic", emoji: "🌀" },
+  "Sacrificial Blade":      { strMultiplier: 1.4,  magicMultiplier: 0.8,  status: "corruption", manaCost: 8, cooldown: 1, group: "hybrid", emoji: "🗡️" },
+  "Curse":                  { strMultiplier: 0,    magicMultiplier: 1.5,  status: "random", manaCost: 15, cooldown: 1, group: "magic", emoji: "😈" },
+  "Unholy Chant":           { strMultiplier: 0,    magicMultiplier: 1.6,  status: "vulnerable", manaCost: 16, cooldown: 1, group: "magic", emoji: "📿" },
+  "Shadow Plague":          { strMultiplier: 0,    magicMultiplier: 2.2,  status: "corruption", manaCost: 22, cooldown: 1, group: "magic", spreadDebuff: true, emoji: "🦠" },
+  "Forbidden Knowledge":    { strMultiplier: 0,    magicMultiplier: 0,    status: "random", manaCost: 0, cooldown: 0, group: "utility", debuffPerTurn: true, isPassive: true, emoji: "📖", description: "Passive: Applies random debuff each turn" },
+  "Pain Amplifier":         { strMultiplier: 0,    magicMultiplier: 2.4,  status: "vulnerable", manaCost: 24, cooldown: 2, group: "magic", doubleStatus: true, emoji: "💢" },
+  "Void Heal":              { strMultiplier: 0,    magicMultiplier: 0.8,  status: "none", manaCost: 8, cooldown: 2, group: "magic", healPercent: 0.2, emoji: "🖤" },
+  "Dark Blessing":          { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 3, group: "utility", fortifyAll: 40, emoji: "✨" },
+  "Insanity":               { strMultiplier: 0,    magicMultiplier: 2.6,  status: "random", manaCost: 26, cooldown: 2, group: "magic", confuse: true, emoji: "🌀" },
+  "Void Tear":              { strMultiplier: 1.5,  magicMultiplier: 2.5,  status: "corruption", manaCost: 25, cooldown: 2, group: "hybrid", emoji: "💔" },
+  "Summon Void":            { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 4, group: "utility", summonAlly: "voidTouched", emoji: "👁️" },
+  "Reality Break":          { strMultiplier: 0,    magicMultiplier: 3.0,  status: "none", manaCost: 30, cooldown: 3, group: "magic", ignoreDefense: 0.5, emoji: "💥" },
+  "Corruption Burst":       { strMultiplier: 0,    magicMultiplier: 2.8,  status: "corruption", manaCost: 28, cooldown: 2, group: "magic", isAOE: true, emoji: "☠️" },
+  "Eldritch Blast":         { strMultiplier: 0,    magicMultiplier: 3.2,  status: "grim", manaCost: 32, cooldown: 2, group: "magic", applyLeech: true, emoji: "👁️" },
+  "Madness Wave":           { strMultiplier: 0,    magicMultiplier: 2.6,  status: "random", manaCost: 26, cooldown: 1, group: "magic", randomStatusCount: 2, emoji: "🌪️" },
+  "Dark Apotheosis":        { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 5, group: "utility", transformPowerup: true, emoji: "👿" },
+  
+  // Paladin Branch
+  "Holy Strike":            { strMultiplier: 1.7,  magicMultiplier: 0.8,  status: "none", manaCost: 8, cooldown: 1, group: "hybrid", emoji: "✨" },
+  "Smite":                  { strMultiplier: 2.0,  magicMultiplier: 1.0,  status: "burn", manaCost: 10, cooldown: 2, group: "hybrid", emoji: "⚡" },
+  "Blessing of Might":      { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "utility", buffStr: 0.2, emoji: "💪" },
+  "Crusader Strike":        { strMultiplier: 2.1,  magicMultiplier: 1.2,  status: "none", manaCost: 12, cooldown: 2, group: "hybrid", emoji: "⚔️" },
+  "Holy Wrath":             { strMultiplier: 0,    magicMultiplier: 2.4,  status: "burn", manaCost: 24, cooldown: 2, group: "magic", emoji: "😇" },
+  "Judgment":               { strMultiplier: 2.4,  magicMultiplier: 0,    status: "vulnerable", manaCost: 0, cooldown: 2, group: "strength", emoji: "⚖️" },
+  "Consecration":           { strMultiplier: 0,    magicMultiplier: 1.8,  status: "burn", manaCost: 18, cooldown: 2, group: "magic", isAOE: true, emoji: "✨" },
+  "Avenging Light":         { strMultiplier: 2.0,  magicMultiplier: 1.8,  status: "none", manaCost: 18, cooldown: 2, group: "hybrid", lowHpBonus: 0.6, emoji: "💫" },
+  "Templar's Judgment":     { strMultiplier: 2.5,  magicMultiplier: 2.0,  status: "burn", manaCost: 20, cooldown: 2, group: "hybrid", emoji: "⚡" },
+  "Holy Nova":              { strMultiplier: 0,    magicMultiplier: 3.0,  status: "none", manaCost: 30, cooldown: 3, group: "magic", isAOE: true, emoji: "✨" },
+  "Radiant Burst":          { strMultiplier: 0,    magicMultiplier: 2.8,  status: "burn", manaCost: 28, cooldown: 2, group: "magic", blindEnemies: true, emoji: "☀️" },
+  "Blessing of Light":      { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 3, group: "utility", healAlliesPercent: 0.15, emoji: "✨" },
+  "Sanctified Ground":      { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 4, group: "utility", fortifyAll: 80, healOverTime: true, emoji: "🛡️" },
+  "Divine Intervention":    { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 5, group: "utility", reviveAlly: true, emoji: "👼" },
+  
+  // Assassin Branch
+  "Bleeding Edge":          { strMultiplier: 1.8,  magicMultiplier: 0,    status: "bleed", manaCost: 0, cooldown: 1, group: "strength", emoji: "🔪" },
+  "Arterial Strike":        { strMultiplier: 2.2,  magicMultiplier: 0,    status: "bleed", manaCost: 0, cooldown: 2, group: "strength", bleedStacks: 2, emoji: "💉" },
+  "Silent Kill":            { strMultiplier: 2.6,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 3, group: "strength", instantKillLowHp: 0.2, emoji: "💀" },
+  "Crimson Dance":          { strMultiplier: 1.6,  magicMultiplier: 0,    status: "bleed", manaCost: 0, cooldown: 1, group: "strength", hits: 3, emoji: "💃" },
+  "Assassinate":            { strMultiplier: 3.0,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 3, group: "strength", critBonus: 1.0, emoji: "☠️" },
+  "Throat Slit":            { strMultiplier: 2.4,  magicMultiplier: 0,    status: "bleed", manaCost: 0, cooldown: 2, group: "strength", silence: true, emoji: "🩸" },
+  "Shadow Dance":           { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 3, group: "utility", dodgeNext: true, extraTurn: true, emoji: "🌑" },
+  "Poison Vial":            { strMultiplier: 1.4,  magicMultiplier: 0,    status: "corruption", manaCost: 0, cooldown: 2, group: "strength", applyGrim: true, emoji: "🧪" },
+  "Garrote":                { strMultiplier: 2.0,  magicMultiplier: 0,    status: "bleed", manaCost: 0, cooldown: 2, group: "strength", silence: true, emoji: "🪢" },
+  "Fatal Strike":           { strMultiplier: 3.5,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 3, group: "strength", alwaysCrits: true, emoji: "💥" },
+  "Dimensional Step":       { strMultiplier: 2.2,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 2, group: "strength", extraTurn: true, emoji: "🌀" },
+  "Execute Order":          { strMultiplier: 3.2,  magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 3, group: "strength", lowHpBonus: 1.8, emoji: "💀" },
+  "Phantom Blades":         { strMultiplier: 2.0,  magicMultiplier: 0,    status: "bleed", manaCost: 0, cooldown: 2, group: "strength", hits: 4, emoji: "🗡️" },
+  "Death Sentence":         { strMultiplier: 4.0,  magicMultiplier: 0,    status: "grim", manaCost: 0, cooldown: 4, group: "strength", applyAllDebuffs: true, emoji: "☠️" },
+  "Vanishing Act":          { strMultiplier: 0,    magicMultiplier: 0,    status: "none", manaCost: 0, cooldown: 5, group: "utility", dodgeChance: 0.8, isPassive: true, createClone: true, emoji: "👻", description: "Passive: 80% dodge chance for 1 turn after using" },
   
   // Tier 6 Legendary Boss Attacks
   "Divine Smite":           { strMultiplier: 2.5,  magicMultiplier: 2.5,  status: "none", manaCost: 25, cooldown: 1, group: "hybrid", emoji: "⚡" },
@@ -4559,6 +5309,7 @@ const PARTY_STATS = {
     BOOTS: null,
     MAINHAND: null,
     OFFHAND: null,
+    RELIC: null,
     LEVEL: 1,
     HEALTH: null,
     SKILL: 0,
@@ -4671,9 +5422,22 @@ function updateStats(){
       equippedMagic += item.magic;
       equippedDefense += item.defense;
       equippedHealth += item.health;
-      equippedMana += (item.mana || 0);
+      const itemMana = (item.mana || 0);
+      equippedMana += itemMana;
       equippedSkill += (item.skill || 0);
       equippedProcChance += (item.procChance || 0);
+      
+      // Debug mana
+      if (itemMana > 0) {
+        console.log(`[STATS] ${memberKey} equipped ${item.name}: +${itemMana} mana (total equipped mana: ${equippedMana})`);
+      }
+      
+      // Process item abilities
+      if (item.ability === 89) {
+        // Lucky Charm: +15% proc chance and +10% crit chance
+        equippedProcChance += 15;
+        equippedSkill += 20; // +20 skill gives +10% crit chance (0.5% per skill)
+      }
     }
   }
 }
@@ -4684,8 +5448,10 @@ function updateStats(){
     const totalMagic = baseMagic + equippedMagic;
     const totalDefense = baseDefense + equippedDefense;
     const totalMaxHealth = baseHealth + equippedHealth;
-    // Mana doesn't scale with level - only from equipment
-    const totalMaxMana = Math.max(50, equippedMana); // Base 50 mana minimum
+    // Mana doesn't scale with level - 50 base + equipment bonuses
+    const totalMaxMana = 50 + equippedMana; // Base 50 mana + equipment
+    console.log(`[STATS] ${memberKey} - Equipped mana: ${equippedMana}, Total MAX_MANA: ${totalMaxMana}`);
+    
     // Skill doesn't have a base value - only from equipment
     const totalSkill = equippedSkill;
     // Proc chance has a base of 25% plus equipment bonuses
@@ -4901,12 +5667,12 @@ function generateRandomItem(level, forceRarity = null, luckBonus = 0) {
   item.magic = scaleStat('magic', item.magic);
   item.defense = scaleStat('defense', item.defense);
   item.health = scaleStat('health', item.health);
-  // Auto-generate mana if not specified: magic-focused items get mana
+  // Mana does NOT scale with level - keep base value from ITEM_TABLE
+  // This ensures a level 1 mage robe gives the same mana as a level 100 mage robe
   if (typeof item.mana === 'undefined') {
-    item.mana = item.magic > 0 ? Math.round(item.magic * 2) : 0;
-  } else {
-    item.mana = scaleStat('mana', item.mana);
+    item.mana = 0;
   }
+  // Keep mana as-is from the item template (no scaling)
   item.level = lvl;
 
   // Assign first available slot index

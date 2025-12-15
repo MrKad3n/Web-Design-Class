@@ -183,3 +183,94 @@ FLAMELING BIG:
 
 SOTRAK:
 64x64 pixel art of a void walker mysterious enemy. Otherworldly being phasing between dimensions. Purple and black void energy forming body. Reality distortion around figure. Multiple eyes opening in void substance. Tentacle-like void appendages. Teleporting particle effects. Cosmic horror texture, dimensional tears, unknowable entity, no background.
+
+
+HUMANOID BRANCH ENEMIES
+========================
+
+ARMY BRANCH (Levels 1-9)
+------------------------
+
+FOOTMAN:
+64x64 pixel art of a basic army footman enemy. Full plate armor in bronze and iron. Long spear held vertically at ready. Rectangular shield with army emblem. Helmet with nose guard showing determined eyes. Sturdy military boots. Standing at attention pose. Weathered metal armor, disciplined soldier, infantry unit, no background.
+
+SWORDSMAN (Tier 2):
+64x64 pixel art of a dual-wielding swordsman enemy. Light chainmail with leather armor. Two short swords crossed in combat stance. No shield, agile fighter build. Open-faced helmet showing focused expression. Quick attack ready position. Polished blade edges, skilled warrior, swift strikes, no background.
+
+CAPTAIN (Tier 3):
+64x64 pixel art of an army captain enemy. Distinguished military armor with officer insignia. Plumed helmet showing leadership rank. Ornate sword with command banner attached. Cape flowing behind in wind. Shoulder pauldrons with rank markings. Commanding gesture pose. Elite armor detail, tactical leader, battlefield commander, no background.
+
+ROYAL KNIGHT (Tier 4):
+64x64 pixel art of a royal knight elite enemy. Heavy golden-trimmed full plate armor. Large kite shield with royal crest in blue and gold. Longsword raised in noble fighting stance. Crowned helmet with closed visor. Armored warhorse barding details optional. Pristine polished armor, royal champion, elite guardian, no background.
+
+ROGUE BRANCH (Levels 11-24)
+----------------------------
+
+BANDIT (Tier 2):
+64x64 pixel art of a bandit rogue enemy. Ragged leather armor with hood concealing face. Curved dagger in main hand. Satchel of stolen goods on hip. Tattered cloak with patches. Sneaky crouched stance. Worn leather texture, outlaw thief, highway robber, no background.
+
+SHADOW BLADE (Tier 3):
+64x64 pixel art of a shadow blade assassin enemy. Black leather armor with dark cloth wrappings. Twin daggers with poison dripping. Face mask covering lower face, eyes visible. Dark cloak that blends with shadows. Smoke wisps emanating from body. Stealth attack pose. Shadowy texture, silent killer, darkness warrior, no background.
+
+MASTER THIEF (Tier 4):
+64x64 pixel art of a master thief enemy. Sleek dark leather armor with tools and lockpicks. Rapier in elegant fencing stance. Elaborate mask with ornate design. Grappling hook and rope on belt. Acrobatic balanced pose. Multiple pouches of stolen treasures. Refined leather work, expert burglar, legendary rogue, no background.
+
+MAGE GUILD BRANCH (Levels 26-39)
+---------------------------------
+
+APPRENTICE (Tier 3):
+64x64 pixel art of a mage apprentice enemy. Blue apprentice robes with arcane symbols. Wooden staff with small crystal. Pointed wizard hat slightly too large. Young eager face studying spellbook. Magical sparkles around hands. Learning spell-casting pose. Simple cloth texture, novice mage, magical student, no background.
+
+WARLOCK (Tier 4):
+64x64 pixel art of a dark warlock enemy. Black and purple robes with eldritch runes. Staff topped with corrupted crystal pulsing. Demonic contract symbols glowing on robes. Shadowy tendrils coiling around body. Face showing forbidden knowledge. One hand channeling dark energy. Corrupted fabric, dark pact user, demon summoner, no background.
+
+ARCH MAGE (Tier 5):
+64x64 pixel art of an arch mage boss enemy. Magnificent flowing robes in royal purple and silver. Elaborate staff crackling with multiple elemental energies. Long beard with arcane runes woven in. Floating spell tomes orbiting body. Crown or circlet showing master rank. Multiple magical auras layered. Grand spell-casting pose. Exquisite robes, supreme magic wielder, arcane master, no background.
+
+MERCENARY BRANCH (Levels 41-54)
+--------------------------------
+
+SELLSWORD (Tier 3):
+64x64 pixel art of a mercenary sellsword enemy. Mismatched armor pieces from various sources. Notched battle-worn sword. Coin purse prominently displayed on belt. Scarred veteran face with eye patch. Multiple weapon sheaths and holsters. Practical fighter stance. Weathered mixed armor, hired blade, fortune seeker, no background.
+
+BOUNTY HUNTER (Tier 4):
+64x64 pixel art of a bounty hunter enemy. Leather armor with metal studs and buckles. Heavy crossbow loaded and aimed. Wanted posters attached to belt. Wide-brimmed hat casting shadow over eyes. Rope and chains for capturing targets. Tracking stance with crossbow ready. Rugged hunter gear, target seeker, contract killer, no background.
+
+WARLORD (Tier 5):
+64x64 pixel art of a mercenary warlord boss enemy. Massive spiked armor assembled from trophies. Huge two-handed sword stained with blood. War helm with horns and face guard. Multiple scars visible on exposed skin. Trophy skulls hanging from belt. Commanding battle roar pose. Intimidating war gear, army leader, paid conqueror, no background.
+
+CULTIST BRANCH (Levels 56-69)
+------------------------------
+
+CULTIST (Tier 3):
+64x64 pixel art of a dark cultist enemy, full body sprite. Complete figure from head to feet visible. Hooded black robes with occult symbols. Ceremonial dagger with curved blade. Face hidden in shadow except glowing eyes. Ritual candles floating around. Dark purple energy seeping from hands. Both feet visible on ground. Full character proportions, entire body in frame. Chanting prayer pose. Sinister cloth, forbidden worshipper, dark ritualist, no background.
+
+DARK PRIEST (Tier 4):
+64x64 pixel art of a dark priest enemy. Elaborate black and purple priestly vestments. Unholy tome bound in strange materials. Crown of twisted thorns. Void energy swirling in one hand. Face showing fanatic devotion. Multiple eyes tattooed on robes. Blessing dark powers pose. Corrupted religious garb, void cleric, heretic priest, no background.
+
+VOID CALLER (Tier 5):
+64x64 pixel art of a void caller boss enemy. Robes that seem to contain starless space. Reality tearing around figure creating void portals. Multiple void tentacles emerging from robe. Cosmic horror artifacts floating nearby. Face partially consumed by void. Eyes replaced with black holes. Summoning eldritch beings pose. Reality-warping texture, outer dimension summoner, void master, no background.
+
+PALADIN BRANCH (Levels 71-84)
+------------------------------
+
+HOLY KNIGHT (Tier 3):
+64x64 pixel art of a holy knight paladin enemy. Bright silver armor with holy symbol. White cape with gold trim. Sword glowing with divine light. Helmet with angel wing motifs. Shield bearing sun emblem. Righteous combat stance. Gleaming blessed armor, divine warrior, light champion, no background.
+
+CRUSADER (Tier 4):
+64x64 pixel art of a crusader paladin enemy. Heavy ornate armor with religious engravings. Large two-handed warhammer crackling with holy power. Tabard showing sacred order emblem. Face showing zealous determination. Holy fire emanating from weapon. Divine aura surrounding body. Battle prayer pose. Sacred war gear, holy zealot, faith warrior, no background.
+
+GRAND TEMPLAR (Tier 5):
+64x64 pixel art of a grand templar boss enemy. Magnificent golden armor radiating light. Enormous holy greatsword blazing white. Crown and helmet hybrid with halo. Wings of pure light energy extending. Divine shield floating beside. Multiple blessings visible as glowing sigils. Ultimate divine judgment pose. Resplendent holy armor, temple master, divine commander, no background.
+
+ASSASSIN BRANCH (Levels 86-100)
+--------------------------------
+
+NIGHTBLADE (Tier 3):
+64x64 pixel art of a nightblade assassin enemy. Jet black armor designed for silence. Serrated blade coated in poison. Face completely masked with only eye slits. Dark mist trailing from movements. Crouched assassination pose. Blood droplets on blade. Stealth armor, silent death, shadow killer, no background.
+
+DEATH MARK (Tier 4):
+64x64 pixel art of a death mark assassin enemy. Sleek black and red assassin gear. Dual wrist-mounted hidden blades extended. Skull mask with glowing red eyes. Throwing knives in bandolier. Crimson cloak billowing. Leaping strike pose from above. Elite killer gear, marked for death, master assassin, no background.
+
+SHADOW MASTER (Tier 5):
+64x64 pixel art of a shadow master boss enemy, full body sprite. Complete figure from head to feet visible. Legendary assassin in ethereal shadow armor. Blade that phases between dimensions. Multiple shadow clones appearing behind. Face showing cold calculating eyes. Reality bending around movements. Perfect invisible stance becoming visible. Both legs visible in combat stance. Full character proportions, entire body in frame. Shadow fragments swirling. Ultimate stealth, assassination perfected, shadow legend, no background.

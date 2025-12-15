@@ -1247,12 +1247,41 @@
             const urlParams = new URLSearchParams(window.location.search);
             const mode = urlParams.get('mode');
             const challengeId = urlParams.get('id');
+            const wave = urlParams.get('wave');
+            const power = urlParams.get('power');
             
             // Read battleData from sessionStorage
             let battleData = {};
             
+            // If horde mode, load horde wave data
+            if (mode === 'horde' && wave && power) {
+                try {
+                    const waveData = JSON.parse(sessionStorage.getItem('currentHordeWave') || '{}');
+                    const playerLevel = (PARTY_STATS && PARTY_STATS.ONE) ? PARTY_STATS.ONE.LEVEL : 1;
+                    
+                    // Convert enemy data to paths for battle
+                    const enemyPaths = waveData.enemies.map(enemy => enemy.image);
+                    
+                    // Set up battle data from horde wave
+                    battleData = {
+                        level: playerLevel,
+                        enemies: enemyPaths,
+                        isBossTile: false,
+                        isHorde: true,
+                        hordeWave: parseInt(wave),
+                        hordePower: parseInt(power),
+                        hordeRewards: waveData.rewards,
+                        hordeEnemyData: waveData.enemies // Store full enemy data including levels
+                    };
+                    
+                    // Store in sessionStorage
+                    sessionStorage.setItem('battleData', JSON.stringify(battleData));
+                } catch(e) {
+                    console.error('Failed to load horde wave data:', e);
+                }
+            }
             // If challenge mode, load challenge data and set up battle
-            if (mode === 'challenge' && challengeId) {
+            else if (mode === 'challenge' && challengeId) {
                 try {
                     const challengeDataStr = localStorage.getItem('activeChallengeData');
                     if (challengeDataStr) {
@@ -2081,8 +2110,13 @@
                     const isBossEnemy = base.tier >= 5;
                     const isBossTile = battleData.isBossTile || false;
                     
+                    // For horde mode, use individual enemy level; otherwise use battle level
+                    const enemyLevel = (battleData.isHorde && battleData.hordeEnemyData && battleData.hordeEnemyData[idx]) 
+                        ? battleData.hordeEnemyData[idx].level 
+                        : level;
+                    
                     // Use exponential scaling: level^0.9 (slightly faster than player/item scaling of level^0.8)
-                    let baseScale = Math.pow(level, 0.9);
+                    let baseScale = Math.pow(enemyLevel, 0.9);
                     
                     // Apply different scaling based on boss tile vs regular tile
                     let scaleMultiplier = baseScale;
@@ -2098,9 +2132,9 @@
                     
                     // Early game tankiness nerf: Reduce health for enemies below level 10
                     let healthMultiplier = scaleMultiplier;
-                    if (level < 10) {
+                    if (enemyLevel < 10) {
                         // Apply progressive health reduction: 50% at level 1, scaling up to 100% at level 10
-                        const nerfFactor = 0.5 + (level / 20); // Range: 0.5 to 0.95
+                        const nerfFactor = 0.5 + (enemyLevel / 20); // Range: 0.5 to 0.95
                         healthMultiplier = scaleMultiplier * nerfFactor;
                     } else {
                         healthMultiplier = scaleMultiplier;
@@ -2174,7 +2208,7 @@
 
                     const nameH = document.createElement('h3');
                     nameH.className = 'w3-text-white';
-                    nameH.textContent = (key || 'Enemy') + ` (Lv ${level})`;
+                    nameH.textContent = (key || 'Enemy') + ` (Lv ${enemyLevel})`;
 
                     const barWrap = document.createElement('div');
                     barWrap.className = 'enemy-health-bar w3-light-grey';
@@ -2223,7 +2257,7 @@
                     wrap.dataset.mag = scaled.magic;
                     wrap.dataset.def = scaled.defense || base.defense || 0;
                     wrap.dataset.key = key;
-                    wrap.dataset.level = level; // Store the level
+                    wrap.dataset.level = enemyLevel; // Store the level
                     wrap.dataset.transformed = 'false'; // Track transformation state for Divine King
                     wrap.dataset.mana = spawnManaDisplay;
                     wrap.dataset.maxMana = spawnManaDisplay;
@@ -3969,7 +4003,13 @@
                                             // Apply status effect for each hit
                                             const attackStatus = attackObj.statusEffect || attackObj.status;
                                             if (attackStatus && attackStatus !== 'none') {
-                                                applyStatusEffect(currentEnemyWrap, 'enemy', enemyIndex, attackStatus, baseDmg);
+                                                const member = PARTY_STATS[memberKey];
+                                                const procChance = Number(member.PROC_CHANCE || 25);
+                                                const guaranteedProc = attackObj.guaranteedProc || false;
+                                                
+                                                if (guaranteedProc || Math.random() * 100 < procChance) {
+                                                    applyStatusEffect(currentEnemyWrap, 'enemy', enemyIndex, attackStatus, baseDmg);
+                                                }
                                             }
                                         }
                                     }
@@ -3978,7 +4018,20 @@
                                     // Check both 'status' (from ATTACK_STATS) and 'statusEffect' (from SPECIAL_ATTACKS)
                                     const attackStatus = attackObj.statusEffect || attackObj.status;
                                     if (attackStatus && attackStatus !== 'none') {
-                                        applyStatusEffect(currentEnemyWrap, 'enemy', enemyIndex, attackStatus, baseDmg);
+                                        // Check if this attack has guaranteed proc or use PROC_CHANCE stat
+                                        const member = PARTY_STATS[memberKey];
+                                        const procChance = Number(member.PROC_CHANCE || 25); // Default 25%
+                                        const guaranteedProc = attackObj.guaranteedProc || false;
+                                        const procRoll = Math.random() * 100;
+                                        
+                                        if (guaranteedProc || procRoll < procChance) {
+                                            applyStatusEffect(currentEnemyWrap, 'enemy', enemyIndex, attackStatus, baseDmg);
+                                            if (!guaranteedProc) {
+                                                logCombat(`🎲 Status proc! (${procChance}% chance, rolled ${procRoll.toFixed(1)})`);
+                                            }
+                                        } else {
+                                            logCombat(`❌ Status failed to proc (${procChance}% chance, rolled ${procRoll.toFixed(1)})`);
+                                        }
                                     }
                                     
                                     // Ability 1: Bleed - Each attack gives bleed status (can stack with attack's bleed)
@@ -6101,7 +6154,66 @@
                                 }
                             }
                             
-                            target.HEALTH = (Number(target.HEALTH) || Number(target.MAX_HEALTH) || 0) - dmg;
+                            // Ability 62: Lifebond Amulet - Share damage and average HP/defense between two party members
+                            let lifebondActive = false;
+                            let lifebondAllyKey = null;
+                            
+                            // Check if either party member has Lifebond ability (62)
+                            const targetAbilities = getEquippedAbilities(targetKey);
+                            const lifebondPartnerKey = targetKey === activeBattleMember ? activeBattleMember2 : activeBattleMember;
+                            const partnerAbilities = getEquippedAbilities(lifebondPartnerKey);
+                            const hasLifebond = targetAbilities.includes(62) || partnerAbilities.includes(62);
+                            
+                            console.log('[LIFEBOND] dmg:', dmg, 'target:', targetKey, 'targetAbilities:', targetAbilities, 'partnerKey:', lifebondPartnerKey, 'partnerAbilities:', partnerAbilities, 'hasLifebond:', hasLifebond);
+                            
+                            if (dmg > 0 && hasLifebond) {
+                                // Find the ally (the other active party member)
+                                lifebondAllyKey = lifebondPartnerKey;
+                                const lifebondAlly = PARTY_STATS[lifebondAllyKey];
+                                
+                                console.log('[LIFEBOND] Ally found:', lifebondAllyKey, 'Ally HP:', lifebondAlly?.HEALTH, 'Target HP:', target.HEALTH);
+                                
+                                // Check if ally is alive and target is alive
+                                if (lifebondAlly && lifebondAlly.HEALTH > 0 && target.HEALTH > 0) {
+                                    lifebondActive = true;
+                                    
+                                    // Split damage between both party members (50% each)
+                                    const splitDmg = Math.ceil(dmg / 2);
+                                    
+                                    // Apply split damage to target
+                                    target.HEALTH = (Number(target.HEALTH) || Number(target.MAX_HEALTH) || 0) - splitDmg;
+                                    
+                                    // Apply split damage to ally
+                                    lifebondAlly.HEALTH = (Number(lifebondAlly.HEALTH) || Number(lifebondAlly.MAX_HEALTH) || 0) - splitDmg;
+                                    
+                                    // Average their current HP
+                                    const combinedHp = Math.max(0, target.HEALTH) + Math.max(0, lifebondAlly.HEALTH);
+                                    const avgHp = Math.floor(combinedHp / 2);
+                                    target.HEALTH = avgHp;
+                                    lifebondAlly.HEALTH = avgHp;
+                                    
+                                    // Average their defense (store original values for next update)
+                                    const targetDefense = Number(target.DEFENSE || 0);
+                                    const allyDefense = Number(lifebondAlly.DEFENSE || 0);
+                                    const avgDefense = Math.floor((targetDefense + allyDefense) / 2);
+                                    target.DEFENSE = avgDefense;
+                                    lifebondAlly.DEFENSE = avgDefense;
+                                    
+                                    logCombat(`💕 Lifebond: ${target.NAME} ${Math.max(0, target.HEALTH + splitDmg)}→${avgHp} HP, ${lifebondAlly.NAME} ${Math.max(0, lifebondAlly.HEALTH + splitDmg)}→${avgHp} HP (${splitDmg} dmg each, DEF: ${avgDefense})`);
+                                    
+                                    // Update the player display to show both HP changes
+                                    if (typeof updatePlayerArea === 'function') {
+                                        updatePlayerArea();
+                                    }
+                                    
+                                    dmg = 0; // Damage already applied through Lifebond
+                                }
+                            }
+                            
+                            // Apply damage normally if Lifebond didn't trigger
+                            if (!lifebondActive) {
+                                target.HEALTH = (Number(target.HEALTH) || Number(target.MAX_HEALTH) || 0) - dmg;
+                            }
                             
                             // Vampiric Onslaught (challenge ID 2): Enemies heal for damage they deal to players
                             if (isChallenge && battleData.challengeId === 2 && dmg > 0) {
@@ -6304,30 +6416,61 @@
                                 return !m || Number(m.HEALTH) <= 0;
                             });
                             
-                            if (allMembersDead) {
-                                logCombat('All party members defeated! Battle lost...');
-                                combatRunning = false;
-                                
-                                // Count defeated enemies
-                                const allEnemies = getEnemyWrappers();
-                                const totalEnemies = allEnemies.length;
-                                const defeatedEnemies = allEnemies.filter(w => Number(w.dataset.hp) <= 0).length;
-                                
-                                // Calculate partial rewards: 10% base + 30% per enemy defeated
-                                const level = battleData.level || 1;
-                                const baseExp = Math.max(10, Math.round(100 * level));
-                                const defeatExpPercent = 0.10 + (0.30 * (defeatedEnemies / totalEnemies));
-                                const partialExp = Math.round(baseExp * defeatExpPercent);
-                                
-                                // Award partial exp to participants
-                                const expInfo = awardExpToParticipants(level, partialExp);
-                                
-                                // Show defeat modal
-                                showDefeatModal(defeatedEnemies, totalEnemies, expInfo, level);
-                                return;
-                            }
-                            
-                            // Filter alive members, excluding currently active ones
+            if (allMembersDead) {
+                logCombat('All party members defeated! Battle lost...');
+                combatRunning = false;
+                
+                // Handle horde mode defeat - clear all unclaimed rewards
+                if (battleData.isHorde) {
+                    try {
+                        const progress = JSON.parse(localStorage.getItem('hordeProgress') || '{}');
+                        const lostRewards = progress.unclaimedRewards || {};
+                        
+                        // Clear unclaimed rewards
+                        progress.unclaimedRewards = {
+                            gems: 0,
+                            tokens: 0,
+                            items: [],
+                            enchants: [],
+                            relics: []
+                        };
+                        
+                        // Reset to wave 1
+                        progress.currentWave = 1;
+                        
+                        localStorage.setItem('hordeProgress', JSON.stringify(progress));
+                        
+                        // Clear all saved wave data on defeat
+                        for (let i = 1; i <= 100; i++) {
+                            localStorage.removeItem(`hordeWave_${i}`);
+                        }
+                        
+                        // Show horde defeat modal with lost rewards
+                        showHordeDefeatModal(lostRewards);
+                        return;
+                    } catch(e) {
+                        console.error('Failed to handle horde defeat:', e);
+                    }
+                }
+                
+                // Count defeated enemies
+                const allEnemies = getEnemyWrappers();
+                const totalEnemies = allEnemies.length;
+                const defeatedEnemies = allEnemies.filter(w => Number(w.dataset.hp) <= 0).length;
+                
+                // Calculate partial rewards: 10% base + 30% per enemy defeated
+                const level = battleData.level || 1;
+                const baseExp = Math.max(10, Math.round(100 * level));
+                const defeatExpPercent = 0.10 + (0.30 * (defeatedEnemies / totalEnemies));
+                const partialExp = Math.round(baseExp * defeatExpPercent);
+                
+                // Award partial exp to participants
+                const expInfo = awardExpToParticipants(level, partialExp);
+                
+                // Show defeat modal
+                showDefeatModal(defeatedEnemies, totalEnemies, expInfo, level);
+                return;
+            }                            // Filter alive members, excluding currently active ones
                             const aliveMembers = ['ONE','TWO','THREE','FOUR','FIVE'].filter(key => {
                                 const m = PARTY_STATS[key];
                                 // Exclude currently active members and only include alive members
@@ -6518,6 +6661,103 @@
             return Math.max(1, Math.round(lvl * 100 * Math.sqrt(lvl)));
         }
 
+        function showHordeDefeatModal(lostRewards) {
+            // Build modal overlay
+            const overlay = document.createElement('div');
+            overlay.style.position = 'fixed';
+            overlay.style.inset = '0';
+            overlay.style.background = 'rgba(0,0,0,0.85)';
+            overlay.style.display = 'flex';
+            overlay.style.alignItems = 'center';
+            overlay.style.justifyContent = 'center';
+            overlay.style.zIndex = '100000';
+
+            const panel = document.createElement('div');
+            panel.style.background = 'rgba(40,20,20,0.95)';
+            panel.style.border = '3px solid #cc0000';
+            panel.style.borderRadius = '10px';
+            panel.style.padding = '20px 24px';
+            panel.style.color = 'white';
+            panel.style.minWidth = '400px';
+            panel.style.maxWidth = '600px';
+
+            const title = document.createElement('h2');
+            title.textContent = '💀 Wave Failed 💀';
+            title.style.marginTop = '0';
+            title.style.color = '#cc0000';
+            title.style.textAlign = 'center';
+            panel.appendChild(title);
+
+            const message = document.createElement('p');
+            message.textContent = 'Your party has been defeated and all unclaimed rewards have been lost...';
+            message.style.marginBottom = '16px';
+            message.style.textAlign = 'center';
+            panel.appendChild(message);
+
+            // Show lost rewards
+            const lostDiv = document.createElement('div');
+            lostDiv.style.margin = '20px 0';
+            lostDiv.style.padding = '15px';
+            lostDiv.style.background = 'rgba(255, 0, 0, 0.2)';
+            lostDiv.style.border = '2px solid #ff0000';
+            lostDiv.style.borderRadius = '8px';
+
+            let lostText = '<h3 style="margin-top: 0; color: #ff0000; text-align: center;">⚠️ Lost Rewards ⚠️</h3>';
+            const hasRewards = lostRewards && (lostRewards.gems > 0 || lostRewards.tokens > 0 || 
+                               (lostRewards.items && lostRewards.items.length > 0) || 
+                               (lostRewards.enchants && lostRewards.enchants.length > 0) || 
+                               (lostRewards.relics && lostRewards.relics.length > 0));
+            
+            if (hasRewards) {
+                if (lostRewards.gems > 0) lostText += `<div style="padding: 5px;">💎 ${lostRewards.gems} Gems</div>`;
+                if (lostRewards.tokens > 0) lostText += `<div style="padding: 5px;">🔥 ${lostRewards.tokens} Horde Tokens</div>`;
+                if (lostRewards.items && lostRewards.items.length > 0) lostText += `<div style="padding: 5px;">⚔️ ${lostRewards.items.length} Items</div>`;
+                if (lostRewards.enchants && lostRewards.enchants.length > 0) lostText += `<div style="padding: 5px;">✨ ${lostRewards.enchants.length} Enchants</div>`;
+                if (lostRewards.relics && lostRewards.relics.length > 0) lostText += `<div style="padding: 5px;">🌟 ${lostRewards.relics.length} Relics</div>`;
+            } else {
+                lostText += '<div style="padding: 5px; text-align: center; color: #aaa;">No unclaimed rewards to lose</div>';
+            }
+            
+            lostDiv.innerHTML = lostText;
+            panel.appendChild(lostDiv);
+
+            const tip = document.createElement('p');
+            tip.style.marginTop = '16px';
+            tip.style.fontSize = '14px';
+            tip.style.color = '#ffaa00';
+            tip.style.textAlign = 'center';
+            tip.textContent = '💡 Tip: Claim rewards between waves to minimize losses!';
+            panel.appendChild(tip);
+
+            const btnRow = document.createElement('div');
+            btnRow.style.display = 'flex';
+            btnRow.style.gap = '10px';
+            btnRow.style.marginTop = '20px';
+            btnRow.style.justifyContent = 'center';
+
+            const ok = document.createElement('button');
+            ok.textContent = 'Return to Horde Mode';
+            ok.style.padding = '12px 20px';
+            ok.style.background = 'rgba(255, 68, 68, 0.9)';
+            ok.style.border = '2px solid #ff4444';
+            ok.style.borderRadius = '8px';
+            ok.style.color = 'white';
+            ok.style.fontSize = '16px';
+            ok.style.fontWeight = 'bold';
+            ok.style.cursor = 'pointer';
+            ok.onclick = ()=>{ 
+                overlay.remove(); 
+                // Save game data before leaving
+                if (typeof saveGameData === 'function') saveGameData();
+                window.location.href = 'horde.html'; 
+            };
+
+            btnRow.appendChild(ok);
+            panel.appendChild(btnRow);
+            overlay.appendChild(panel);
+            document.body.appendChild(overlay);
+        }
+
         function showDefeatModal(defeatedEnemies, totalEnemies, expInfo, level) {
             // Build modal overlay
             const overlay = document.createElement('div');
@@ -6658,12 +6898,14 @@
         }
 
         function generateVictoryLoot(level){
+            console.log('[LOOT] generateVictoryLoot called for level:', level);
             try {
                 if (typeof window.generateRandomItem === 'function') {
                     // Check if this is the first time clearing this level
                     const progression = typeof window.loadDungeonProgression === 'function' ? window.loadDungeonProgression() : { clearedLevels: [] };
                     const isFirstClear = !progression.clearedLevels.includes(level);
                     const numItems = isFirstClear ? 3 : 1;
+                    console.log('[LOOT] Progression:', progression.clearedLevels, 'isFirstClear:', isFirstClear, 'numItems:', numItems);
                     
                     // Boss tiles grant bonus loot
                     const isBossTile = battleData.isBossTile || false;
@@ -6691,7 +6933,40 @@
                         logCombat(`✨ FIRST CLEAR BONUS: ${items.length}x loot drops!`);
                     }
                     
-                    try { if (typeof saveGameData === 'function') saveGameData(); } catch(e){}
+                    // Add items to INVENTORY
+                    console.log('[LOOT] Generated items:', items.length, 'INVENTORY exists:', typeof INVENTORY !== 'undefined', 'INVENTORY length before:', typeof INVENTORY !== 'undefined' ? INVENTORY.length : 'N/A');
+                    if (typeof INVENTORY !== 'undefined') {
+                        // Build set of occupied slots
+                        const occupiedSlots = new Set();
+                        INVENTORY.forEach(invItem => {
+                            if (invItem && !invItem.equipped && invItem.slotIndex !== undefined) {
+                                occupiedSlots.add(invItem.slotIndex);
+                            }
+                        });
+                        
+                        items.forEach((item, itemIndex) => {
+                            // Assign first available slot to new item
+                            for (let slotNum = 0; slotNum < 125; slotNum++) { // 125 total slots (5 pages × 25 slots)
+                                if (!occupiedSlots.has(slotNum)) {
+                                    item.slotIndex = slotNum;
+                                    occupiedSlots.add(slotNum);
+                                    break;
+                                }
+                            }
+                            // Ensure item has unique ID - use timestamp + random + counter for uniqueness
+                            if (!item._uid) {
+                                item._uid = `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}_${itemIndex}`;
+                            }
+                            item.equipped = false; // New items start unequipped
+                            INVENTORY.push(item);
+                            console.log('[LOOT] Added item to INVENTORY:', item.name, 'rarity:', item.rarity, 'slot:', item.slotIndex, 'uid:', item._uid);
+                        });
+                        console.log('[LOOT] INVENTORY length after:', INVENTORY.length);
+                    } else {
+                        console.error('[LOOT] INVENTORY is undefined! Cannot add items.');
+                    }
+                    
+                    try { if (typeof saveGameData === 'function') saveGameData(); } catch(e){ console.error('[LOOT] saveGameData failed:', e); }
                     return items;
                 }
             } catch(e) { console.error('generateRandomItem failed', e); }
@@ -6795,7 +7070,17 @@
             document.body.appendChild(overlay);
         }
 
+        let victoryModalShown = false; // Prevent duplicate victory modals
+        
         function showVictoryRewards(level){
+            // Prevent duplicate calls
+            if (victoryModalShown) {
+                console.warn('[VICTORY] Modal already shown, skipping duplicate call for level', level);
+                return;
+            }
+            console.log('[VICTORY] Showing victory rewards for level', level);
+            victoryModalShown = true;
+            
             // Stop battle music and play victory music
             if (battleMusic) {
                 battleMusic.pause();
@@ -6809,15 +7094,22 @@
                 victorySound.play().catch(err => console.log('Could not play victory music:', err));
             }
             
-            // Compute rewards
-            const expInfo = awardExpToParticipants(level);
-            const lootArray = generateVictoryLoot(level);
-
             // Check if this is a challenge mode victory
             const isChallengeVictory = battleData.isChallenge || false;
             const challengeReward = battleData.challengeReward || null;
             const challengeId = battleData.challengeId || null;
             const isBossTile = battleData.isBossTile || false;
+            
+            // Check if this is a horde mode victory
+            const isHordeVictory = battleData.isHorde || false;
+            const hordeWave = battleData.hordeWave || 1;
+            const hordePower = battleData.hordePower || 3;
+            const hordeRewards = battleData.hordeRewards || {};
+            
+            // Compute rewards
+            const expInfo = awardExpToParticipants(level);
+            // Don't generate item loot for horde mode - rewards are predetermined
+            const lootArray = isHordeVictory ? [] : generateVictoryLoot(level);
             
             // Award gems based on stage type
             let gemsAwarded = 0;
@@ -6838,8 +7130,43 @@
             // Save game data to persist gems
             if (typeof saveGameData === 'function') saveGameData();
             
+            // Handle horde mode completion
+            if (isHordeVictory) {
+                // Update horde progress
+                try {
+                    const progress = JSON.parse(localStorage.getItem('hordeProgress') || '{}');
+                    
+                    // Update highest wave
+                    if (!progress.highestWave || hordeWave > progress.highestWave) {
+                        progress.highestWave = hordeWave;
+                    }
+                    
+                    // Advance to next wave
+                    progress.currentWave = hordeWave + 1;
+                    
+                    // Add rewards to unclaimed
+                    if (!progress.unclaimedRewards) {
+                        progress.unclaimedRewards = { gems: 0, tokens: 0, items: [], enchants: [], relics: [] };
+                    }
+                    
+                    progress.unclaimedRewards.gems += hordeRewards.gems || 0;
+                    progress.unclaimedRewards.tokens += hordeRewards.tokens || 0;
+                    progress.unclaimedRewards.items.push(...(hordeRewards.items || []));
+                    progress.unclaimedRewards.enchants.push(...(hordeRewards.enchants || []));
+                    progress.unclaimedRewards.relics.push(...(hordeRewards.relics || []));
+                    
+                    localStorage.setItem('hordeProgress', JSON.stringify(progress));
+                    
+                    // Clear saved wave data so next wave gets new enemies
+                    localStorage.removeItem(`hordeWave_${hordeWave}`);
+                    
+                    logCombat(`🔥 Wave ${hordeWave} Complete! Rewards added to unclaimed total.`);
+                } catch(e) {
+                    console.error('Failed to update horde progress:', e);
+                }
+            }
             // Handle challenge completion
-            if (isChallengeVictory && challengeId && challengeReward) {
+            else if (isChallengeVictory && challengeId && challengeReward) {
                 // Mark challenge as completed
                 try {
                     const completed = JSON.parse(localStorage.getItem('completedChallenges') || '[]');
@@ -6881,9 +7208,17 @@
             panel.style.maxWidth = '600px';
 
             const title = document.createElement('h2');
-            title.textContent = isChallengeVictory ? 'Challenge Complete!' : 'Victory!';
+            if (isHordeVictory) {
+                title.textContent = `Wave ${hordeWave} Complete!`;
+                title.style.color = '#ff4444';
+            } else if (isChallengeVictory) {
+                title.textContent = 'Challenge Complete!';
+                title.style.color = '#a335ee';
+            } else {
+                title.textContent = 'Victory!';
+                title.style.color = 'gold';
+            }
             title.style.marginTop = '0';
-            title.style.color = isChallengeVictory ? '#a335ee' : 'gold';
             panel.appendChild(title);
             
             // Show gems awarded
@@ -6896,6 +7231,54 @@
                 gemDiv.style.borderRadius = '8px';
                 gemDiv.innerHTML = `<strong style="color: #00c8ff;">💎 Gems Earned:</strong> <span style="color: #fff; font-weight: bold;">+${gemsAwarded}</span> <span style="color: #aaa;">(Total: ${GEMS || 0})</span>`;
                 panel.appendChild(gemDiv);
+            }
+            
+            // Show horde rewards
+            if (isHordeVictory) {
+                const hordeRewardDiv = document.createElement('div');
+                hordeRewardDiv.style.margin = '10px 0';
+                hordeRewardDiv.style.padding = '15px';
+                hordeRewardDiv.style.background = 'rgba(255, 68, 68, 0.2)';
+                hordeRewardDiv.style.border = '2px solid #ff4444';
+                hordeRewardDiv.style.borderRadius = '8px';
+                
+                let rewardText = '<strong style="color: #ff4444;">🔥 Wave Rewards Added to Unclaimed:</strong><br/>';
+                if (hordeRewards.gems) rewardText += `💎 +${hordeRewards.gems} Gems<br/>`;
+                if (hordeRewards.tokens) rewardText += `🔥 +${hordeRewards.tokens} Horde Tokens<br/>`;
+                
+                // Show item details
+                if (hordeRewards.items && hordeRewards.items.length > 0) {
+                    hordeRewards.items.forEach(item => {
+                        const rarityColor = typeof window.getRarityColor === 'function' ? window.getRarityColor(item.rarity) : '#fff';
+                        rewardText += `⚔️ <span style="color: ${rarityColor};">${item.name}</span> (Lv ${item.level})<br/>`;
+                    });
+                }
+                
+                if (hordeRewards.enchants && hordeRewards.enchants.length > 0) {
+                    hordeRewards.enchants.forEach(enchant => {
+                        rewardText += `✨ ${enchant}<br/>`;
+                    });
+                }
+                
+                if (hordeRewards.relics && hordeRewards.relics.length > 0) {
+                    hordeRewards.relics.forEach(relic => {
+                        rewardText += `🌟 <span style="color: #ff8800;">${relic}</span><br/>`;
+                    });
+                }
+                
+                hordeRewardDiv.innerHTML = rewardText;
+                panel.appendChild(hordeRewardDiv);
+                
+                // Warning about claiming
+                const warningDiv = document.createElement('div');
+                warningDiv.style.margin = '10px 0';
+                warningDiv.style.padding = '10px';
+                warningDiv.style.background = 'rgba(255, 136, 0, 0.2)';
+                warningDiv.style.border = '2px solid #ff8800';
+                warningDiv.style.borderRadius = '8px';
+                warningDiv.style.fontSize = '14px';
+                warningDiv.innerHTML = '<strong style="color: #ff8800;">⚠️ Remember:</strong> Return to Horde Mode to claim rewards. Losing a wave forfeits all unclaimed rewards!';
+                panel.appendChild(warningDiv);
             }
             
             // Show enchantment reward for challenges
@@ -7105,7 +7488,9 @@
                 overlay.remove();
                 
                 // Redirect based on mode
-                if (isChallengeVictory) {
+                if (isHordeVictory) {
+                    window.location.href = 'horde.html';
+                } else if (isChallengeVictory) {
                     window.location.href = 'challenge.html';
                 } else {
                     window.location.href = 'map.html';

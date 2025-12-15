@@ -38,10 +38,13 @@
 
   <script src="script.js"></script>
   
-  <!-- Debug/Test Button -->
-  <div style="position:fixed;bottom:20px;right:20px;z-index:9999;">
+  <!-- Debug/Test Buttons -->
+  <div style="position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px;">
     <button onclick="skipNextLevel()" style="background:rgba(255,165,0,0.9);color:white;border:2px solid rgba(255,140,0,1);padding:12px 20px;border-radius:8px;cursor:pointer;font-weight:bold;font-size:14px;box-shadow:0 4px 8px rgba(0,0,0,0.3);">
       Skip Next Level (Test)
+    </button>
+    <button onclick="skipToLevel100()" style="background:rgba(255,0,0,0.9);color:white;border:2px solid rgba(200,0,0,1);padding:12px 20px;border-radius:8px;cursor:pointer;font-weight:bold;font-size:14px;box-shadow:0 4px 8px rgba(0,0,0,0.3);">
+      Skip to Level 100 (Test)
     </button>
   </div>
   
@@ -118,7 +121,29 @@
           console.error('window.clearLevelAndUnlock is not available');
         }
       } else {
-        alert('All levels are already unlocked!');
+        alert('All levels already unlocked!');
+      }
+    }
+    
+    function skipToLevel100() {
+      // Skip all levels from 1 to 99
+      if (typeof window.clearLevelAndUnlock === 'function') {
+        // Clear levels 1-99
+        for (let i = 1; i < 100; i++) {
+          window.clearLevelAndUnlock(i);
+        }
+        alert('Levels 1-99 completed! Level 100 unlocked!');
+        
+        // Refresh the map display
+        if (typeof renderGrid === 'function') {
+          renderGrid();
+        } else {
+          // Fallback: reload the page
+          window.location.reload();
+        }
+      } else {
+        alert('Unable to unlock levels. clearLevelAndUnlock function not found.');
+        console.error('window.clearLevelAndUnlock is not available');
       }
     }
   </script>

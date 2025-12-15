@@ -21,11 +21,55 @@ const maxPages = 5;
 const slotsPerPage = invRows * invCols;
 const totalSlots = maxPages * slotsPerPage; // 125 total slots
 
+// Remove duplicate items based on UID
+function deduplicateInventory() {
+  const seenUids = new Set();
+  const itemsToRemove = [];
+  
+  INVENTORY.forEach((item, idx) => {
+    if (item && item._uid) {
+      if (seenUids.has(item._uid)) {
+        console.warn('[DEDUPE] Found duplicate item with UID:', item._uid, 'Name:', item.name);
+        itemsToRemove.push(idx);
+      } else {
+        seenUids.add(item._uid);
+      }
+    }
+  });
+  
+  // Remove duplicates in reverse order to preserve indices
+  for (let i = itemsToRemove.length - 1; i >= 0; i--) {
+    console.log('[DEDUPE] Removing duplicate at index:', itemsToRemove[i]);
+    INVENTORY.splice(itemsToRemove[i], 1);
+  }
+  
+  if (itemsToRemove.length > 0) {
+    console.log('[DEDUPE] Removed', itemsToRemove.length, 'duplicate items');
+    if (typeof saveGameData === 'function') saveGameData();
+  }
+}
+
 // Ensure each item has a stable slot index
 function ensureItemSlots() {
-  INVENTORY.forEach((item, idx) => {
-    if (item && item.slotIndex === undefined) {
-      item.slotIndex = idx;
+  // Build set of occupied slots
+  const occupiedSlots = new Set();
+  INVENTORY.forEach(item => {
+    if (item && !item.equipped && item.slotIndex !== undefined) {
+      occupiedSlots.add(item.slotIndex);
+    }
+  });
+  
+  // Assign first available slot to items without one
+  INVENTORY.forEach(item => {
+    if (item && !item.equipped && item.slotIndex === undefined) {
+      // Find first available slot
+      for (let i = 0; i < totalSlots; i++) {
+        if (!occupiedSlots.has(i)) {
+          item.slotIndex = i;
+          occupiedSlots.add(i);
+          break;
+        }
+      }
     }
   });
 }
@@ -38,6 +82,7 @@ function renderInventoryGrid() {
   }
   inventory.innerHTML = "";
   
+  deduplicateInventory();
   ensureItemSlots();
   
   // Calculate start/end slot index for current page
@@ -46,11 +91,22 @@ function renderInventoryGrid() {
   
   // Create a map of slot positions to items (only unequipped items)
   const slotMap = {};
-  INVENTORY.forEach(item => {
+  const slotConflicts = {};
+  INVENTORY.forEach((item, idx) => {
     if (item && !item.equipped && item.slotIndex !== undefined) {
-      slotMap[item.slotIndex] = item;
+      if (slotMap[item.slotIndex]) {
+        // Conflict detected - two items in same slot
+        if (!slotConflicts[item.slotIndex]) slotConflicts[item.slotIndex] = [];
+        slotConflicts[item.slotIndex].push({name: item.name, uid: item._uid, idx: idx});
+        console.warn('[INVENTORY] Slot conflict at index', item.slotIndex, '- UIDs:', slotMap[item.slotIndex]._uid, 'vs', item._uid, '- Names:', slotMap[item.slotIndex].name, 'vs', item.name);
+      }
+      slotMap[item.slotIndex] = item; // Last one wins
     }
   });
+  
+  if (Object.keys(slotConflicts).length > 0) {
+    console.error('[INVENTORY] Found', Object.keys(slotConflicts).length, 'slot conflicts. Total items:', INVENTORY.length, 'Unequipped:', INVENTORY.filter(i => i && !i.equipped).length);
+  }
 
   for (let row = 0; row < invRows; row++) {
     for (let col = 0; col < invCols; col++) {
@@ -210,7 +266,7 @@ function renderEquippedItems(memberKey = getSelectedMember()) {
   equipDiv.appendChild(classDiv);
 
   // --- EQUIPPED ITEMS DISPLAY ---
-  const slots = ["HELMET","CHEST","LEGS","BOOTS","MAINHAND","OFFHAND"];
+  const slots = ["HELMET","CHEST","LEGS","BOOTS","MAINHAND","OFFHAND","RELIC"];
   slots.forEach(s => {
     const itemName = member[s];
     // Prefer the actual INVENTORY object that is marked equipped for this slot (handles duplicates)
@@ -587,6 +643,23 @@ function equipItemToMember(item, memberKey = getSelectedMember()) {
     const prevInv = INVENTORY.find(i => i.name === prevName && i.equipped);
     if (prevInv) {
       prevInv.equipped = false;
+      
+      // Assign it to the first available slot
+      const occupiedSlots = new Set();
+      INVENTORY.forEach(invItem => {
+        if (invItem && !invItem.equipped && invItem.slotIndex !== undefined) {
+          occupiedSlots.add(invItem.slotIndex);
+        }
+      });
+      
+      // Find first available slot for the unequipped item
+      for (let slotNum = 0; slotNum < totalSlots; slotNum++) {
+        if (!occupiedSlots.has(slotNum)) {
+          prevInv.slotIndex = slotNum;
+          break;
+        }
+      }
+      
       // Remove attack by uid if available, otherwise remove by item name
       if (prevInv._uid) {
         removeAttackBySourceUid(prevInv._uid, memberKey);
@@ -846,6 +919,10 @@ function updateStatsDisplay(memberKey = getSelectedMember()) {
         <div style="display: flex; justify-content: space-between; padding: 6px 10px; background: rgba(255, 0, 0, 0.15); border-left: 3px solid #ff4444; border-radius: 4px;">
           <span style="color: #ff6666; font-weight: bold;">❤️ Health:</span>
           <span style="color: #ffffff; font-weight: bold;">${member.MAX_HEALTH}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 6px 10px; background: rgba(0, 150, 255, 0.15); border-left: 3px solid #0096ff; border-radius: 4px;">
+          <span style="color: #44aaff; font-weight: bold;">💧 Mana:</span>
+          <span style="color: #ffffff; font-weight: bold;">${member.MAX_MANA || 50}</span>
         </div>
         <div style="display: flex; justify-content: space-between; padding: 6px 10px; background: rgba(255, 100, 0, 0.15); border-left: 3px solid #ff6644; border-radius: 4px;">
           <span style="color: #ff8866; font-weight: bold;">⚔️ Strength:</span>
