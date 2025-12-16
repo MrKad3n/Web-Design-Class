@@ -396,7 +396,7 @@ function displayItemInfo(item) {
     77: "Curse Reflection - Transfer all your debuffs to target on hit (item attack triggers)",
     78: "Weakpoint - Critical hits ignore 100% of enemy defense",
     79: "Summoner - Create a minion with 30% of your stats that attacks with you for 5 turns (item attack triggers)",
-    80: "Leeching Aura - Drain 3% max HP from all enemies per turn, heal yourself for total amount drained",
+    80: "Leeching Aura - Drain 3% of your max HP from each enemy per turn, heal yourself for total amount drained",
     81: "Enrage - Damage scales with missing HP: +2% per 1% missing HP up to +200% at 1% HP",
     82: "Chronobreak - Critical hits undo enemy's last action and restore your HP by 20% (item attacks only)",
     83: "Fortify - Gain +5% defense each time you take damage, max +50% (resets after battle)",

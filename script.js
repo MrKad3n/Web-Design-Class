@@ -209,88 +209,15 @@ function clearLevelAndUnlock(level) {
     progression.clearedLevels.push(level);
   }
   
-  // Unlock the next level if this is a new highest cleared
-  if (level >= progression.unlockedUpToLevel) {
-    progression.unlockedUpToLevel = level + 1;
-  }
-  
-  // Special: If level 100 (Divine King) is defeated, create chaos portal at level 101
+  // Special: If level 100 (Divine King) is defeated, mark chaos portal as unlocked and set it as level 101
   if (level === 100 && currentGameMode === 'main') {
-    // Find an empty cell for the chaos portal (adjacent to level 100 if possible)
-    if (typeof tileData !== 'undefined' && Object.keys(tileData).length > 0) {
-      // Find level 100 position
-      let level100Key = null;
-      for (const key in tileData) {
-        if (tileData[key].level === 100) {
-          level100Key = key;
-          break;
-        }
-      }
-      
-      if (level100Key) {
-        const [row100, col100] = level100Key.split(',').map(Number);
-        
-        // Try to find an adjacent empty cell
-        const adjacentCells = [
-          [row100 - 1, col100], [row100 + 1, col100],
-          [row100, col100 - 1], [row100, col100 + 1]
-        ];
-        
-        let portalPlaced = false;
-        for (const [r, c] of adjacentCells) {
-          const adjacentKey = `${r},${c}`;
-          if (r >= 0 && r < 20 && c >= 0 && c < 20 && !tileData[adjacentKey]) {
-            // Create the chaos portal here
-            tileData[adjacentKey] = {
-              level: 101,
-              title: "🌀 Chaos Realm Portal",
-              description: "Enter the Chaos Realm - Reality itself bends here.",
-              cleared: false,
-              status: true, // Unlocked immediately
-              isPortal: true,
-              portalMode: 'chaos',
-              portalName: 'Chaos Realm',
-              portalIcon: '🌀',
-              enemyOne: null,
-              enemyTwo: null,
-              enemyThree: null
-            };
-            portalPlaced = true;
-            console.log('Chaos portal created at level 101, position:', adjacentKey);
-            break;
-          }
-        }
-        
-        // If no adjacent cells available, try to find any empty cell
-        if (!portalPlaced) {
-          for (let r = 0; r < 20; r++) {
-            for (let c = 0; c < 20; c++) {
-              const key = `${r},${c}`;
-              if (!tileData[key]) {
-                tileData[key] = {
-                  level: 101,
-                  title: "🌀 Chaos Realm Portal",
-                  description: "Enter the Chaos Realm - Reality itself bends here.",
-                  cleared: false,
-                  status: true,
-                  isPortal: true,
-                  portalMode: 'chaos',
-                  portalName: 'Chaos Realm',
-                  portalIcon: '🌀',
-                  enemyOne: null,
-                  enemyTwo: null,
-                  enemyThree: null
-                };
-                portalPlaced = true;
-                console.log('Chaos portal created at level 101, position:', key);
-                break;
-              }
-            }
-            if (portalPlaced) break;
-          }
-        }
-      }
-    }
+    progression.chaosPortalUnlocked = true;
+    progression.unlockedUpToLevel = 101; // Unlock level 101 (chaos portal)
+    console.log('Chaos portal unlocked as level 101! Map will create it on next load.');
+  }
+  // Unlock the next level if this is a new highest cleared
+  else if (level >= progression.unlockedUpToLevel) {
+    progression.unlockedUpToLevel = level + 1;
   }
   
   console.log('Updated progression:', progression);
@@ -307,6 +234,93 @@ function clearLevelAndUnlock(level) {
         tileData[key].status = true;
       }
     }
+    
+    // Create chaos portal if unlocked and not already present
+    if (progression.chaosPortalUnlocked && currentGameMode === 'main') {
+      let chaosPortalExists = false;
+      for (const key in tileData) {
+        if (tileData[key].level === 101 && tileData[key].isPortal) {
+          chaosPortalExists = true;
+          break;
+        }
+      }
+      
+      if (!chaosPortalExists) {
+        // Find level 100 position
+        let level100Key = null;
+        for (const key in tileData) {
+          if (tileData[key].level === 100) {
+            level100Key = key;
+            break;
+          }
+        }
+        
+        if (level100Key) {
+          const [row100, col100] = level100Key.split(',').map(Number);
+          
+          // Try to find an adjacent empty cell
+          const adjacentCells = [
+            [row100 - 1, col100], [row100 + 1, col100],
+            [row100, col100 - 1], [row100, col100 + 1]
+          ];
+          
+          let portalPlaced = false;
+          for (const [r, c] of adjacentCells) {
+            const adjacentKey = `${r},${c}`;
+            if (r >= 0 && r < 20 && c >= 0 && c < 20 && !tileData[adjacentKey]) {
+              // Create the chaos portal here
+              tileData[adjacentKey] = {
+                level: 101,
+                title: "🌀 Chaos Realm Portal",
+                description: "Enter the Chaos Realm - Reality itself bends here.",
+                cleared: false,
+                status: true, // Unlocked immediately
+                isPortal: true,
+                portalMode: 'chaos',
+                portalName: 'Chaos Realm',
+                portalIcon: '🌀',
+                enemyOne: null,
+                enemyTwo: null,
+                enemyThree: null
+              };
+              portalPlaced = true;
+              console.log('Chaos portal created at level 101, position:', adjacentKey);
+              break;
+            }
+          }
+          
+          // If no adjacent cells available, try to find any empty cell
+          if (!portalPlaced) {
+            for (let r = 0; r < 20; r++) {
+              for (let c = 0; c < 20; c++) {
+                const key = `${r},${c}`;
+                if (!tileData[key]) {
+                  tileData[key] = {
+                    level: 101,
+                    title: "🌀 Chaos Realm Portal",
+                    description: "Enter the Chaos Realm - Reality itself bends here.",
+                    cleared: false,
+                    status: true,
+                    isPortal: true,
+                    portalMode: 'chaos',
+                    portalName: 'Chaos Realm',
+                    portalIcon: '🌀',
+                    enemyOne: null,
+                    enemyTwo: null,
+                    enemyThree: null
+                  };
+                  portalPlaced = true;
+                  console.log('Chaos portal created at level 101, position:', key);
+                  break;
+                }
+              }
+              if (portalPlaced) break;
+            }
+          }
+        }
+      }
+    }
+    
     const mode = currentGameMode || 'normal';
     localStorage.setItem(`dungeonTileData_${mode}`, JSON.stringify(tileData));
     console.log('Updated tileData in localStorage for mode:', mode);
@@ -1234,6 +1248,97 @@ function initialize() {
   }
   console.log('[MAP INIT] Tile levels in dungeon:', tileLevels.sort((a,b) => a-b));
   console.log('[MAP INIT] Unlocked', unlockedCount, 'tiles based on progression.unlockedUpToLevel =', progression.unlockedUpToLevel);
+  
+  // Create chaos portal if unlocked and in main mode
+  if (progression.chaosPortalUnlocked && currentGameMode === 'main') {
+    console.log('[MAP INIT] Chaos portal unlocked, checking if it exists...');
+    let chaosPortalExists = false;
+    for (const key in tileData) {
+      if (tileData[key].level === 101 && tileData[key].isPortal) {
+        chaosPortalExists = true;
+        console.log('[MAP INIT] Chaos portal already exists at', key);
+        break;
+      }
+    }
+    
+    if (!chaosPortalExists) {
+      console.log('[MAP INIT] Creating chaos portal at level 101...');
+      // Find level 100 position
+      let level100Key = null;
+      for (const key in tileData) {
+        if (tileData[key].level === 100) {
+          level100Key = key;
+          break;
+        }
+      }
+      
+      if (level100Key) {
+        const [row100, col100] = level100Key.split(',').map(Number);
+        
+        // Try to find an adjacent empty cell
+        const adjacentCells = [
+          [row100 - 1, col100], [row100 + 1, col100],
+          [row100, col100 - 1], [row100, col100 + 1]
+        ];
+        
+        let portalPlaced = false;
+        for (const [r, c] of adjacentCells) {
+          const adjacentKey = `${r},${c}`;
+          if (r >= 0 && r < 20 && c >= 0 && c < 20 && !tileData[adjacentKey]) {
+            // Create the chaos portal here
+            tileData[adjacentKey] = {
+              level: 101,
+              title: "🌀 Chaos Realm Portal",
+              description: "Enter the Chaos Realm - Reality itself bends here.",
+              cleared: false,
+              status: true, // Unlocked immediately
+              isPortal: true,
+              portalMode: 'chaos',
+              portalName: 'Chaos Realm',
+              portalIcon: '🌀',
+              enemyOne: null,
+              enemyTwo: null,
+              enemyThree: null
+            };
+            portalPlaced = true;
+            console.log('[MAP INIT] Chaos portal created at level 101, position:', adjacentKey);
+            break;
+          }
+        }
+        
+        // If no adjacent cells available, try to find any empty cell
+        if (!portalPlaced) {
+          for (let r = 0; r < 20; r++) {
+            for (let c = 0; c < 20; c++) {
+              const key = `${r},${c}`;
+              if (!tileData[key]) {
+                tileData[key] = {
+                  level: 101,
+                  title: "🌀 Chaos Realm Portal",
+                  description: "Enter the Chaos Realm - Reality itself bends here.",
+                  cleared: false,
+                  status: true,
+                  isPortal: true,
+                  portalMode: 'chaos',
+                  portalName: 'Chaos Realm',
+                  portalIcon: '🌀',
+                  enemyOne: null,
+                  enemyTwo: null,
+                  enemyThree: null
+                };
+                portalPlaced = true;
+                console.log('[MAP INIT] Chaos portal created at level 101, position:', key);
+                break;
+              }
+            }
+            if (portalPlaced) break;
+          }
+        }
+      } else {
+        console.warn('[MAP INIT] Could not find level 100 tile to place chaos portal near');
+      }
+    }
+  }
   
   // Save the updated tileData back to localStorage
   localStorage.setItem(`dungeonTileData_${currentGameMode}`, JSON.stringify(tileData));

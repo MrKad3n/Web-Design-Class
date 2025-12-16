@@ -5456,18 +5456,19 @@
                             // --- Passive Leech Aura (Leech Crown, ability 80) ---
                             const equippedAbilities = getEquippedAbilities(memberKey);
                             if (equippedAbilities.includes(80)) {
+                                const playerMaxHp = Number(target.MAX_HEALTH) || 1;
+                                const drainAmtPerEnemy = Math.max(1, Math.round(playerMaxHp * 0.03)); // 3% of player's max HP per enemy, min 1
                                 let totalDrained = 0;
                                 const enemies = getEnemyWrappers().filter(e => Number(e.dataset.hp) > 0);
                                 enemies.forEach(enemyWrap => {
-                                    const maxHp = Number(enemyWrap.dataset.maxHp) || 1;
-                                    const drainAmt = Math.max(1, Math.round(maxHp * 0.03)); // 3% max HP, min 1
                                     const curHp = Number(enemyWrap.dataset.hp);
-                                    enemyWrap.dataset.hp = Math.max(0, curHp - drainAmt);
+                                    const actualDrain = Math.min(drainAmtPerEnemy, curHp); // Can't drain more than enemy has
+                                    enemyWrap.dataset.hp = Math.max(0, curHp - actualDrain);
                                     updateEnemyBar(enemyWrap);
-                                    totalDrained += drainAmt;
+                                    totalDrained += actualDrain;
                                     // Show leech popup on enemy
                                     const enemyImg = enemyWrap.querySelector('img');
-                                    if (enemyImg) showDamagePopup(enemyImg, drainAmt, 'leech');
+                                    if (enemyImg) showDamagePopup(enemyImg, actualDrain, 'leech');
                                 });
                                 if (totalDrained > 0) {
                                     target.HEALTH = Math.min(Number(target.MAX_HEALTH), Number(target.HEALTH) + totalDrained);
@@ -5476,7 +5477,7 @@
                                     const playerImgId = (memberKey === activeBattleMember2) ? 'player-2' : 'player-1';
                                     const pimg = document.getElementById(playerImgId);
                                     if (pimg) showDamagePopup(pimg, totalDrained, 'heal');
-                                    logCombat(`👑 Leeching Aura: Drained ${totalDrained} HP from all enemies and healed ${target.NAME}`);
+                                    logCombat(`👑 Leeching Aura: Drained ${totalDrained} HP from all enemies (${drainAmtPerEnemy} per enemy, 3% of max HP) and healed ${target.NAME}`);
                                 }
                             }
 
